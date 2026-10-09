@@ -27,11 +27,11 @@ export function statusColor(s: Status): string {
   return STATUS_VAR[s];
 }
 
-/** 14x14 icons; fill = status hue, stroke = current ink. */
+/** 14x14 icons, each a distinct shape; fill = status hue, outline = current ink (always >= 3:1). */
 function iconBody(s: Status, c: string): JSX.Element {
   switch (s) {
-    case 'reported': // open circle: on the record, nothing further yet
-      return <circle cx="7" cy="7" r="4.6" fill="none" stroke={c} strokeWidth="2.4" />;
+    case 'reported': // plain disc: on the record, nothing further yet
+      return <circle cx="7" cy="7" r="4.8" fill={c} stroke="currentColor" strokeWidth="1.2" />;
     case 'under-investigation': // magnifier
       return (
         <>
@@ -60,11 +60,11 @@ function iconBody(s: Status, c: string): JSX.Element {
           <path d="M7 1.4a5.6 5.6 0 0 1 0 11.2z" fill={c} stroke="currentColor" strokeWidth="1" />
         </>
       );
-    case 'retracted': // struck circle
+    case 'retracted': // struck-through disc
       return (
         <>
-          <circle cx="7" cy="7" r="5.4" fill="none" stroke={c} strokeWidth="2" />
-          <path d="M3.2 10.8l7.6-7.6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          <circle cx="7" cy="7" r="5.4" fill={c} stroke="currentColor" strokeWidth="1.2" />
+          <path d="M2.6 11.4l8.8-8.8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
         </>
       );
   }

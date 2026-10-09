@@ -6,6 +6,14 @@
     <meta name="color-scheme" content="dark light" />
     <link rel="icon" href="data:," />
     <title>Corruption Ticker</title>
+    <script>
+      // Apply saved theme / type size before first paint. Dark is the default.
+      try {
+        var t = localStorage.getItem('ct.theme');
+        if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+        if (localStorage.getItem('ct.type') === 'large') document.documentElement.setAttribute('data-type', 'large');
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

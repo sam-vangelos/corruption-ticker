@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useRef, useState } from 'react';
+import { memo, useCallback, useLayoutEffect, useRef, useState } from 'react';
 import type { Item } from '../types';
 import { CategoryGlyph, CATEGORY_LABEL } from '../categories';
 import { formatDate } from '../data/dates';
@@ -19,7 +19,7 @@ interface TickerProps {
  * to a static, horizontally scrollable strip at the same visual offset, so a
  * focused title is never stranded off-screen. Reduced motion: always static.
  */
-export function Ticker({ items, onOpen }: TickerProps) {
+export const Ticker = memo(function Ticker({ items, onOpen }: TickerProps) {
   const reduced = useReducedMotion();
   const viewportRef = useRef<HTMLDivElement>(null);
   const railRef = useRef<HTMLDivElement>(null);
@@ -145,4 +145,4 @@ export function Ticker({ items, onOpen }: TickerProps) {
       </div>
     </section>
   );
-}
+});

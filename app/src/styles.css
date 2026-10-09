@@ -14,7 +14,10 @@
   --surface: #1a1a19;        /* chart + card surface (the validator's dark surface) */
   --raised: #232321;
   --hairline: #2c2c2a;       /* gridlines, dividers */
-  --rule: #3a3a37;           /* baselines, control borders */
+  --rule: #3a3a37;           /* baselines, dividers */
+  --control: #77756e;        /* borders of inputs, buttons, chips: >= 3:1 on every surface */
+  --overlay: #262624;        /* popovers, tooltips */
+  --glyph-stroke: none;
   --text: #ecebe6;           /* primary ink */
   --text-2: #c3c2b7;         /* secondary ink */
   --text-3: #9e9c95;         /* muted ink (axis labels, meta) */
@@ -54,12 +57,42 @@
   --wide: 76rem;
 }
 
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --page: #f3f3ef;
+  --surface: #fcfcfb;        /* the validator's light surface */
+  --raised: #e9e8e3;
+  --hairline: #e1e0d9;
+  --rule: #c3c2b7;
+  --control: #85847c;
+  --overlay: #ffffff;
+  --text: #161615;
+  --text-2: #45443f;
+  --text-3: #5c5b55;
+  --ink-data: #6b6a64;
+  --ink-wash: rgba(107, 106, 100, 0.10);
+  --focus: #000000;
+  --selected-bg: #161615;
+  --selected-text: #fcfcfb;
+  --scrim: rgba(20, 20, 19, 0.35);
+  /* Three light steps sit under 3:1 on the surface (validator WARN); every
+     glyph is outlined in ink and always paired with a text label. */
+  --glyph-stroke: rgba(22, 22, 21, 0.55);
+
+  --cat-1: #2a78d6;  --cat-2: #eda100;  --cat-3: #4a3aa7;  --cat-4: #008300;
+  --cat-5: #e87ba4;  --cat-6: #93591a;  --cat-7: #00899b;  --cat-8: #eb6834;
+  --cat-9: #1baf7a;  --cat-10: #a24fb0; --cat-11: #e34948;
+}
+
+/* Large type: the root steps from 16px to 20px; everything is sized in rem. */
+:root[data-type='large'] { font-size: 125%; }
+
 *,
 *::before,
 *::after { box-sizing: border-box; }
 
 html {
-  font-size: 100%; /* 16px base */
   -webkit-text-size-adjust: 100%;
 }
 
@@ -173,7 +206,7 @@ button, input, select { font: inherit; color: inherit; }
 
 /* ---------- glyphs ---------- */
 
-.glyph { flex: none; width: 0.8125rem; height: 0.8125rem; overflow: visible; }
+.glyph { flex: none; width: 0.8125rem; height: 0.8125rem; overflow: visible; stroke: var(--glyph-stroke); stroke-width: 0.8; paint-order: stroke; }
 .ticker__glyph { width: 0.875rem; height: 0.875rem; }
 
 /* ---------- ticker ---------- */
@@ -274,7 +307,7 @@ button, input, select { font: inherit; color: inherit; }
 
 .counters {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(11rem, calc(50% - var(--space-3))), 1fr));
   gap: var(--space-3);
   margin-block: var(--space-5);
 }
@@ -314,10 +347,10 @@ button, input, select { font: inherit; color: inherit; }
   z-index: 30;
   max-width: 22rem;
   padding: var(--space-3);
-  background: var(--raised);
-  border: 1px solid var(--rule);
+  background: var(--overlay);
+  border: 1px solid var(--control);
   border-radius: 6px;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
   color: var(--text);
   font-size: 0.875rem;
   line-height: 1.45;
@@ -338,7 +371,7 @@ button, input, select { font: inherit; color: inherit; }
   min-height: 2.5rem;
   padding: 0 var(--space-3);
   background: var(--surface);
-  border: 1px solid var(--rule);
+  border: 1px solid var(--control);
   border-radius: var(--radius-s);
   color: var(--text);
   cursor: pointer;
@@ -371,7 +404,7 @@ button, input, select { font: inherit; color: inherit; }
   min-height: 2.5rem;
   padding: 0 var(--space-3);
   background: var(--surface);
-  border: 1px solid var(--rule);
+  border: 1px solid var(--control);
   border-radius: var(--radius-s);
   color: var(--text);
 }
@@ -380,7 +413,7 @@ button, input, select { font: inherit; color: inherit; }
 .field--search { flex: 1 1 12rem; min-width: 11rem; }
 .field--date input { width: 9.5rem; }
 .field--min input { width: 7rem; }
-input[type='date']::-webkit-calendar-picker-indicator { filter: invert(0.85); }
+:root:not([data-theme='light']) input[type='date']::-webkit-calendar-picker-indicator { filter: invert(0.85); }
 
 .kbd {
   display: inline-grid;
@@ -388,7 +421,7 @@ input[type='date']::-webkit-calendar-picker-indicator { filter: invert(0.85); }
   min-width: 1.25rem;
   height: 1.25rem;
   padding: 0 0.25rem;
-  border: 1px solid var(--rule);
+  border: 1px solid var(--control);
   border-radius: 3px;
   font-size: 0.75rem;
   color: var(--text-2);
@@ -446,10 +479,10 @@ input[type='date']::-webkit-calendar-picker-indicator { filter: invert(0.85); }
   width: 20rem;
   max-width: calc(100vw - 2rem);
   padding: var(--space-2);
-  background: var(--raised);
-  border: 1px solid var(--rule);
+  background: var(--overlay);
+  border: 1px solid var(--control);
   border-radius: var(--radius-m);
-  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.3);
 }
 .ms__pop--chips { width: 34rem; }
 
@@ -459,7 +492,7 @@ input[type='date']::-webkit-calendar-picker-indicator { filter: invert(0.85); }
   margin-bottom: var(--space-2);
   padding: 0 var(--space-3);
   background: var(--surface);
-  border: 1px solid var(--rule);
+  border: 1px solid var(--control);
   border-radius: var(--radius-s);
 }
 
@@ -478,7 +511,7 @@ input[type='date']::-webkit-calendar-picker-indicator { filter: invert(0.85); }
 .ms__opt[data-active] { background: var(--surface); box-shadow: inset 0 0 0 1px var(--text-2); }
 .ms__opt:hover { background: var(--surface); }
 .ms__list--chips .ms__opt {
-  border: 1px solid var(--rule);
+  border: 1px solid var(--control);
   border-radius: 999px;
   padding: var(--space-1) var(--space-3) var(--space-1) var(--space-2);
 }
@@ -511,7 +544,7 @@ input[type='date']::-webkit-calendar-picker-indicator { filter: invert(0.85); }
   min-height: 1.75rem;
   padding: 0 var(--space-3);
   background: transparent;
-  border: 1px solid var(--rule);
+  border: 1px solid var(--control);
   border-radius: 999px;
   color: var(--text-2);
   font-size: 0.8125rem;
@@ -656,7 +689,7 @@ input[type='date']::-webkit-calendar-picker-indicator { filter: invert(0.85); }
 .chart__toggle {
   flex: none;
   background: none;
-  border: 1px solid var(--rule);
+  border: 1px solid var(--control);
   border-radius: var(--radius-s);
   padding: 0.25rem 0.625rem;
   font-size: 0.8125rem;
@@ -803,6 +836,7 @@ input[type='date']::-webkit-calendar-picker-indicator { filter: invert(0.85); }
 .drawer__facts dt { color: var(--text-3); font-size: 0.8125rem; }
 .drawer__facts dd { margin: 0; }
 .chip--static { cursor: default; color: var(--text); }
+.chip--static { border-color: var(--rule); }
 .chip--static:hover { border-color: var(--rule); }
 
 .drawer__usd { font-size: 1.375rem; font-weight: 650; }
@@ -841,4 +875,52 @@ input[type='date']::-webkit-calendar-picker-indicator { filter: invert(0.85); }
 @media (prefers-reduced-motion: reduce) {
   .drawer { animation: none; }
   .charts__caret { transition: none; }
+}
+
+/* ---------- display preferences ---------- */
+
+.prefs { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.pref {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 2.25rem;
+  padding: 0 var(--space-3);
+  background: transparent;
+  border: 1px solid var(--control);
+  border-radius: 999px;
+  color: var(--text-2);
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+.pref:hover { color: var(--text); }
+.pref svg { flex: none; }
+/* Pressed = inverted fill plus the pressed state announced; not color alone. */
+.pref[aria-pressed='true'] { background: var(--selected-bg); border-color: var(--selected-bg); color: var(--selected-text); }
+.pref[aria-pressed='true'] .kbd { border-color: currentColor; color: inherit; }
+
+/* ---------- footer ---------- */
+
+.footer {
+  display: grid;
+  gap: var(--space-3);
+  padding-block: var(--space-6) var(--space-7);
+  border-top: 1px solid var(--rule);
+  color: var(--text-2);
+  font-size: 0.875rem;
+}
+.footer__h { font-size: 0.9375rem; color: var(--text); }
+.keys { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-5); margin: 0; }
+.keys > div { display: flex; align-items: center; gap: var(--space-2); }
+.keys dd { margin: 0; }
+.footer__note { color: var(--text-3); max-width: var(--measure); }
+
+/* ---------- forced colors (Windows high contrast) ---------- */
+
+@media (forced-colors: active) {
+  .plot__svg .mark, .plot__svg .dot { fill: CanvasText; }
+  .plot__svg .line, .plot__svg .crosshair { stroke: CanvasText; }
+  .plot__svg .area { fill: transparent; }
+  .glyph, .status-icon { forced-color-adjust: none; }
+  .pref[aria-pressed='true'], .ms__count { forced-color-adjust: none; outline: 2px solid CanvasText; }
 }
