@@ -11,6 +11,8 @@ import { Counters } from './components/Counters';
 import { FilterBar } from './components/FilterBar';
 import { Stream } from './components/Stream';
 import { ChartsPanel } from './components/charts/ChartsPanel';
+import { Drawer } from './components/Drawer';
+import { useShortcuts } from './hooks/useShortcuts';
 
 export function App() {
   const [state, setState] = useState<LoadState>({ kind: 'loading' });
@@ -68,10 +70,61 @@ export function App() {
     return { from, to: Math.max(from, to) };
   }, [items, filters.from, filters.to, now]);
 
+  // Drawer: which item is open, and where focus goes back to on close.
+  const [openId, setOpenId] = useState<string | null>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
+  const restoredItem = useRef(false);
+
+  const writeItemParam = (id: string | null) => {
+    const p = new URLSearchParams(window.location.search);
+    if (id) p.set('item', id); else p.delete('item');
+    const qs = p.toString();
+    window.history.replaceState(window.history.state, '', `${window.location.pathname}${qs ? `?${qs}` : ''}${window.location.hash}`);
+  };
+
   const openItem = useCallback((id: string, opener: HTMLElement) => {
-    // Placeholder until the detail drawer lands (commit 5 of the build).
-    void id; void opener;
+    openerRef.current = opener;
+    setOpenId(id);
+    writeItemParam(id);
   }, []);
+
+  const navigateItem = useCallback((id: string) => {
+    setOpenId(id);
+    writeItemParam(id);
+  }, []);
+
+  const closeItem = useCallback(() => {
+    const closingId = openId;
+    setOpenId(null);
+    writeItemParam(null);
+    // Return focus to the opener; if it is gone, to that item's card; else to the list.
+    requestAnimationFrame(() => {
+      const opener = openerRef.current;
+      if (opener && opener.isConnected) { opener.focus({ preventScroll: false }); return; }
+      const card = closingId ? document.querySelector<HTMLElement>(`.card[data-card-id="${CSS.escape(closingId)}"]`) : null;
+      (card ?? document.getElementById('main'))?.focus();
+    });
+  }, [openId]);
+
+  // Deep link: ?item=<id> opens that item once the data is ready.
+  useEffect(() => {
+    if (!indexes || restoredItem.current) return;
+    restoredItem.current = true;
+    const id = new URLSearchParams(window.location.search).get('item');
+    if (id && indexes.byId.has(id)) {
+      openerRef.current = null;
+      setOpenId(id);
+    } else if (id) {
+      writeItemParam(null);
+    }
+  }, [indexes]);
+
+  const openEntry = openId && indexes ? indexes.byId.get(openId) ?? null : null;
+
+  useShortcuts({
+    focusSearch: () => { searchRef.current?.focus(); searchRef.current?.select(); },
+    modalOpen: openEntry !== null,
+  });
   const addActor = useCallback((actor: string) => {
     setFilters((f) => (f.actors.includes(actor) ? f : { ...f, actors: [...f.actors, actor] }));
   }, [setFilters]);
@@ -133,6 +186,9 @@ export function App() {
           <main id="main" className="main" tabIndex={-1}>
             <Stream items={filtered} onOpen={openItem} onActor={addActor} onClear={clearFilters} filtered={filtering} />
           </main>
+          {openEntry && indexes && (
+            <Drawer item={openEntry} byId={indexes.byId} onClose={closeItem} onNavigate={navigateItem} />
+          )}
         </>
       )}
     </div>
