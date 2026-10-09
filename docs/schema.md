@@ -12,7 +12,7 @@ Each entry in `data/entries.json` is one *reported item*: a discrete, dated, sou
   "category": "self-enrichment | foreign-emoluments | crypto | pardons-clemency | pay-to-play | nepotism-cronyism | contracts-procurement | oversight-retaliation | abuse-of-office | conflicts-of-interest | misuse-of-funds",
   "actors": ["Donald Trump", "..."],
   "entities": ["Trump Organization", "..."],
-  "dollar_amount_usd": 0,
+  "dollar_amount_usd": 12500000,
   "dollar_basis": "What the number represents and where it came from, or null",
   "status": "reported | under-investigation | litigation | confirmed | disputed | retracted",
   "status_note": "Latest known development, or null",
@@ -34,5 +34,6 @@ Exclude: policy disagreements, pure opinion, unsourced social-media claims, item
 ## Editorial rules
 - Summaries are neutral and attributive ("The Times reported that..."). No adjectives of judgment.
 - `status` reflects the latest known development, not the original report.
-- Every dollar figure must have a `dollar_basis`.
+- Every dollar figure must have a `dollar_basis`. When no figure was reported, `dollar_amount_usd` is `null` (never 0).
+- `date` is always `YYYY-MM-DD`; month-precision items use the 1st of the month with `date_precision: "month"`.
 - One entry per discrete event; ongoing sagas get one parent entry plus dated child entries linked via `related_ids`.
