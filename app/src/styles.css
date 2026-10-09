@@ -18,8 +18,8 @@
   --text: #ecebe6;           /* primary ink */
   --text-2: #c3c2b7;         /* secondary ink */
   --text-3: #9e9c95;         /* muted ink (axis labels, meta) */
-  --ink-data: #c9c7bd;       /* aggregate chart marks */
-  --ink-wash: rgba(201, 199, 189, 0.10);
+  --ink-data: #a8a69c;       /* aggregate chart marks */
+  --ink-wash: rgba(168, 166, 156, 0.10);
   --focus: #ffffff;
   --selected-bg: #ecebe6;
   --selected-text: #141413;
@@ -602,3 +602,115 @@ input[type='date']::-webkit-calendar-picker-indicator { filter: invert(0.85); }
 .card__sources { font-size: 0.875rem; color: var(--text-2); }
 .card__sources-label { color: var(--text-3); }
 .card__sources a { color: var(--text); }
+
+/* ---------- charts panel ---------- */
+
+.charts { margin-top: var(--space-2); }
+.charts__bar {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: var(--space-2);
+}
+.charts__heading { font-size: 1.125rem; }
+.charts__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: none;
+  border: 0;
+  padding: var(--space-1) 0;
+  font-weight: 650;
+  cursor: pointer;
+}
+.charts__caret { transition: transform 120ms ease-out; color: var(--text-2); }
+.charts__toggle[aria-expanded='true'] .charts__caret { transform: rotate(90deg); }
+.charts__scope { color: var(--text-3); font-size: 0.875rem; }
+.charts__empty { color: var(--text-2); padding: var(--space-4) 0; }
+
+.charts__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 30rem), 1fr));
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.chart {
+  margin: 0;
+  min-width: 0;
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-m);
+}
+.chart__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+.chart__title { font-size: 1rem; font-weight: 620; }
+.chart__sub { font-size: 0.8125rem; color: var(--text-3); margin-top: 0.125rem; }
+.chart__toggle {
+  flex: none;
+  background: none;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-s);
+  padding: 0.25rem 0.625rem;
+  font-size: 0.8125rem;
+  color: var(--text-2);
+  cursor: pointer;
+}
+.chart__toggle:hover { color: var(--text); border-color: var(--text-3); }
+.chart__toggle[aria-pressed='true'] { color: var(--text); border-color: var(--text-2); }
+
+.plot { position: relative; width: 100%; }
+.plot__focus { position: relative; border-radius: var(--radius-s); }
+.plot__focus:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }
+.plot__svg { display: block; overflow: visible; }
+
+.plot__svg .grid { stroke: var(--hairline); stroke-width: 1; shape-rendering: crispEdges; }
+.plot__svg .axis-base { stroke: var(--rule); stroke-width: 1; shape-rendering: crispEdges; }
+.plot__svg .tick { fill: var(--text-3); font-size: 0.75rem; font-variant-numeric: tabular-nums; }
+.plot__svg .tick--year { fill: var(--text-2); }
+.plot__svg .row-label { fill: var(--text-2); font-size: 0.8125rem; }
+.plot__svg [data-active] > .row-label { fill: var(--text); }
+.plot__svg .direct-label { fill: var(--text); font-size: 0.75rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.plot__svg .mark { fill: var(--ink-data); }
+.plot__svg .mark[data-active] { fill: var(--text); }
+.plot__svg .line { fill: none; stroke: var(--ink-data); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.plot__svg .area { fill: var(--ink-wash); stroke: none; }
+.plot__svg .dot { fill: var(--ink-data); stroke: var(--surface); stroke-width: 2; }
+.plot__svg .crosshair { stroke: var(--text-3); stroke-width: 1; shape-rendering: crispEdges; }
+.plot__svg .hit { fill: transparent; }
+
+.chart-tip { display: grid; gap: 0.125rem; min-width: 8rem; white-space: nowrap; }
+.chart-tip__value { font-weight: 650; font-size: 0.9375rem; color: var(--text); }
+.chart-tip__label { color: var(--text-2); }
+.chart-tip__extra { color: var(--text-3); font-size: 0.8125rem; }
+
+/* ---------- table view ---------- */
+
+.table-wrap { max-height: 18rem; overflow: auto; }
+.table-wrap:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.data-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.data-table th,
+.data-table td {
+  padding: 0.375rem 0.5rem;
+  border-bottom: 1px solid var(--hairline);
+  text-align: left;
+}
+.data-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  color: var(--text-2);
+  font-weight: 600;
+  border-bottom-color: var(--rule);
+}
+.data-table tbody th { font-weight: 400; }
+.data-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.table-cat { display: inline-flex; align-items: center; gap: 0.5rem; }

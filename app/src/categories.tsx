@@ -43,6 +43,11 @@ const SHAPES: Record<number, JSX.Element> = {
   11: <polygon points="1,1 11,1 6,6 11,11 1,11 6,6" />,                         // hourglass
 };
 
+/** The bare shape for a category, for drawing inside an existing <svg>. */
+export function glyphShape(c: Category): JSX.Element | undefined {
+  return SHAPES[categorySlot(c)];
+}
+
 interface GlyphProps {
   category: Category;
   /** When true the glyph is announced by name; otherwise it is decorative. */

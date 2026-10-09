@@ -10,6 +10,7 @@ import { Ticker } from './components/Ticker';
 import { Counters } from './components/Counters';
 import { FilterBar } from './components/FilterBar';
 import { Stream } from './components/Stream';
+import { ChartsPanel } from './components/charts/ChartsPanel';
 
 export function App() {
   const [state, setState] = useState<LoadState>({ kind: 'loading' });
@@ -56,6 +57,16 @@ export function App() {
   );
 
   const isPlaceholder = !!items && items.some((it) => it.placeholder);
+
+  // Chart window: 20 Jan 2025 (or the earliest item, if older) through today
+  // (or the latest item, if newer); a from/to filter narrows it.
+  const chartWindow = useMemo(() => {
+    const oldest = items && items.length ? (items[items.length - 1] as { day: number }).day : inaugurationDay();
+    const newest = items && items.length ? (items[0] as { day: number }).day : now;
+    const from = filters.from ? (parseDay(filters.from) ?? inaugurationDay()) : Math.min(inaugurationDay(), oldest);
+    const to = filters.to ? (parseDay(filters.to) ?? now) : Math.max(now, newest);
+    return { from, to: Math.max(from, to) };
+  }, [items, filters.from, filters.to, now]);
 
   const openItem = useCallback((id: string, opener: HTMLElement) => {
     // Placeholder until the detail drawer lands (commit 5 of the build).
@@ -115,6 +126,9 @@ export function App() {
               total={state.items.length}
             />
             {stats && <Counters stats={stats} overall={state.items.length} filtered={filtering} />}
+          </div>
+          <div className="frame">
+            <ChartsPanel items={filtered} fromDay={chartWindow.from} toDay={chartWindow.to} />
           </div>
           <main id="main" className="main" tabIndex={-1}>
             <Stream items={filtered} onOpen={openItem} onActor={addActor} onClear={clearFilters} filtered={filtering} />

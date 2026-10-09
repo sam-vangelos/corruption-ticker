@@ -103,3 +103,45 @@ export function computeStats(
     last30,
   };
 }
+
+export interface MonthBucket {
+  month: string;
+  count: number;
+  cumulative: number;
+  dollars: number;
+  cumDollars: number;
+}
+
+/** Monthly counts and running totals for every month in [fromMonth, toMonth], zeros included. */
+export function monthlySeries(items: Item[], months: string[]): MonthBucket[] {
+  const counts = new Map<string, { count: number; dollars: number }>();
+  let before = 0;
+  let beforeDollars = 0;
+  const first = months[0] ?? '';
+  for (const it of items) {
+    const usd = it.hasDollar ? (it.dollar_amount_usd ?? 0) : 0;
+    if (it.month < first) { before += 1; beforeDollars += usd; continue; }
+    const b = counts.get(it.month) ?? { count: 0, dollars: 0 };
+    b.count += 1;
+    b.dollars += usd;
+    counts.set(it.month, b);
+  }
+  let cumulative = before;
+  let cumDollars = beforeDollars;
+  return months.map((month) => {
+    const b = counts.get(month) ?? { count: 0, dollars: 0 };
+    cumulative += b.count;
+    cumDollars += b.dollars;
+    return { month, count: b.count, cumulative, dollars: b.dollars, cumDollars };
+  });
+}
+
+/** Items per category, all eleven categories, largest first (ties in schema order). */
+export function categorySeries(items: Item[], order: readonly Category[]): Array<{ category: Category; count: number }> {
+  const m = new Map<Category, number>();
+  for (const it of items) m.set(it.category, (m.get(it.category) ?? 0) + 1);
+  return order
+    .map((category, i) => ({ category, count: m.get(category) ?? 0, i }))
+    .sort((a, b) => b.count - a.count || a.i - b.i)
+    .map(({ category, count }) => ({ category, count }));
+}
