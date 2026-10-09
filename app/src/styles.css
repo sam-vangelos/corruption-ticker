@@ -1,0 +1,157 @@
+/* ==========================================================================
+   Corruption Ticker: tokens and base
+   Color carries exactly two meanings in this app: category identity and
+   status. Everything else (chrome, text, aggregate chart marks) is neutral ink.
+   Dark is the default theme. Text tokens are measured for WCAG AA or better.
+   ========================================================================== */
+
+:root,
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  /* Surfaces. Graphite rather than pure black, and off-white rather than pure
+     white text, to limit halation for readers with keratoconus. */
+  --page: #141413;
+  --surface: #1a1a19;        /* chart + card surface (the validator's dark surface) */
+  --raised: #232321;
+  --hairline: #2c2c2a;       /* gridlines, dividers */
+  --rule: #3a3a37;           /* baselines, control borders */
+  --text: #ecebe6;           /* primary ink */
+  --text-2: #c3c2b7;         /* secondary ink */
+  --text-3: #9e9c95;         /* muted ink (axis labels, meta) */
+  --ink-data: #c9c7bd;       /* aggregate chart marks */
+  --ink-wash: rgba(201, 199, 189, 0.10);
+  --focus: #ffffff;
+  --selected-bg: #ecebe6;
+  --selected-text: #141413;
+  --scrim: rgba(0, 0, 0, 0.55);
+
+  /* Categorical palette, fixed order = schema order (validated, dark steps). */
+  --cat-1: #3987e5;  --cat-2: #c98500;  --cat-3: #9085e9;  --cat-4: #008300;
+  --cat-5: #d55181;  --cat-6: #ad6c24;  --cat-7: #0e9cb0;  --cat-8: #d95926;
+  --cat-9: #199e70;  --cat-10: #b46ac2; --cat-11: #e66767;
+
+  /* Status palette: reserved, never themed, always icon + label. */
+  --status-reported: #9e9c95;
+  --status-investigation: #fab219;
+  --status-litigation: #ec835a;
+  --status-confirmed: #d03b3b;
+  --status-disputed: #8a93a6;
+  --status-retracted: #6b6a65;
+
+  --sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --serif: Charter, 'Bitstream Charter', 'Sitka Text', Cambria, Georgia, serif;
+
+  --radius-s: 4px;
+  --radius-m: 8px;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --measure: 46rem;
+  --wide: 76rem;
+}
+
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html {
+  font-size: 100%; /* 16px base */
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 1rem;
+  line-height: 1.5;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4 { margin: 0; line-height: 1.2; font-weight: 650; }
+p { margin: 0; }
+code { font-size: 0.9em; overflow-wrap: anywhere; }
+
+a { color: var(--text); text-decoration-thickness: 1px; text-underline-offset: 0.18em; }
+a:hover { text-decoration-thickness: 2px; }
+
+button, input, select { font: inherit; color: inherit; }
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0);
+  white-space: nowrap; border: 0;
+}
+
+/* ---------- page frame ---------- */
+
+.app { min-height: 100vh; }
+
+.masthead,
+.frame,
+.main {
+  max-width: var(--wide);
+  margin-inline: auto;
+  padding-inline: var(--space-5);
+}
+
+.masthead {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  padding-top: var(--space-6);
+  padding-bottom: var(--space-4);
+}
+
+.masthead h1 { font-size: 1.75rem; letter-spacing: -0.01em; }
+.masthead__sub { color: var(--text-2); margin-top: var(--space-1); max-width: var(--measure); }
+
+.placeholder-notice {
+  /* A hatched left rule (pattern, not color) marks the notice. */
+  margin-top: var(--space-2);
+  margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-left: 6px solid transparent;
+  border-image: repeating-linear-gradient(45deg, var(--text-2) 0 3px, transparent 3px 6px) 6;
+  background: var(--raised);
+  color: var(--text);
+}
+
+.main { padding-bottom: var(--space-7); }
+
+.skip-notice {
+  margin-block: var(--space-4);
+  color: var(--text-2);
+  font-size: 0.875rem;
+}
+
+/* ---------- empty / error state ---------- */
+
+.state-panel {
+  max-width: var(--measure);
+  margin-block: var(--space-6);
+  padding: var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-m);
+  display: grid;
+  gap: var(--space-3);
+}
+.state-panel__heading { font-size: 1.25rem; }
+.state-panel__lead { color: var(--text); }
+.state-panel p + p { color: var(--text-2); }

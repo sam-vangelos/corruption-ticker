@@ -1,0 +1,538 @@
+[
+  {
+    "id": "p-2025-01-self-01",
+    "date": "2025-01-24",
+    "date_precision": "day",
+    "title": "[PLACEHOLDER] Sample self enrichment item 01 for layout testing",
+    "summary": "Placeholder summary for fixture item 01. This text exists only to exercise the layout and describes no real event, person, or organization. Replace it with real, sourced entries from data/entries.json.",
+    "category": "self-enrichment",
+    "actors": [
+      "Placeholder Official A"
+    ],
+    "entities": [
+      "Example Holdings LLC"
+    ],
+    "dollar_amount_usd": 12000000,
+    "dollar_basis": "Placeholder figure for layout testing; not a real amount.",
+    "status": "reported",
+    "status_note": null,
+    "sources": [
+      {
+        "outlet": "Example Outlet",
+        "title": "[PLACEHOLDER] Sample headline 01",
+        "url": "https://example.com/placeholder/01",
+        "date": "2025-01-24",
+        "author": "Placeholder Reporter"
+      },
+      {
+        "outlet": "Placeholder Wire",
+        "title": "[PLACEHOLDER] Sample follow-up 01",
+        "url": "https://example.com/placeholder/01-followup",
+        "date": "2025-01-24",
+        "author": "Sample Byline"
+      }
+    ],
+    "related_ids": [
+      "p-2026-07-self-13"
+    ],
+    "tags": [
+      "placeholder"
+    ],
+    "placeholder": true
+  },
+  {
+    "id": "p-2025-02-foreign-02",
+    "date": "2025-02-11",
+    "date_precision": "day",
+    "title": "[PLACEHOLDER] Sample foreign emoluments item 02 for layout testing",
+    "summary": "Placeholder summary for fixture item 02. This text exists only to exercise the layout and describes no real event, person, or organization. Replace it with real, sourced entries from data/entries.json.",
+    "category": "foreign-emoluments",
+    "actors": [
+      "Placeholder Official B"
+    ],
+    "entities": [
+      "Sample Hotel Group"
+    ],
+    "dollar_amount_usd": 450000,
+    "dollar_basis": "Placeholder figure for layout testing; not a real amount.",
+    "status": "under-investigation",
+    "status_note": "Placeholder status note for item 02; no real development is described.",
+    "sources": [
+      {
+        "outlet": "Example Outlet",
+        "title": "[PLACEHOLDER] Sample headline 02",
+        "url": "https://example.com/placeholder/02",
+        "date": "2025-02-11",
+        "author": "Placeholder Reporter"
+      }
+    ],
+    "related_ids": [],
+    "tags": [
+      "placeholder"
+    ],
+    "placeholder": true
+  },
+  {
+    "id": "p-2025-03-crypto-03",
+    "date": "2025-03",
+    "date_precision": "month",
+    "title": "[PLACEHOLDER] Sample crypto item 03 for layout testing",
+    "summary": "Placeholder summary for fixture item 03. This text exists only to exercise the layout and describes no real event, person, or organization. Replace it with real, sourced entries from data/entries.json.",
+    "category": "crypto",
+    "actors": [
+      "Placeholder Official A",
+      "Placeholder Associate C"
+    ],
+    "entities": [
+      "Demo Token Project"
+    ],
+    "dollar_amount_usd": null,
+    "dollar_basis": null,
+    "status": "disputed",
+    "status_note": "Placeholder status note for item 03; no real development is described.",
+    "sources": [
+      {
+        "outlet": "Example Outlet",
+        "title": "[PLACEHOLDER] Sample headline 03",
+        "url": "https://example.com/placeholder/03",
+        "date": "2025-03-15",
+        "author": "Placeholder Reporter"
+      }
+    ],
+    "related_ids": [
+      "p-2026-09-crypto-14"
+    ],
+    "tags": [
+      "placeholder"
+    ],
+    "placeholder": true
+  },
+  {
+    "id": "p-2025-04-pardons-04",
+    "date": "2025-04-17",
+    "date_precision": "day",
+    "title": "[PLACEHOLDER] Sample pardons clemency item 04 for layout testing",
+    "summary": "Placeholder summary for fixture item 04. This text exists only to exercise the layout and describes no real event, person, or organization. Replace it with real, sourced entries from data/entries.json.",
+    "category": "pardons-clemency",
+    "actors": [
+      "Placeholder Official A"
+    ],
+    "entities": [
+      "Placeholder Department of Examples"
+    ],
+    "dollar_amount_usd": null,
+    "dollar_basis": null,
+    "status": "confirmed",
+    "status_note": "Placeholder status note for item 04; no real development is described.",
+    "sources": [
+      {
+        "outlet": "Example Outlet",
+        "title": "[PLACEHOLDER] Sample headline 04",
+        "url": "https://example.com/placeholder/04",
+        "date": "2025-04-17",
+        "author": "Placeholder Reporter"
+      },
+      {
+        "outlet": "Placeholder Wire",
+        "title": "[PLACEHOLDER] Sample follow-up 04",
+        "url": "https://example.com/placeholder/04-followup",
+        "date": "2025-04-17",
+        "author": "Sample Byline"
+      }
+    ],
+    "related_ids": [],
+    "tags": [
+      "placeholder"
+    ],
+    "placeholder": true
+  },
+  {
+    "id": "p-2025-05-pay-05",
+    "date": "2025-05-30",
+    "date_precision": "day",
+    "title": "[PLACEHOLDER] Sample pay to play item 05 for layout testing",
+    "summary": "Placeholder summary for fixture item 05. This text exists only to exercise the layout and describes no real event, person, or organization. Replace it with real, sourced entries from data/entries.json.",
+    "category": "pay-to-play",
+    "actors": [
+      "Placeholder Donor D"
+    ],
+    "entities": [
+      "Example Fund PAC"
+    ],
+    "dollar_amount_usd": 2500000,
+    "dollar_basis": "Placeholder figure for layout testing; not a real amount.",
+    "status": "litigation",
+    "status_note": "Placeholder status note for item 05; no real development is described.",
+    "sources": [
+      {
+        "outlet": "Example Outlet",
+        "title": "[PLACEHOLDER] Sample headline 05",
+        "url": "https://example.com/placeholder/05",
+        "date": "2025-05-30",
+        "author": "Placeholder Reporter"
+      }
+    ],
+    "related_ids": [
+      "p-2026-10-pay-15"
+    ],
+    "tags": [
+      "placeholder"
+    ],
+    "placeholder": true
+  },
+  {
+    "id": "p-2025-07-nepotism-06",
+    "date": "2025-07-08",
+    "date_precision": "day",
+    "title": "[PLACEHOLDER] Sample nepotism cronyism item 06 for layout testing",
+    "summary": "Placeholder summary for fixture item 06. This text exists only to exercise the layout and describes no real event, person, or organization. Replace it with real, sourced entries from data/entries.json.",
+    "category": "nepotism-cronyism",
+    "actors": [
+      "Placeholder Relative E"
+    ],
+    "entities": [
+      "Sample Advisory Board"
+    ],
+    "dollar_amount_usd": null,
+    "dollar_basis": null,
+    "status": "reported",
+    "status_note": null,
+    "sources": [
+      {
+        "outlet": "Example Outlet",
+        "title": "[PLACEHOLDER] Sample headline 06",
+        "url": "https://example.com/placeholder/06",
+        "date": "2025-07-08",
+        "author": "Placeholder Reporter"
+      }
+    ],
+    "related_ids": [],
+    "tags": [
+      "placeholder"
+    ],
+    "placeholder": true
+  },
+  {
+    "id": "p-2025-08-contracts-07",
+    "date": "2025-08-21",
+    "date_precision": "day",
+    "title": "[PLACEHOLDER] Sample contracts procurement item 07 for layout testing",
+    "summary": "Placeholder summary for fixture item 07. This text exists only to exercise the layout and describes no real event, person, or organization. Replace it with real, sourced entries from data/entries.json.",
+    "category": "contracts-procurement",
+    "actors": [
+      "Placeholder Associate C"
+    ],
+    "entities": [
+      "Example Systems Inc.",
+      "Placeholder Agency F"
+    ],
+    "dollar_amount_usd": 88000000,
+    "dollar_basis": "Placeholder figure for layout testing; not a real amount.",
+    "status": "under-investigation",
+    "status_note": "Placeholder status note for item 07; no real development is described.",
+    "sources": [
+      {
+        "outlet": "Example Outlet",
+        "title": "[PLACEHOLDER] Sample headline 07",
+        "url": "https://example.com/placeholder/07",
+        "date": "2025-08-21",
+        "author": "Placeholder Reporter"
+      },
+      {
+        "outlet": "Placeholder Wire",
+        "title": "[PLACEHOLDER] Sample follow-up 07",
+        "url": "https://example.com/placeholder/07-followup",
+        "date": "2025-08-21",
+        "author": "Sample Byline"
+      }
+    ],
+    "related_ids": [
+      "p-2025-11-contracts-09"
+    ],
+    "tags": [
+      "placeholder"
+    ],
+    "placeholder": true
+  },
+  {
+    "id": "p-2025-10-oversight-08",
+    "date": "2025-10-02",
+    "date_precision": "day",
+    "title": "[PLACEHOLDER] Sample oversight retaliation item 08 for layout testing",
+    "summary": "Placeholder summary for fixture item 08. This text exists only to exercise the layout and describes no real event, person, or organization. Replace it with real, sourced entries from data/entries.json.",
+    "category": "oversight-retaliation",
+    "actors": [
+      "Placeholder Official B"
+    ],
+    "entities": [
+      "Placeholder Inspector General Office"
+    ],
+    "dollar_amount_usd": null,
+    "dollar_basis": null,
+    "status": "litigation",
+    "status_note": "Placeholder status note for item 08; no real development is described.",
+    "sources": [
+      {
+        "outlet": "Example Outlet",
+        "title": "[PLACEHOLDER] Sample headline 08",
+        "url": "https://example.com/placeholder/08",
+        "date": "2025-10-02",
+        "author": "Placeholder Reporter"
+      }
+    ],
+    "related_ids": [],
+    "tags": [
+      "placeholder"
+    ],
+    "placeholder": true
+  },
+  {
+    "id": "p-2025-11-contracts-09",
+    "date": "2025-11-19",
+    "date_precision": "day",
+    "title": "[PLACEHOLDER] Sample contracts procurement item 09 for layout testing",
+    "summary": "Placeholder summary for fixture item 09. This text exists only to exercise the layout and describes no real event, person, or organization. Replace it with real, sourced entries from data/entries.json.",
+    "category": "contracts-procurement",
+    "actors": [
+      "Placeholder Associate C"
+    ],
+    "entities": [
+      "Example Systems Inc."
+    ],
+    "dollar_amount_usd": 3100000,
+    "dollar_basis": "Placeholder figure for layout testing; not a real amount.",
+    "status": "confirmed",
+    "status_note": "Placeholder status note for item 09; no real development is described.",
+    "sources": [
+      {
+        "outlet": "Example Outlet",
+        "title": "[PLACEHOLDER] Sample headline 09",
+        "url": "https://example.com/placeholder/09",
+        "date": "2025-11-19",
+        "author": "Placeholder Reporter"
+      }
+    ],
+    "related_ids": [
+      "p-2025-08-contracts-07"
+    ],
+    "tags": [
+      "placeholder"
+    ],
+    "placeholder": true
+  },
+  {
+    "id": "p-2026-01-abuse-10",
+    "date": "2026-01-06",
+    "date_precision": "day",
+    "title": "[PLACEHOLDER] Sample abuse of office item 10 for layout testing",
+    "summary": "Placeholder summary for fixture item 10. This text exists only to exercise the layout and describes no real event, person, or organization. Replace it with real, sourced entries from data/entries.json.",
+    "category": "abuse-of-office",
+    "actors": [
+      "Placeholder Official G"
+    ],
+    "entities": [
+      "Placeholder Agency F"
+    ],
+    "dollar_amount_usd": null,
+    "dollar_basis": null,
+    "status": "retracted",
+    "status_note": "Placeholder status note for item 10; no real development is described.",
+    "sources": [
+      {
+        "outlet": "Example Outlet",
+        "title": "[PLACEHOLDER] Sample headline 10",
+        "url": "https://example.com/placeholder/10",
+        "date": "2026-01-06",
+        "author": "Placeholder Reporter"
+      },
+      {
+        "outlet": "Placeholder Wire",
+        "title": "[PLACEHOLDER] Sample follow-up 10",
+        "url": "https://example.com/placeholder/10-followup",
+        "date": "2026-01-06",
+        "author": "Sample Byline"
+      }
+    ],
+    "related_ids": [],
+    "tags": [
+      "placeholder"
+    ],
+    "placeholder": true
+  },
+  {
+    "id": "p-2026-03-conflicts-11",
+    "date": "2026-03",
+    "date_precision": "month",
+    "title": "[PLACEHOLDER] Sample conflicts of interest item 11 for layout testing",
+    "summary": "Placeholder summary for fixture item 11. This text exists only to exercise the layout and describes no real event, person, or organization. Replace it with real, sourced entries from data/entries.json.",
+    "category": "conflicts-of-interest",
+    "actors": [
+      "Placeholder Official G",
+      "Placeholder Relative E"
+    ],
+    "entities": [
+      "Sample Media Co."
+    ],
+    "dollar_amount_usd": 640000,
+    "dollar_basis": "Placeholder figure for layout testing; not a real amount.",
+    "status": "reported",
+    "status_note": null,
+    "sources": [
+      {
+        "outlet": "Example Outlet",
+        "title": "[PLACEHOLDER] Sample headline 11",
+        "url": "https://example.com/placeholder/11",
+        "date": "2026-03-15",
+        "author": "Placeholder Reporter"
+      }
+    ],
+    "related_ids": [],
+    "tags": [
+      "placeholder"
+    ],
+    "placeholder": true
+  },
+  {
+    "id": "p-2026-05-misuse-12",
+    "date": "2026-05-14",
+    "date_precision": "day",
+    "title": "[PLACEHOLDER] Sample misuse of funds item 12 for layout testing",
+    "summary": "Placeholder summary for fixture item 12. This text exists only to exercise the layout and describes no real event, person, or organization. Replace it with real, sourced entries from data/entries.json.",
+    "category": "misuse-of-funds",
+    "actors": [
+      "Placeholder Official B"
+    ],
+    "entities": [
+      "Placeholder Department of Examples"
+    ],
+    "dollar_amount_usd": 1750000,
+    "dollar_basis": "Placeholder figure for layout testing; not a real amount.",
+    "status": "under-investigation",
+    "status_note": "Placeholder status note for item 12; no real development is described.",
+    "sources": [
+      {
+        "outlet": "Example Outlet",
+        "title": "[PLACEHOLDER] Sample headline 12",
+        "url": "https://example.com/placeholder/12",
+        "date": "2026-05-14",
+        "author": "Placeholder Reporter"
+      }
+    ],
+    "related_ids": [],
+    "tags": [
+      "placeholder"
+    ],
+    "placeholder": true
+  },
+  {
+    "id": "p-2026-07-self-13",
+    "date": "2026-07-27",
+    "date_precision": "day",
+    "title": "[PLACEHOLDER] Sample self enrichment item 13 for layout testing",
+    "summary": "Placeholder summary for fixture item 13. This text exists only to exercise the layout and describes no real event, person, or organization. Replace it with real, sourced entries from data/entries.json.",
+    "category": "self-enrichment",
+    "actors": [
+      "Placeholder Official A"
+    ],
+    "entities": [
+      "Example Holdings LLC",
+      "Demo Token Project"
+    ],
+    "dollar_amount_usd": null,
+    "dollar_basis": null,
+    "status": "disputed",
+    "status_note": "Placeholder status note for item 13; no real development is described.",
+    "sources": [
+      {
+        "outlet": "Example Outlet",
+        "title": "[PLACEHOLDER] Sample headline 13",
+        "url": "https://example.com/placeholder/13",
+        "date": "2026-07-27",
+        "author": "Placeholder Reporter"
+      },
+      {
+        "outlet": "Placeholder Wire",
+        "title": "[PLACEHOLDER] Sample follow-up 13",
+        "url": "https://example.com/placeholder/13-followup",
+        "date": "2026-07-27",
+        "author": "Sample Byline"
+      }
+    ],
+    "related_ids": [
+      "p-2025-01-self-01"
+    ],
+    "tags": [
+      "placeholder"
+    ],
+    "placeholder": true
+  },
+  {
+    "id": "p-2026-09-crypto-14",
+    "date": "2026-09-15",
+    "date_precision": "day",
+    "title": "[PLACEHOLDER] Sample crypto item 14 for layout testing",
+    "summary": "Placeholder summary for fixture item 14. This text exists only to exercise the layout and describes no real event, person, or organization. Replace it with real, sourced entries from data/entries.json.",
+    "category": "crypto",
+    "actors": [
+      "Placeholder Associate C"
+    ],
+    "entities": [
+      "Demo Token Project"
+    ],
+    "dollar_amount_usd": 27000000,
+    "dollar_basis": "Placeholder figure for layout testing; not a real amount.",
+    "status": "reported",
+    "status_note": null,
+    "sources": [
+      {
+        "outlet": "Example Outlet",
+        "title": "[PLACEHOLDER] Sample headline 14",
+        "url": "https://example.com/placeholder/14",
+        "date": "2026-09-15",
+        "author": "Placeholder Reporter"
+      }
+    ],
+    "related_ids": [
+      "p-2025-03-crypto-03"
+    ],
+    "tags": [
+      "placeholder"
+    ],
+    "placeholder": true
+  },
+  {
+    "id": "p-2026-10-pay-15",
+    "date": "2026-10-01",
+    "date_precision": "day",
+    "title": "[PLACEHOLDER] Sample pay to play item 15 for layout testing",
+    "summary": "Placeholder summary for fixture item 15. This text exists only to exercise the layout and describes no real event, person, or organization. Replace it with real, sourced entries from data/entries.json.",
+    "category": "pay-to-play",
+    "actors": [
+      "Placeholder Donor D",
+      "Placeholder Official A"
+    ],
+    "entities": [
+      "Example Fund PAC"
+    ],
+    "dollar_amount_usd": null,
+    "dollar_basis": null,
+    "status": "under-investigation",
+    "status_note": "Placeholder status note for item 15; no real development is described.",
+    "sources": [
+      {
+        "outlet": "Example Outlet",
+        "title": "[PLACEHOLDER] Sample headline 15",
+        "url": "https://example.com/placeholder/15",
+        "date": "2026-10-01",
+        "author": "Placeholder Reporter"
+      }
+    ],
+    "related_ids": [
+      "p-2025-05-pay-05"
+    ],
+    "tags": [
+      "placeholder"
+    ],
+    "placeholder": true
+  }
+]
