@@ -1,15 +1,20 @@
-import { useEffect, useMemo, useState } from 'react';
-import type { LoadState } from './types';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { Category, LoadState, Status } from './types';
 import { loadEntries } from './data/load';
-import { buildIndexes, computeStats } from './data/derive';
-import { inaugurationDay, today } from './data/dates';
+import { buildIndexes, computeStats, optionsFrom } from './data/derive';
+import { inaugurationDay, parseDay, today } from './data/dates';
 import { plural } from './data/format';
+import { applyFilters, EMPTY_FILTERS, isFiltering, useUrlFilters } from './state/filters';
 import { StatePanel } from './components/StatePanel';
 import { Ticker } from './components/Ticker';
 import { Counters } from './components/Counters';
+import { FilterBar } from './components/FilterBar';
+import { Stream } from './components/Stream';
 
 export function App() {
   const [state, setState] = useState<LoadState>({ kind: 'loading' });
+  const [filters, setFilters] = useUrlFilters();
+  const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let live = true;
@@ -18,17 +23,48 @@ export function App() {
   }, []);
 
   const items = state.kind === 'ready' ? state.items : null;
-  const indexes = useMemo(() => (items ? buildIndexes(items) : null), [items]);
-  const isPlaceholder = !!items && items.some((it) => it.placeholder);
   const now = useMemo(() => today(), []);
+
+  // Indexes over the full dataset, computed once per load.
+  const indexes = useMemo(() => (items ? buildIndexes(items) : null), [items]);
+  const actorOptions = useMemo(() => (indexes ? optionsFrom(indexes.byActor) : []), [indexes]);
+  const entityOptions = useMemo(() => (indexes ? optionsFrom(indexes.byEntity) : []), [indexes]);
+  const categoryCounts = useMemo(() => {
+    const m = new Map<Category, number>();
+    indexes?.byCategory.forEach((list, k) => m.set(k, list.length));
+    return m;
+  }, [indexes]);
+  const statusCounts = useMemo(() => {
+    const m = new Map<Status, number>();
+    items?.forEach((it) => m.set(it.status, (m.get(it.status) ?? 0) + 1));
+    return m;
+  }, [items]);
+
+  // The active slice: counters, charts and the stream follow it; the ticker does not.
+  const filtering = isFiltering(filters);
+  const filtered = useMemo(() => (items ? applyFilters(items, filters) : []), [items, filters]);
   const stats = useMemo(
-    () => (items ? computeStats(items, { now, inauguration: inaugurationDay() }) : null),
-    [items, now],
+    () => (items
+      ? computeStats(filtered, {
+          now,
+          inauguration: inaugurationDay(),
+          from: filters.from ? parseDay(filters.from) : null,
+          to: filters.to ? parseDay(filters.to) : null,
+        })
+      : null),
+    [items, filtered, filters.from, filters.to, now],
   );
-  const openItem = (id: string, opener: HTMLElement) => {
+
+  const isPlaceholder = !!items && items.some((it) => it.placeholder);
+
+  const openItem = useCallback((id: string, opener: HTMLElement) => {
     // Placeholder until the detail drawer lands (commit 5 of the build).
     void id; void opener;
-  };
+  }, []);
+  const addActor = useCallback((actor: string) => {
+    setFilters((f) => (f.actors.includes(actor) ? f : { ...f, actors: [...f.actors, actor] }));
+  }, [setFilters]);
+  const clearFilters = useCallback(() => setFilters(EMPTY_FILTERS), [setFilters]);
 
   return (
     <div className="app">
@@ -52,11 +88,13 @@ export function App() {
         </div>
       )}
 
-      <main id="main" className="main">
-        {state.kind !== 'ready' ? (
+      {state.kind !== 'ready' ? (
+        <main id="main" className="main">
           <StatePanel state={state} />
-        ) : (
-          <>
+        </main>
+      ) : (
+        <>
+          <div className="frame">
             {state.skipped.length > 0 && (
               <p className="skip-notice" role="note">
                 {plural(state.skipped.length, 'record')} in the file failed validation and{' '}
@@ -65,10 +103,24 @@ export function App() {
                 {state.skipped.length > 5 ? '; and more.' : '.'}
               </p>
             )}
-            {stats && <Counters stats={stats} overall={indexes?.byId.size ?? 0} filtered={false} />}
-          </>
-        )}
-      </main>
+            <FilterBar
+              ref={searchRef}
+              filters={filters}
+              onChange={setFilters}
+              actorOptions={actorOptions}
+              entityOptions={entityOptions}
+              categoryCounts={categoryCounts}
+              statusCounts={statusCounts}
+              shown={filtered.length}
+              total={state.items.length}
+            />
+            {stats && <Counters stats={stats} overall={state.items.length} filtered={filtering} />}
+          </div>
+          <main id="main" className="main" tabIndex={-1}>
+            <Stream items={filtered} onOpen={openItem} onActor={addActor} onClear={clearFilters} filtered={filtering} />
+          </main>
+        </>
+      )}
     </div>
   );
 }

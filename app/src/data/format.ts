@@ -5,7 +5,12 @@ export function formatInt(n: number): string {
   return intFmt.format(n);
 }
 
+const twoDp = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2, minimumFractionDigits: 2 });
+
+/** One decimal; two below 1 so a small nonzero rate never reads as 0.0. */
 export function formatRate(n: number): string {
+  if (n > 0 && n < 0.005) return '<0.01';
+  if (n > 0 && n < 1) return twoDp.format(n);
   return oneDp.format(n);
 }
 
