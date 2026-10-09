@@ -155,3 +155,174 @@ button, input, select { font: inherit; color: inherit; }
 .state-panel__heading { font-size: 1.25rem; }
 .state-panel__lead { color: var(--text); }
 .state-panel p + p { color: var(--text-2); }
+
+/* ---------- skip link ---------- */
+
+.skip-link {
+  position: absolute;
+  left: var(--space-4);
+  top: -10rem;
+  z-index: 100;
+  padding: var(--space-2) var(--space-3);
+  background: var(--selected-bg);
+  color: var(--selected-text);
+  border-radius: var(--radius-s);
+  font-weight: 600;
+}
+.skip-link:focus { top: var(--space-2); }
+
+/* ---------- glyphs ---------- */
+
+.glyph { flex: none; width: 0.75rem; height: 0.75rem; overflow: visible; }
+
+/* ---------- ticker ---------- */
+
+.ticker {
+  display: flex;
+  align-items: stretch;
+  background: var(--raised);
+  border-bottom: 1px solid var(--rule);
+}
+
+.ticker__toggle {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-4);
+  background: transparent;
+  border: 0;
+  border-right: 1px solid var(--rule);
+  color: var(--text-2);
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+.ticker__toggle:hover { color: var(--text); background: var(--surface); }
+.ticker__toggle svg { fill: currentColor; width: 0.75rem; height: 0.75rem; }
+.ticker__toggle:focus-visible { outline-offset: -3px; }
+
+.ticker__viewport {
+  flex: 1;
+  min-width: 0;
+  overflow: clip;
+  /* Soft edges say "this continues" without adding a mark. */
+  mask-image: linear-gradient(to right, transparent 0, #000 1.5rem, #000 calc(100% - 3rem), transparent 100%);
+}
+.ticker[data-mode='manual'] .ticker__viewport {
+  overflow-x: auto;
+  scrollbar-width: thin;
+  mask-image: none;
+}
+
+.ticker__rail {
+  display: flex;
+  width: max-content;
+  animation-name: ticker-scroll;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+.ticker[data-mode='manual'] .ticker__rail { animation: none; }
+.ticker:hover .ticker__rail { animation-play-state: paused; }
+
+@keyframes ticker-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.ticker__track {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ticker__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  white-space: nowrap;
+  background: none;
+  border: 0;
+  padding: 0.9rem var(--space-5) 0.9rem var(--space-5);
+  color: var(--text);
+  cursor: pointer;
+}
+.ticker__entry + .ticker__entry .ticker__item,
+.ticker__track + .ticker__track .ticker__entry:first-child .ticker__item {
+  box-shadow: inset 1px 0 0 var(--hairline);
+}
+.ticker__item:hover .ticker__title { text-decoration: underline; text-underline-offset: 0.2em; }
+.ticker__item:focus-visible { outline-offset: -3px; }
+
+.ticker__date {
+  color: var(--text-3);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+.ticker__title {
+  font-family: var(--serif);
+  font-size: 1.125rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticker__rail { animation: none; }
+  .ticker__viewport { overflow-x: auto; mask-image: none; }
+}
+
+/* ---------- counters ---------- */
+
+.counters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--space-3);
+  margin-block: var(--space-5);
+}
+
+.tile {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-m);
+}
+.tile__label { font-size: 0.875rem; font-weight: 500; color: var(--text-2); }
+.tile__value {
+  font-size: 2.25rem;
+  font-weight: 620;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  /* Tabular per the brief: values change as filters change, and equal-width
+     digits stop the tiles from jittering while they do. */
+  font-variant-numeric: tabular-nums;
+}
+.tile__note { font-size: 0.8125rem; color: var(--text-3); }
+.tile--tip { cursor: help; }
+.tile--tip .tile__label::after {
+  content: ' (i)' / '';
+  color: var(--text-3);
+  font-weight: 400;
+}
+
+/* ---------- tooltip ---------- */
+
+.tooltip {
+  position: absolute;
+  z-index: 30;
+  max-width: 22rem;
+  padding: var(--space-3);
+  background: var(--raised);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  color: var(--text);
+  font-size: 0.875rem;
+  line-height: 1.45;
+  pointer-events: none;
+  visibility: hidden;
+}
+.tooltip[data-open] { visibility: visible; }
+
+.tile__tip { top: calc(100% + var(--space-2)); left: 0; right: 0; }

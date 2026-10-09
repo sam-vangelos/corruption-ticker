@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { LoadState } from './types';
 import { loadEntries } from './data/load';
-import { buildIndexes } from './data/derive';
+import { buildIndexes, computeStats } from './data/derive';
+import { inaugurationDay, today } from './data/dates';
 import { plural } from './data/format';
 import { StatePanel } from './components/StatePanel';
+import { Ticker } from './components/Ticker';
+import { Counters } from './components/Counters';
 
 export function App() {
   const [state, setState] = useState<LoadState>({ kind: 'loading' });
@@ -17,9 +20,20 @@ export function App() {
   const items = state.kind === 'ready' ? state.items : null;
   const indexes = useMemo(() => (items ? buildIndexes(items) : null), [items]);
   const isPlaceholder = !!items && items.some((it) => it.placeholder);
+  const now = useMemo(() => today(), []);
+  const stats = useMemo(
+    () => (items ? computeStats(items, { now, inauguration: inaugurationDay() }) : null),
+    [items, now],
+  );
+  const openItem = (id: string, opener: HTMLElement) => {
+    // Placeholder until the detail drawer lands (commit 5 of the build).
+    void id; void opener;
+  };
 
   return (
     <div className="app">
+      <a className="skip-link" href="#main">Skip to the item list</a>
+      {items && <Ticker items={items} onOpen={openItem} />}
       <header className="masthead">
         <div className="masthead__title">
           <h1>Corruption Ticker</h1>
@@ -51,7 +65,7 @@ export function App() {
                 {state.skipped.length > 5 ? '; and more.' : '.'}
               </p>
             )}
-            <p>{plural(indexes?.byId.size ?? 0, 'item')} loaded.</p>
+            {stats && <Counters stats={stats} overall={indexes?.byId.size ?? 0} filtered={false} />}
           </>
         )}
       </main>
