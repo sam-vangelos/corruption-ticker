@@ -47,6 +47,9 @@ printed, for each admission gate:
   or naming no public record;
 - a loopback `SITE_URL`, and a `DATASET_DIR` without `ALLOW_DATASET_DIR`.
 
+It also greps the real `dist/` for any trace of the development-only review
+queue.
+
 Verify also requires two builds to succeed (an attributed guilt phrase; a
 grade-1 finding saying "committed"). It searches every file of a build with
 planted secrets for them, checks that the prerender removes a stale page and
@@ -180,13 +183,23 @@ none of it reaches `dist/`. Its API:
 - `POST /__review/reject {id, reason}`: clear approval and append
   `{id, reason, at}` to `dataset/rejections.json`.
 - `POST /__review/edit {id, patch}`: apply editable fields and clear approval.
+- `POST /__review/archive {url}`: `GET https://web.archive.org/save/<url>`
+  (following redirects) and fill `archive_url` on every unapproved source with
+  that url; rate-limited to one request per 4 seconds.
 
 The page shows one record at a time, keyboard-driven: `a` approve, `r` reject
 (asks for a reason), `e` edit, `n`/`p` next and previous, `/` jump to an id,
 `Esc` cancel. Edit mode is a form over the schema fields (never raw JSON):
 text fields, selects for every enum, and list editors for actors with roles,
 entities, offices, sources and amounts. Saving clears any approval and
-re-validates; the record stays unapproved until `a`. It shows any validation errors and lint findings in red first (and
+re-validates; the record stays unapproved until `a`. `b` toggles the batch
+view: a sortable table of the unapproved records (id, date, grade, category,
+title, error count) to choose a triage order; clicking a row opens it in the
+queue. There is deliberately no bulk approve. A source without an
+`archive_url` offers "Request archive", which asks the Wayback Machine to save
+the page (`POST /__review/archive {url}`; at most one request per 4 seconds;
+failures are shown) and writes the resulting
+`https://web.archive.org/web/<timestamp>/<url>` into that source. It shows any validation errors and lint findings in red first (and
 disables approval until an edit fixes them), then the title, the summary
 with its grade verb marked, the grade and evidence note, the rubric prong and
 its evidence, actors with roles, every source (outlet, kind, headline, link,
@@ -199,7 +212,15 @@ re-validates and returns the record's new state; writes are serialised. The
 queue and the raw `/data/*.json` routes answer loopback clients only, refuse a
 non-loopback `Host` header (DNS rebinding), and refuse cross-origin or
 non-JSON POSTs. `npm run review-smoke` runs the whole API against a temporary
-copy of the dataset, including a request from the machine's LAN address.
+copy of the dataset (the archive helper against a local stand-in for the
+Wayback Machine), including a request from the machine's LAN address.
+
+Nothing of the queue reaches `dist/`: no app module imports `src/review/`, and
+`npm run verify` greps every file of the real build, sourcemaps included, for
+the API path, the page markers and the component names. (A guarded
+`import.meta.env.DEV` lazy import is not enough: the sourcemap's
+`sourcesContent` would still carry the component's name. That is why the
+queue is a separate page served by the dev server.)
 
 ### Approval
 

@@ -3,6 +3,7 @@ import type { QueueView, RecordState } from './api';
 import * as api from './api';
 import { ReviewRecord } from './ReviewRecord';
 import { ReviewEdit } from './ReviewEdit';
+import { ReviewBatch } from './ReviewBatch';
 import { CATEGORIES } from '../types';
 import { CATEGORY_LABEL } from '../categories';
 
@@ -26,14 +27,15 @@ export function applyQueueFilters(records: RecordState[], f: QueueFilters): Reco
     && (!f.errorsOnly || hasProblems(s)));
 }
 
-type Mode = 'record' | 'reject' | 'jump' | 'edit';
+type Mode = 'record' | 'reject' | 'jump' | 'edit' | 'batch';
 
 const isTyping = (el: Element | null) => !!el && (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement);
 
 /**
  * The editor's review queue (development only). One record at a time,
  * keyboard-driven: a approve, r reject (asks for a reason), e edit, n / p
- * next and previous, / jump to an id. Approval is refused while the record has
+ * next and previous, / jump to an id, b batch view (a table to choose the
+ * triage order; there is no bulk approve). Approval is refused while the record has
  * validation errors or lint findings; the server refuses it too.
  */
 export function ReviewApp() {
@@ -113,6 +115,30 @@ export function ReviewApp() {
     }
   }, [current, busy, reload, filters]);
 
+  const doArchive = useCallback(async (url: string) => {
+    if (busy) return;
+    setBusy(true);
+    setMessage(`Requesting a Wayback Machine snapshot of ${url}…`);
+    const { status, data } = await api.archive(url);
+    setBusy(false);
+    if (status !== 200) { setMessage(`Archive failed: ${data.error ?? `HTTP ${status}`}`); return; }
+    setMessage(`Archived: ${data.archive_url} (written into ${data.touched?.length ?? 0} record(s)).`);
+    const id = current?.id;
+    const fresh = await reload();
+    if (fresh && id) {
+      const i = applyQueueFilters(fresh.records, filters).findIndex((s) => s.id === id);
+      if (i >= 0) setPos(i);
+    }
+  }, [busy, current, reload, filters]);
+
+  const openFromBatch = useCallback((id: string) => {
+    if (!view) return;
+    const i = list.findIndex((s) => s.id === id);
+    setPos(i >= 0 ? i : 0);
+    setMode('record');
+    setMessage('');
+  }, [view, list]);
+
   const doJump = useCallback(() => {
     if (!view) return;
     const id = jumpTo.trim();
@@ -135,6 +161,11 @@ export function ReviewApp() {
     const onKey = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (e.key === 'Escape' && mode !== 'record') { e.preventDefault(); setMode('record'); return; }
+      if (e.key === 'b' && (mode === 'record' || mode === 'batch') && !isTyping(document.activeElement)) {
+        e.preventDefault();
+        setMode(mode === 'batch' ? 'record' : 'batch');
+        return;
+      }
       if (mode !== 'record' || isTyping(document.activeElement)) return;
       switch (e.key) {
         case 'a': e.preventDefault(); void doApprove(); break;
@@ -184,7 +215,7 @@ export function ReviewApp() {
         </div>
         <p className="rq-keys">
           <kbd className="kbd">a</kbd> approve · <kbd className="kbd">r</kbd> reject · <kbd className="kbd">e</kbd> edit · <kbd className="kbd">n</kbd>/<kbd className="kbd">p</kbd> next/previous ·{' '}
-          <kbd className="kbd">/</kbd> jump to id · <kbd className="kbd">Esc</kbd> cancel
+          <kbd className="kbd">/</kbd> jump to id · <kbd className="kbd">b</kbd> batch view · <kbd className="kbd">Esc</kbd> cancel
         </p>
       </header>
 
@@ -214,7 +245,9 @@ export function ReviewApp() {
 
       {view && list.length === 0 && <p className="rq-empty">Nothing to review under these filters.</p>}
 
-      {current && (
+      {mode === 'batch' && <ReviewBatch records={list} onOpen={openFromBatch} />}
+
+      {mode !== 'batch' && current && (
         <>
           <nav className="rq-nav" aria-label="Queue position">
             <button type="button" className="button" onClick={() => go(-1)} disabled={index <= 0}>Previous</button>
@@ -226,10 +259,11 @@ export function ReviewApp() {
             </button>
             <button type="button" className="button" onClick={() => setMode('reject')} disabled={busy}>Reject</button>
             <button type="button" className="button" onClick={() => setMode('edit')} disabled={busy}>Edit</button>
+            <button type="button" className="button" onClick={() => setMode('batch')}>Batch view</button>
           </nav>
           {mode === 'edit'
             ? <ReviewEdit key={current.id} state={current} busy={busy} onSave={(p) => void doSave(p)} onCancel={() => setMode('record')} />
-            : <ReviewRecord state={current} />}
+            : <ReviewRecord state={current} busy={busy} onArchive={(u) => void doArchive(u)} />}
         </>
       )}
     </div>

@@ -19,7 +19,11 @@ function devDataset(): Plugin {
       const dataset = resolveDatasetDir(process.env);
       server.config.logger.info(`dev dataset: ${dataset.label}`);
       // The editor's review queue (/review, /__review/*): development only.
-      server.middlewares.use(reviewMiddleware(server, { datasetDir: dataset.dir }));
+      // REVIEW_ARCHIVE_BASE points the archive helper at a stand-in (review-smoke).
+      server.middlewares.use(reviewMiddleware(server, {
+        datasetDir: dataset.dir,
+        archiveBase: process.env.REVIEW_ARCHIVE_BASE || 'https://web.archive.org',
+      }));
       server.middlewares.use(async (req, res, next) => {
         const m = /^\/data\/(entries|corrections)\.json(?:\?.*)?$/.exec(req.url ?? '');
         if (!m) return next();

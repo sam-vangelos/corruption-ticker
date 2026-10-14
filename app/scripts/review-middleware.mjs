@@ -9,6 +9,7 @@
 //   POST /__review/approve       {id}            approve through src/data/approve-core.ts
 //   POST /__review/reject        {id, reason}    clear approval, log to rejections.json
 //   POST /__review/edit          {id, patch}     apply editable fields, clear approval
+//   POST /__review/archive       {url}           Wayback Machine save; fill archive_url (1 per 4 s)
 //
 // Every write re-reads the dataset, applies the change, writes atomically
 // (temp file, then rename), re-validates, and returns the record's new state.
@@ -100,9 +101,9 @@ const PAGE = `<!doctype html>
 
 /**
  * @param {import('vite').ViteDevServer} server
- * @param {{ datasetDir: string }} opts
+ * @param {{ datasetDir: string, archiveBase?: string, archiveIntervalMs?: number }} opts
  */
-export function reviewMiddleware(server, { datasetDir }) {
+export function reviewMiddleware(server, { datasetDir, archiveBase = 'https://web.archive.org', archiveIntervalMs = 4000 }) {
   const entriesFile = path.join(datasetDir, 'entries.json');
   const rejectionsFile = path.join(datasetDir, 'rejections.json');
   const core = () => server.ssrLoadModule('/src/review/core.ts');
@@ -122,6 +123,9 @@ export function reviewMiddleware(server, { datasetDir }) {
   };
   const readRejections = async () => (existsSync(rejectionsFile) ? JSON.parse(await readFile(rejectionsFile, 'utf8')) : []);
   const json = (v) => `${JSON.stringify(v, null, 2)}\n`;
+
+  // The archive helper: at most one Wayback Machine request per interval.
+  let lastArchiveAt = 0;
 
   return async (req, res, next) => {
     const url = new URL(req.url ?? '/', 'http://localhost');
@@ -178,6 +182,37 @@ export function reviewMiddleware(server, { datasetDir }) {
           if (!r.ok) return send(res, r.status, { error: r.error });
           await writeAtomic(entriesFile, json(entries));
           return send(res, 200, { ok: true, state: c.stateById(await readEntries(), await readRejections(), id) });
+        });
+      }
+
+      if (route === 'POST /__review/archive') {
+        const { url: target } = await readBody(req);
+        let parsed;
+        try { parsed = new URL(String(target ?? '')); } catch { return send(res, 400, { error: 'url is not a URL' }); }
+        if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return send(res, 400, { error: 'only http(s) URLs can be archived' });
+        const wait = lastArchiveAt + archiveIntervalMs - Date.now();
+        if (wait > 0) {
+          res.setHeader('Retry-After', String(Math.ceil(wait / 1000)));
+          return send(res, 429, { error: `one archive request per ${archiveIntervalMs / 1000} seconds; try again in ${Math.ceil(wait / 1000)} s` });
+        }
+        lastArchiveAt = Date.now();
+        let finalUrl;
+        try {
+          const r = await fetch(`${archiveBase.replace(/\/+$/, '')}/save/${parsed.href}`, { redirect: 'follow', signal: AbortSignal.timeout(90_000) });
+          if (!r.ok) return send(res, 502, { error: `the Wayback Machine answered HTTP ${r.status}` });
+          finalUrl = r.url;
+        } catch (err) {
+          return send(res, 502, { error: `the Wayback Machine request failed: ${err.message}` });
+        }
+        const archiveUrl = c.archiveUrlFrom(finalUrl, parsed.href);
+        if (!archiveUrl) return send(res, 502, { error: `no snapshot URL in the Wayback Machine's answer (${finalUrl})` });
+        return await serial(async () => {
+          const entries = await readEntries();
+          const touched = c.fillArchive(entries, parsed.href, archiveUrl);
+          if (touched.length) await writeAtomic(entriesFile, json(entries));
+          const fresh = await readEntries();
+          const rejections = await readRejections();
+          return send(res, 200, { ok: true, archive_url: archiveUrl, touched, states: touched.map((id) => c.stateById(fresh, rejections, id)) });
         });
       }
 

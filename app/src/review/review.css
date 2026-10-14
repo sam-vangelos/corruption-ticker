@@ -56,3 +56,11 @@
 .rqe-row { display: grid; grid-template-columns: 1fr auto auto; gap: var(--space-2); align-items: center; }
 .rqe-card { display: grid; gap: var(--space-2); padding: var(--space-3); background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--radius-s); }
 .rq-save { border-color: var(--text); font-weight: 650; }
+
+/* Batch view */
+.rq-batch { display: grid; gap: var(--space-3); }
+.rqb-wrap { max-height: 70vh; }
+.rqb-table td, .rqb-table th { vertical-align: top; }
+.rqb-sort { background: none; border: 0; padding: 0; font: inherit; font-weight: 600; color: inherit; cursor: pointer; }
+.rqb-has-errors th { box-shadow: inset 4px 0 0 #f08c8c; }
+.rq-archive { min-height: 1.75rem; font-size: 0.8125rem; }

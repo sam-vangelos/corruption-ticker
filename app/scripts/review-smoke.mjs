@@ -10,12 +10,14 @@
 //   - refuses to approve an invalid draft;
 //   - rejects a record with a reason and reads rejections.json;
 //   - edits the approved record and confirms its approval was cleared;
+//   - archives a source through a local stand-in for the Wayback Machine,
+//     confirms the one-request-per-4-seconds limit and a surfaced failure;
 //   - confirms a request from a non-loopback address, a cross-origin POST, a
 //     non-JSON POST and a foreign Host header are all refused;
 //   - confirms the committed dataset file did not change.
 import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { copyFileSync, existsSync, mkdtempSync, readFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import http from 'node:http';
 import { networkInterfaces, tmpdir } from 'node:os';
@@ -38,6 +40,20 @@ const work = mkdtempSync(path.join(tmpdir(), 'ethics-review-smoke-'));
 for (const f of ['entries.json', 'corrections.json']) {
   if (existsSync(path.join(dataset.dir, f))) copyFileSync(path.join(dataset.dir, f), path.join(work, f));
 }
+// Add a draft whose first source has no archive_url, for the archive helper.
+{
+  const entries = JSON.parse(readFileSync(path.join(work, 'entries.json'), 'utf8'));
+  const base = entries.find((r) => r.approved_by === null) ?? entries[0];
+  const draft = JSON.parse(JSON.stringify(base));
+  draft.id = 'p-2026-09-archive-me-99';
+  draft.title = '[PLACEHOLDER] Review-smoke draft whose source needs archiving';
+  draft.approved_by = null;
+  draft.approved_digest = null;
+  draft.sources[0].url = 'https://example.com/placeholder/archive-me';
+  draft.sources[0].archive_url = '';
+  entries.push(draft);
+  writeFileSync(path.join(work, 'entries.json'), `${JSON.stringify(entries, null, 2)}\n`);
+}
 const raw = JSON.parse(readFileSync(path.join(work, 'entries.json'), 'utf8'));
 
 const freePort = () => new Promise((resolve, reject) => {
@@ -49,6 +65,7 @@ const freePort = () => new Promise((resolve, reject) => {
 // A local stand-in for web.archive.org: /save/<url> redirects to /web/<ts>/<url>.
 const archiveStub = http.createServer((req, res) => {
   const m = /^\/save\/(.+)$/.exec(req.url ?? '');
+  if (m && m[1].includes('fail-archive')) { res.statusCode = 503; return res.end('unavailable'); }
   if (m) { res.statusCode = 302; res.setHeader('Location', `/web/20261014120000/${m[1]}`); return res.end(); }
   if ((req.url ?? '').startsWith('/web/')) { res.statusCode = 200; return res.end('snapshot'); }
   res.statusCode = 404; res.end();
@@ -100,7 +117,7 @@ try {
   record('GET /__review/queue lists every unapproved record', drafts.every((d) => ids.includes(d.id)) && ids.length === drafts.length,
     `${ids.length} records; progress ${JSON.stringify(q.progress)}`);
   const valid = q.records.find((r) => r.errors.length === 0 && !r.lint);
-  const invalid = q.records.find((r) => r.errors.length > 0 || r.lint);
+  const invalid = q.records.find((r) => (r.errors.length > 0 || r.lint) && r.id !== 'p-2026-09-archive-me-99');
   record('the queue carries validation and lint results from the build\'s rules', !!valid && !!invalid,
     `${valid?.id} clean; ${invalid?.id}: ${invalid?.errors[0] ?? invalid?.lint}`);
 
@@ -141,6 +158,21 @@ try {
   const edBad = await post('/__review/edit', { id: valid.id, patch: { id: 'other', approved_by: 'Sam Vangelos' } });
   record('edit refuses fields outside the editable set', edBad.status === 400, `HTTP ${edBad.status}: ${(await edBad.json()).error}`);
   record('the edited record is back in the queue', (await queue()).records.some((r) => r.id === valid.id));
+
+  // The archive helper, against the local stand-in for the Wayback Machine.
+  const needs = (await queue()).records.find((r) => r.id === 'p-2026-09-archive-me-99');
+  record('a source without archive_url shows as a validation error', /archive_url/.test(needs?.errors[0] ?? ''), needs?.errors[0]);
+  const ar = await post('/__review/archive', { url: 'https://example.com/placeholder/archive-me' });
+  const arBody = await ar.json();
+  const archived = JSON.parse(readFileSync(path.join(work, 'entries.json'), 'utf8')).find((r) => r.id === 'p-2026-09-archive-me-99');
+  record('POST /__review/archive writes the snapshot URL into the source', ar.ok
+    && archived.sources[0].archive_url === 'https://web.archive.org/web/20261014120000/https://example.com/placeholder/archive-me'
+    && arBody.states?.[0]?.errors.length === 0, `${archived.sources[0].archive_url}; errors now ${JSON.stringify(arBody.states?.[0]?.errors)}`);
+  const ar2 = await post('/__review/archive', { url: 'https://example.com/placeholder/archive-me' });
+  record('a second archive request within 4 s is rate-limited', ar2.status === 429 && Number(ar2.headers.get('retry-after')) > 0, `HTTP ${ar2.status}, Retry-After ${ar2.headers.get('retry-after')}`);
+  await new Promise((r) => setTimeout(r, 4100));
+  const ar3 = await post('/__review/archive', { url: 'https://example.com/fail-archive' });
+  record('an archive failure is surfaced', ar3.status === 502, `HTTP ${ar3.status}: ${(await ar3.json()).error}`);
 
   // Refusals.
   const lan = Object.values(networkInterfaces()).flat().find((x) => x && !x.internal && x.family === 'IPv4');

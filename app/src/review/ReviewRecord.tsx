@@ -38,7 +38,7 @@ function Field({ k, children }: { k: string; children: ReactNode }) {
 }
 
 /** One record, in the order the editor reads it. Render only. */
-export function ReviewRecord({ state }: { state: RecordState }) {
+export function ReviewRecord({ state, onArchive, busy = false }: { state: RecordState; onArchive?: (url: string) => void; busy?: boolean }) {
   const r = state.record;
   const grade = r.evidence_grade;
   const gradeOk = typeof grade === 'number' && grade >= 1 && grade <= 5;
@@ -105,7 +105,19 @@ export function ReviewRecord({ state }: { state: RecordState }) {
                     {' · '}
                     {archived
                       ? <a href={str(s.archive_url)} target="_blank" rel="noopener noreferrer">archived copy</a>
-                      : <span className="rq-bad">no archive_url</span>}
+                      : (
+                        <>
+                          <span className="rq-bad">no archive_url</span>
+                          {onArchive && /^https?:\/\//.test(str(s.url)) && (
+                            <>
+                              {' '}
+                              <button type="button" className="button rq-archive" disabled={busy} onClick={() => onArchive(str(s.url))}>
+                                Request archive
+                              </button>
+                            </>
+                          )}
+                        </>
+                      )}
                   </li>
                 );
               })}
