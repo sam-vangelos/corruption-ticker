@@ -157,8 +157,12 @@ const ROUTES: Array<{ path: string; title: string; description: string }> = [
   { path: 'subscribe', title: 'Subscribe', description: 'Atom feeds of The Ethics Record: every new record, or one office or category.' },
 ];
 
-/** Rejections that stop the build: they would break URLs or hosting, or hide a data error. */
-const FATAL: readonly SkipCode[] = ['id', 'duplicate', 'url'];
+/**
+ * The only rejection the build may make quietly (it is logged privately): an
+ * unapproved draft. Every other rejection, of any record, approved or not,
+ * stops the build with the record and reason printed (docs/schema.md).
+ */
+const QUIET: readonly SkipCode[] = ['unapproved'];
 
 /** Thrown when the data cannot be published as is; the message lists every problem. */
 export class BuildError extends Error {}
@@ -173,10 +177,25 @@ export function buildSite(input: SiteInput): SiteOutput {
   // The build log is private; the site never names a left-out record.
   for (const s of state.skipped) {
     const line = `#${s.index}${s.id ? ` (${s.id})` : ''} [${s.code}] ${s.reason}`;
-    if (FATAL.includes(s.code)) fatal.push(`record ${line}`);
-    else notes.push(`left out of the public dataset: ${line}`);
+    if (QUIET.includes(s.code)) notes.push(`not public: ${line}`);
+    else fatal.push(`record ${line}`);
   }
-  const items = state.items;
+  // Publication: an approved, valid record whose first_published_at is unset
+  // or after build time is held back quietly: no page, no dataset entry, no
+  // feed entry, until a build after that time.
+  const items = state.items.filter((it) => it.publishedMs !== null && it.publishedMs <= input.nowMs);
+  for (const it of state.items) {
+    if (!items.includes(it)) {
+      notes.push(`not public: (${it.id}) [unpublished] first_published_at ${it.first_published_at ?? 'is not set'}`);
+    }
+  }
+  // A published child whose root is not itself public cannot be published.
+  const publicIdSet = new Set(items.map((it) => it.id));
+  for (const it of items) {
+    if (it.root_id !== null && !publicIdSet.has(it.root_id)) {
+      fatal.push(`record (${it.id}) [orphan] its root "${it.root_id}" is not public (unapproved, unpublished or missing)`);
+    }
+  }
   const rawById = new Map<string, unknown>();
   if (Array.isArray(input.entries)) {
     for (const raw of input.entries) {

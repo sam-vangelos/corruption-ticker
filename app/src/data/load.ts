@@ -247,20 +247,28 @@ export function interpret(body: unknown, nowMs: number = Date.now()): LoadState 
   if (body.length === 0) return { kind: 'empty' };
   const candidates: Array<{ index: number; item: Item }> = [];
   const skipped: SkippedEntry[] = [];
-  const seen = new Set<string>();
   const idOf = (raw: unknown) => (raw && typeof raw === 'object' && isStr((raw as Record<string, unknown>).id)
     ? ((raw as Record<string, unknown>).id as string)
     : null);
+
+  // Duplicate ids first, over the raw file, before approval or any other
+  // check: a draft and an approved record sharing an id must never let one
+  // stand in for the other. Every copy is rejected, naming the others.
+  const indicesById = new Map<string, number[]>();
   body.forEach((raw, index) => {
-    const res = toItem(raw, nowMs);
-    if ('code' in res) {
-      skipped.push({ index, id: idOf(raw), code: res.code, reason: res.reason });
-    } else if (seen.has(res.id)) {
-      skipped.push({ index, id: res.id, code: 'duplicate', reason: 'duplicate id' });
-    } else {
-      seen.add(res.id);
-      candidates.push({ index, item: res });
+    const id = idOf(raw);
+    if (id !== null) indicesById.set(id, [...(indicesById.get(id) ?? []), index]);
+  });
+  body.forEach((raw, index) => {
+    const id = idOf(raw);
+    const all = id !== null ? indicesById.get(id) ?? [] : [];
+    if (id !== null && all.length > 1) {
+      skipped.push({ index, id, code: 'duplicate', reason: `duplicate id "${id}" at records #${all.join(' and #')}` });
+      return;
     }
+    const res = toItem(raw, nowMs);
+    if ('code' in res) skipped.push({ index, id: idOf(raw), code: res.code, reason: res.reason });
+    else candidates.push({ index, item: res });
   });
 
   // A child must name a root that loaded; children of children are not allowed.

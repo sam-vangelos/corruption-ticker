@@ -6,8 +6,8 @@
 //    port 0), so nothing already listening can answer in its place, and
 //    requires every page to carry this build's id from dist/build.json.
 // 3. Checks, all against data recounted here independently of the app's code:
-//    - the leak: no unapproved or rubric-failing record from dataset/ appears
-//      in /data/entries.json, the front page, or dist/r/;
+//    - the leak: no unapproved, rubric-failing or unpublished record from
+//      dataset/ appears in /data/entries.json, the front page, or dist/r/;
 //    - every id is URL-safe;
 //    - the visible front-page headline (the SPA's Headline component, rendered
 //      into the HTML at build time) and its og:description equal the recount;
@@ -162,7 +162,9 @@ try {
     return roles.length > 0 && roles.every((r) => PRIVATE.has(r))
       && (e.evidence_grade > 3 || e.subject_response === null || e.subject_response === 'not-sought');
   };
-  const secret = raw.filter((e) => !e.approved_by || failsRubric(e));
+  // Not public: unapproved, rubric-failing, or not yet published at build time.
+  const unpublished = (e) => !e.first_published_at || Date.parse(e.first_published_at) > builtAtMs;
+  const secret = raw.filter((e) => !e.approved_by || failsRubric(e) || unpublished(e));
   record('fixture has an approved_by null record', raw.some((e) => !e.approved_by), 'without one the leak check proves nothing');
   for (const e of secret) {
     record(`${e.id} absent from /data/entries.json`, !publicIds.has(e.id), publicIds.has(e.id) ? 'LEAKED' : 'absent');
@@ -172,7 +174,7 @@ try {
     record(`${e.id} not named in the front-page HTML`, !named, named ? 'LEAKED' : 'absent');
   }
   const missing = raw.filter((e) => !secret.includes(e) && !publicIds.has(e.id));
-  record('every approved, rubric-passing raw record is public', missing.length === 0, missing.length ? `missing: ${missing.map((e) => e.id).join(', ')}` : `${entries.length} records`);
+  record('every approved, rubric-passing, published raw record is public', missing.length === 0, missing.length ? `missing: ${missing.map((e) => e.id).join(', ')}` : `${entries.length} records`);
 
   // Independent recount (docs/schema.md § Counting rules), at the build's own clock.
   const qualifies = (e) => Number.isInteger(e.evidence_grade) && e.evidence_grade >= 1 && e.evidence_grade <= 4

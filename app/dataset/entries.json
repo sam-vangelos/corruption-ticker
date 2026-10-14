@@ -1442,7 +1442,7 @@
     "root_id": null,
     "date": "2026-08-02",
     "date_precision": "day",
-    "title": "[PLACEHOLDER] Sample record 24 failing the private-actor rule",
+    "title": "[PLACEHOLDER] Sample draft 24 failing the private-actor rule",
     "summary": "Alleged (corroborated): placeholder summary for fixture record 24. Under evidence grade 4 the record says \"alleged (corroborated)\". This text exists only to exercise the layout and describes no real event, person, or organization.",
     "category": "nepotism-cronyism",
     "rubric_prong": "private-gain",
@@ -1484,10 +1484,10 @@
         "kind": "news"
       }
     ],
-    "first_published_at": "2026-09-07T15:00:00Z",
+    "first_published_at": null,
     "last_modified_at": null,
-    "last_verified_at": "2026-09-07T15:00:00Z",
-    "approved_by": "[PLACEHOLDER] Editor",
+    "last_verified_at": "2026-10-13T00:00:00Z",
+    "approved_by": null,
     "related_ids": [],
     "tags": [
       "placeholder"

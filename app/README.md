@@ -98,10 +98,15 @@ directory's `entries.json` and `corrections.json` (for testing fixtures).
 
 The raw dataset lives in `dataset/entries.json` and `dataset/corrections.json`,
 outside `public/`, so Vite never copies it into `dist/`. The build writes the
-**public** dataset to `dist/data/entries.json`: only approved records that pass
-the rubric. Leads (grade 5) and retracted records stay in it, labelled by their
-own fields; drafts (`approved_by: null`) and rubric failures never reach
-`dist/`, any record page, or any HTML. In development, Vite serves the raw files
+**public** dataset to `dist/data/entries.json`: only approved, rubric-passing
+records whose `first_published_at` is set and not after build time. Leads
+(grade 5) and retracted records stay in it, labelled by their own fields.
+Drafts (`approved_by: null`) and approved records not yet published are held
+back quietly (named only in the build log): no dataset entry, no record page,
+no feed entry. Everything else that fails is a build error, not a silent drop:
+a duplicate id anywhere in the raw file (checked before approval, so a draft
+can never stand in for its approved twin), and any approved record that fails
+validation or the rubric, or whose root is not public. In development, Vite serves the raw files
 at `/data/*.json` (an inline plugin in `vite.config.ts`) and the page lists
 rejected records with their reasons; a production page says nothing about
 them. The build log lists them.
@@ -126,18 +131,18 @@ on main): a record is *qualifying* when its `evidence_grade` is 1 to 4, its
 number of trees (a root plus its children) holding at least one qualifying
 record, so a qualifying child under a grade-5 or retracted root still makes
 one event. The rule text lives verbatim in `src/method.ts` and the arithmetic
-in `src/data/metrics.ts`. A record dated for future publication still gets its
-record page, labelled "Not yet published, not counted", but appears in no
-count, strip, feed or `/recent` list until then.
+in `src/data/metrics.ts`. A record dated for future publication is not public
+at all until a build after that time.
 
 The files in `dataset/` are a **placeholder fixture**: every title
 starts with `[PLACEHOLDER]`, every source and archive URL points at
 `https://example.com/`, every record has `"placeholder": true`, and every name
-is invented. The raw file holds 25 records; 23 reach the public dataset (one
-unapproved draft and one record failing the private-actor rule are left out).
-Among them: three parent/child trees plus a grade-5 lead root with a
-qualifying child, three grade-5 leads in all, one retracted record, one record
-scheduled for publication in 2099, and figures of each `amount_type`. They
+is invented. The raw file holds 25 records; 22 reach the public dataset (two
+unapproved drafts, one of which would also fail the private-actor rule, and
+one record scheduled for publication in 2099 are held back). Among them: three
+parent/child trees plus a grade-5 lead root with a qualifying child, three
+grade-5 leads in all, one retracted record, and figures of each
+`amount_type`. They
 count 18 qualifying records concerning 14 distinct events (a rule that counted
 only qualifying roots would say 13). Its `first_published_at` times cluster in
 the week to 13 October 2026 so the cadence strip and `/recent` have something

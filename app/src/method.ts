@@ -118,7 +118,7 @@ export const COUNTING_RULES: readonly Rule[] = [
   { id: 'qualifying', text: 'A record is *qualifying* when `evidence_grade` is 1 to 4, `evidentiary_status` is not `retracted`, `approved_by` is set, and `first_published_at` is set and not in the future.' },
   { id: 'events', text: 'Event count = number of trees (a root plus its children) containing at least one qualifying record.' },
   { id: 'records', text: 'Record count = all qualifying records, root or child.' },
-  { id: 'public-file', text: 'The public dataset file contains only approved records that pass the rubric; leads (grade 5) and retracted records stay in it, labelled, because they are part of the record. Unapproved or rubric-failing records are never written to it.' },
+  { id: 'public-file', text: 'The public dataset file contains only approved, rubric-passing records whose `first_published_at` is set and not after build time, projected to schema fields only. Leads (grade 5) and retracted records stay in it, labelled, because they are part of the record. Unapproved, unpublished, or rubric-failing records are never written to it, never get a record page, and are never named on any public page. An approved record that fails validation, or whose root is not public, fails the build rather than being dropped. Duplicate ids anywhere in the raw file fail the build.' },
   { id: 'feeds', text: 'Feeds contain qualifying records only.' },
   { id: 'interval', text: 'Average interval = hours since 2025-01-20T12:00:00-05:00 divided by event count.' },
   { id: 'money', text: 'Financial stakes = per `amount_type`, sum of `usd` over records in the metric set, counting each `overlap_group` once (largest figure wins). No grand total.' },
