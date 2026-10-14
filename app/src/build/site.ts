@@ -21,9 +21,9 @@ import { MAIN_FEED, feedIndex, feedItems } from '../feeds';
 export interface SiteInput {
   /** dist/index.html as Vite wrote it. */
   indexHtml: string;
-  /** public/data/entries.json, parsed. */
+  /** dataset/entries.json, parsed: the raw file, drafts and all. Never copied to dist as is. */
   entries: unknown;
-  /** public/data/corrections.json, parsed, or null when absent. */
+  /** dataset/corrections.json, parsed, or null when absent. */
   corrections: unknown;
   /** Absolute origin for canonical, og:url and feed links, no trailing slash. */
   siteUrl: string;
@@ -157,8 +157,16 @@ export function buildSite(input: SiteInput): SiteOutput {
   if (state.kind !== 'ready') {
     throw new Error(`prerender: the dataset did not load (${state.kind}${'detail' in state ? `: ${state.detail}` : ''})`);
   }
-  for (const s of state.skipped) notes.push(`skipped record #${s.index}${s.id ? ` (${s.id})` : ''}: ${s.reason}`);
+  // The build log is private; the site never names a left-out record.
+  for (const s of state.skipped) notes.push(`left out of the public dataset: #${s.index}${s.id ? ` (${s.id})` : ''} [${s.code}] ${s.reason}`);
   const items = state.items;
+  const rawById = new Map<string, unknown>();
+  if (Array.isArray(input.entries)) {
+    for (const raw of input.entries) {
+      const id = raw && typeof raw === 'object' ? (raw as Record<string, unknown>).id : null;
+      if (typeof id === 'string' && !rawById.has(id)) rawById.set(id, raw);
+    }
+  }
   const byId = new Map(items.map((it) => [it.id, it]));
 
   let corrections: Correction[] = [];
@@ -174,6 +182,17 @@ export function buildSite(input: SiteInput): SiteOutput {
 
   const site = input.siteUrl.replace(/\/+$/, '');
   const files: SiteFile[] = [];
+
+  // The public dataset: only records that loaded, i.e. approved and passing
+  // the rubric. Leads and retracted records stay, labelled by their own fields.
+  // Same order as the raw file.
+  const publicIds = new Set(items.map((it) => it.id));
+  const publicEntries = (Array.isArray(input.entries) ? input.entries : []).filter((raw) => {
+    const id = raw && typeof raw === 'object' ? (raw as Record<string, unknown>).id : null;
+    return typeof id === 'string' && publicIds.has(id) && rawById.get(id) === raw;
+  });
+  files.push({ path: 'data/entries.json', content: `${JSON.stringify(publicEntries, null, 2)}\n` });
+  files.push({ path: 'data/corrections.json', content: `${JSON.stringify(corrections, null, 2)}\n` });
   const placeholder = items.some((it) => it.placeholder);
   const noscriptRecord = 'The record above is complete without JavaScript; the interactive front page needs it.';
   const noscriptShell = 'This page needs JavaScript to load and display the dataset.';

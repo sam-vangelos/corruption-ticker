@@ -60,6 +60,16 @@ time: `SITE_URL=https://example.org npm run build`.
 
 ## Data
 
+The raw dataset lives in `dataset/entries.json` and `dataset/corrections.json`,
+outside `public/`, so Vite never copies it into `dist/`. The build writes the
+**public** dataset to `dist/data/entries.json`: only approved records that pass
+the rubric. Leads (grade 5) and retracted records stay in it, labelled by their
+own fields; drafts (`approved_by: null`) and rubric failures never reach
+`dist/`, any record page, or any HTML. In development, Vite serves the raw files
+at `/data/*.json` (an inline plugin in `vite.config.ts`) and the page lists
+rejected records with their reasons; a production page says nothing about
+them. The build log lists them.
+
 The app loads `/data/entries.json`, a JSON array of records following dataset
 schema v2 (`docs/schema.md`, mirrored field for field in `src/types.ts`), and
 `/data/corrections.json`, the corrections log. The loader
@@ -78,7 +88,7 @@ The metric set follows the schema's counting rules: a record counts when its
 events are the counted records with `root_id: null`. The constants live in
 `src/method.ts` and the arithmetic in `src/data/metrics.ts`.
 
-The files shipped in `public/data/` are a **placeholder fixture**: every title
+The files in `dataset/` are a **placeholder fixture**: every title
 starts with `[PLACEHOLDER]`, every source and archive URL points at
 `https://example.com/`, every record has `"placeholder": true`, and every name
 is invented. The fixture holds 20 records: three parent/child trees, two

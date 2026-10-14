@@ -2,7 +2,9 @@
 //
 // 1. Compiles src/build/site.ts for Node with Vite's SSR build, so the pages
 //    are made by the app's own loader, counting rules and labels.
-// 2. Reads dist/index.html and public/data/*.json and writes, under dist/:
+// 2. Reads dist/index.html and the raw dataset/*.json and writes, under dist/:
+//    data/entries.json and data/corrections.json, the public dataset (approved,
+//    rubric-passing records only; drafts and rejected records never reach dist),
 //    r/<id>/index.html for every record (full <title>, description, Open
 //    Graph and Twitter tags, the record as plain HTML, and the app script,
 //    which opens that record's drawer), the front page's preview tags, route
@@ -60,10 +62,13 @@ if (!builtIndex.includes('property="og:title"')) {
   process.exit(1);
 }
 
+// The raw dataset lives outside public/, so Vite never copies it into dist/.
+// buildSite writes the filtered public files to dist/data/.
+const datasetDir = path.join(appDir, 'dataset');
 const out = buildSite({
   indexHtml: await readFile(shellCopy, 'utf8'),
-  entries: await readJson(path.join(dist, 'data', 'entries.json')),
-  corrections: await readJson(path.join(dist, 'data', 'corrections.json'), true),
+  entries: await readJson(path.join(datasetDir, 'entries.json')),
+  corrections: await readJson(path.join(datasetDir, 'corrections.json'), true),
   siteUrl,
 });
 

@@ -10,10 +10,12 @@
 //   /feeds/category/<c>.xml, /feeds/office/<slug>.xml for the first record
 //   /method, /recent, /corrections, /subscribe, /data/corrections.json
 //
+// Leak check: unapproved and rubric-failing records from dataset/entries.json
+// are absent from /data/entries.json, the front page, and dist/r/.
 // The headline recount is deliberately independent of the app's TypeScript:
 // grade 1 to 4, evidentiary_status not "retracted"; events are the roots.
 import { spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
@@ -107,6 +109,34 @@ try {
       return `body is not JSON (${e.message})`;
     }
   });
+
+  // The leak check: no record from the raw dataset that is unapproved, or that
+  // names only private actors below grade 3 or without a response, may appear
+  // in the public dataset, on the front page, or as a record page.
+  const raw = JSON.parse(readFileSync(path.join(appDir, 'dataset', 'entries.json'), 'utf8'));
+  const PRIVATE = new Set(['family', 'private-associate', 'private-entity']);
+  const failsRubric = (e) => {
+    const roles = (e.actors ?? []).map((a) => e.actor_roles?.[a]);
+    return roles.length > 0 && roles.every((r) => PRIVATE.has(r))
+      && (e.evidence_grade > 3 || e.subject_response === null || e.subject_response === 'not-sought');
+  };
+  const secret = raw.filter((e) => !e.approved_by || failsRubric(e));
+  if (!raw.some((e) => !e.approved_by)) {
+    checks.push({ urlPath: 'fixture', ok: false, note: 'the raw dataset has no approved_by null record, so the leak check proves nothing' });
+  }
+  const publicIds = new Set(entries.map((e) => e.id));
+  for (const e of secret) {
+    checks.push({ urlPath: `/data/entries.json without ${e.id}`, ok: !publicIds.has(e.id), note: publicIds.has(e.id) ? 'LEAKED into the public dataset' : 'absent' });
+    const onDisk = existsSync(path.join(appDir, 'dist', 'r', e.id));
+    checks.push({ urlPath: `dist/r/${e.id}/ absent`, ok: !onDisk, note: onDisk ? 'a record page was generated' : 'absent' });
+  }
+  await check('/', (body) => {
+    const hit = secret.find((e) => body.includes(e.id) || body.includes(encode(e.title)));
+    return hit ? `front page HTML names left-out record ${hit.id}` : true;
+  });
+  for (const c of checks.filter((c) => c.urlPath.includes(' without ') || c.urlPath.endsWith(' absent') || c.urlPath === 'fixture')) {
+    console.log(`smoke: ${c.ok ? 'PASS' : 'FAIL'} ${c.urlPath} -> ${c.note}`);
+  }
 
   // Independent recount of the headline per docs/schema.md counting rules.
   const qualifying = entries.filter((e) => Number.isInteger(e.evidence_grade) && e.evidence_grade >= 1 && e.evidence_grade <= 4 && e.evidentiary_status !== 'retracted' && e.approved_by);

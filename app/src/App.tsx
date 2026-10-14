@@ -169,9 +169,11 @@ export function App() {
   }, [setFilters]);
   const clearFilters = useCallback(() => setFilters(EMPTY_FILTERS), [setFilters]);
 
-  const skippedNotice = state.kind === 'ready' && state.skipped.length > 0 && (
+  // Development only. The public dataset is filtered at build time, and a
+  // production page never names a rejected record or says why it was rejected.
+  const skippedNotice = import.meta.env.DEV && state.kind === 'ready' && state.skipped.length > 0 && (
     <p className="skip-notice" role="note">
-      {plural(state.skipped.length, 'record')} in the file failed validation and{' '}
+      Development build: {plural(state.skipped.length, 'record')} in the raw dataset failed validation and{' '}
       {state.skipped.length === 1 ? 'is' : 'are'} not shown:{' '}
       {state.skipped.slice(0, 5).map((s) => `#${s.index}${s.id ? ` (${s.id})` : ''}: ${s.reason}`).join('; ')}
       {state.skipped.length > 5 ? '; and more.' : '.'}

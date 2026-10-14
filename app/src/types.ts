@@ -171,9 +171,17 @@ export type LoadState =
   | { kind: 'empty' }
   | { kind: 'ready'; items: Item[]; skipped: SkippedEntry[] };
 
+/**
+ * Why a record was left out. `unapproved` and `rubric` are the normal,
+ * private exclusions (drafts, records failing the private-actor rule); the
+ * rest are data errors.
+ */
+export type SkipCode = 'invalid' | 'v1' | 'id' | 'url' | 'unapproved' | 'rubric' | 'duplicate' | 'orphan';
+
 export interface SkippedEntry {
   index: number;
   id: string | null;
+  code: SkipCode;
   reason: string;
 }
 

@@ -2,7 +2,7 @@ import {
   ACTOR_ROLES, ACTUAL_OR_ESTIMATED, AMOUNT_TYPES, CATEGORIES, EVIDENCE_GRADES, EVIDENTIARY_STATUSES,
   PROCEDURAL_STATUSES, RUBRIC_PRONGS, SOURCE_KINDS, SUBJECT_RESPONSES,
   type ActorRole, type Amount, type Correction, type CorrectionsState, type Entry, type EvidenceGrade,
-  type Item, type JsonValue, type LoadState, type SkippedEntry, type Source,
+  type Item, type JsonValue, type LoadState, type SkipCode, type SkippedEntry, type Source,
 } from '../types';
 import { monthKey, parseDay } from './dates';
 import { isQualifying } from './metrics';
@@ -72,19 +72,32 @@ function toAmount(v: unknown, i: number): Amount | string {
   };
 }
 
+export interface Rejection {
+  code: SkipCode;
+  reason: string;
+}
+
 /**
- * Validate one raw record against schema v2; return an Item or the reason it
- * was skipped. Cross-record checks (root_id resolution, duplicate ids) happen
- * in `interpret`.
+ * Validate one raw record against schema v2; return an Item or why it was
+ * left out. Cross-record checks (root_id resolution, duplicate ids) happen in
+ * `interpret`. Approval is checked first: a draft is "unapproved" however
+ * incomplete it is.
  */
-export function toItem(raw: unknown): Item | string {
-  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return 'not an object';
+export function toItem(raw: unknown): Item | Rejection {
+  const bad = (reason: string): Rejection => ({ code: 'invalid', reason });
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return bad('not an object');
   const o = raw as Record<string, unknown>;
-  if (!nonEmpty(o.id)) return 'missing id';
-  if (looksLikeV1(o)) return V1_REASON;
+  if (!nonEmpty(o.id)) return bad('missing id');
+  if (looksLikeV1(o)) return { code: 'v1', reason: V1_REASON };
+  if (!nonEmpty(o.approved_by)) return { code: 'unapproved', reason: 'approved_by is null, so the record is not in the public dataset' };
+  const res = validate(o, o.id);
+  return typeof res === 'string' ? bad(res) : res;
+}
+
+function validate(o: Record<string, unknown>, id: string): Item | Rejection | string {
   if (!nonEmpty(o.title)) return 'missing title';
   if (o.root_id !== null && !nonEmpty(o.root_id)) return 'root_id must be null (a root record) or the id of a root record';
-  if (o.root_id === o.id) return 'root_id names the record itself';
+  if (o.root_id === id) return 'root_id names the record itself';
 
   if (!isStr(o.date) || !DAY_RE.test(o.date)) return `date "${String(o.date)}" is not YYYY-MM-DD`;
   const day = parseDay(o.date);
@@ -118,9 +131,11 @@ export function toItem(raw: unknown): Item | string {
   // Inclusion rubric: records naming only private persons or entities need
   // grade 3 or better and a recorded response (sought and received, or declined).
   if (actors.length > 0 && actors.every((a) => PRIVATE_ROLES.includes(actorRoles[a] as ActorRole))) {
-    if (grade > PRIVATE_MAX_GRADE) return `names only private actors, so it needs evidence grade ${PRIVATE_MAX_GRADE} or better`;
+    if (grade > PRIVATE_MAX_GRADE) {
+      return { code: 'rubric', reason: `names only private actors, so it needs evidence grade ${PRIVATE_MAX_GRADE} or better` };
+    }
     if ((PRIVATE_DISALLOWED_RESPONSES as readonly unknown[]).includes(o.subject_response)) {
-      return 'names only private actors, so it needs a subject_response other than "not-sought" or null';
+      return { code: 'rubric', reason: 'names only private actors, so it needs a subject_response other than "not-sought" or null' };
     }
   }
 
@@ -139,7 +154,6 @@ export function toItem(raw: unknown): Item | string {
     sources.push(res);
   }
 
-  if (!nonEmpty(o.approved_by)) return 'approved_by is null, so the record is not in the public dataset';
   const publishedMs = parseTimestamp(o.first_published_at);
   if (publishedMs === null) return `first_published_at "${String(o.first_published_at)}" is not an ISO 8601 timestamp`;
   let modifiedMs: number | null = null;
@@ -150,7 +164,7 @@ export function toItem(raw: unknown): Item | string {
   if (parseTimestamp(o.last_verified_at) === null) return `last_verified_at "${String(o.last_verified_at)}" is not an ISO 8601 timestamp`;
 
   const entry: Entry = {
-    id: o.id,
+    id,
     root_id: o.root_id as string | null,
     date: o.date,
     date_precision: o.date_precision,
@@ -174,7 +188,7 @@ export function toItem(raw: unknown): Item | string {
     first_published_at: o.first_published_at as string,
     last_modified_at: (o.last_modified_at as string | null) ?? null,
     last_verified_at: o.last_verified_at as string,
-    approved_by: o.approved_by,
+    approved_by: o.approved_by as string,
     related_ids: strList(o.related_ids),
     tags: strList(o.tags),
     placeholder: o.placeholder === true ? true : undefined,
@@ -210,10 +224,10 @@ export function interpret(body: unknown): LoadState {
     : null);
   body.forEach((raw, index) => {
     const res = toItem(raw);
-    if (typeof res === 'string') {
-      skipped.push({ index, id: idOf(raw), reason: res });
+    if ('code' in res) {
+      skipped.push({ index, id: idOf(raw), code: res.code, reason: res.reason });
     } else if (seen.has(res.id)) {
-      skipped.push({ index, id: res.id, reason: 'duplicate id' });
+      skipped.push({ index, id: res.id, code: 'duplicate', reason: 'duplicate id' });
     } else {
       seen.add(res.id);
       candidates.push({ index, item: res });
@@ -225,7 +239,7 @@ export function interpret(body: unknown): LoadState {
   const items: Item[] = [];
   for (const c of candidates) {
     if (!c.item.isRoot && !roots.has(c.item.root_id as string)) {
-      skipped.push({ index: c.index, id: c.item.id, reason: `root_id "${c.item.root_id}" does not name a root record in this file` });
+      skipped.push({ index: c.index, id: c.item.id, code: 'orphan', reason: `root_id "${c.item.root_id}" does not name a root record in this file` });
     } else {
       items.push(c.item);
     }
@@ -233,7 +247,7 @@ export function interpret(body: unknown): LoadState {
   skipped.sort((a, b) => a.index - b.index);
 
   if (items.length === 0) {
-    if (skipped.length > 0 && skipped.every((s) => s.reason === V1_REASON)) {
+    if (skipped.length > 0 && skipped.every((s) => s.code === 'v1')) {
       return {
         kind: 'invalid',
         detail: 'Every record in the file uses dataset schema v1 (a single "status" and "dollar_amount_usd"). '
