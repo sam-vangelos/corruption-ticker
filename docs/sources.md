@@ -1,4 +1,6 @@
-# Source tiers
+# Source directory (not an inclusion gate)
+
+Since schema v2 (2026-10-13), inclusion is decided by claim-level evidence grade, not outlet. This list only helps researchers find reporting and primary documents.
 
 **Tier 1 (sufficient alone):** AP, Reuters, NYT, WaPo, WSJ, Bloomberg, FT, ProPublica, NPR, PBS, BBC, The Guardian, Politico, Axios, CNN, NBC, ABC, CBS, The Atlantic, The New Yorker, Forbes (news), Fortune, Business Insider (news), Rolling Stone (news desk), Mother Jones, The Hill, Semafor, Punchbowl, Wired, The Verge, 404 Media, The Intercept, Court documents, IG/GAO/OGE/CRS reports, congressional reports.
 

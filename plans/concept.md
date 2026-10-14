@@ -1,67 +1,74 @@
-# Concept: a living public ledger of reported corruption
+# Concept v2: a living public record of sourced allegations, findings, and oversight changes
 
-Working title: **The Running Tab**. Alternatives for counsel to weigh: The Ledger, Receipts, Public Record.
+Working title: **The Ethics Record**. Deck: "Sourced allegations, findings, and oversight changes in the second Trump administration." Clearance (trademark, publication titles, handles) still to run; no purchase yet.
+
+Revised 2026-10-13 after outside counsel (Codex GPT, `plans/counsel/2026-10-13-codex-concept-review.md`). What changed and why is in the last section.
 
 ## The goal, in Sam's words
 
-Build a mechanism that lets people quickly and intuitively grasp the frequency, scale, pervasiveness and corrosiveness of corruption in the second Trump administration, in a way that allows for virality without being gimmicky. Sam's name goes on it. Code and data are published openly. Nothing is bought yet.
+Build a mechanism that lets people quickly and intuitively grasp the frequency, scale, pervasiveness and corrosiveness of corruption in the second Trump administration, in a way that allows for virality without being gimmicks. Sam's name goes on it. Code and data are published openly. Nothing is bought yet.
 
 ## The thesis
 
-A ticker is a reader. A record is something people cite. The thing to build is a living, open, source-verified public record whose front page states one number nobody can un-see and whose four instruments each make one of the four words legible in under five seconds. Everything that spreads comes from credibility plus specificity: a permanent receipt for every entry, a dataset that journalists and researchers can download and audit, and a daily update so the record is alive and gets checked every morning.
+A ticker is a reader. A record is something people cite. The thing to build is a living, open, evidence-graded public record whose front page states one honest number and whose instruments each make one of the four words legible in seconds. What spreads is credibility plus specificity: a permanent receipt for every entry, a dataset journalists and researchers can download and audit, subscriptions that bring readers back, and a public corrections log. The record never calls a person corrupt. It states what was reported, by whom, with what evidence, and what happened next.
 
-## The headline number
+## The headline
 
-"One reported act of corruption every N hours since 20 January 2025." Derived live from the verified dataset: elapsed hours since inauguration divided by entry count. A second line restates the rate at a human scale: "That is K a week. L this month." No "since you opened this page" counter, because at a rate of hours per item it would sit at zero and read as a trick. The number is only as strong as the dataset's inclusion rubric, which is why the rubric and the source tiers ship on the page one click away.
+"**X qualifying records concerning Y distinct events since 20 January 2025.**" Both counts come live from the dataset. Beneath it, the average cadence stated as what it is: "one new qualifying record every N hours on average," computed over root events only, with the counting rules one click away. No "acts of corruption," no "K a week" presented as current cadence, no "since you opened this page" counter.
 
-## The four instruments
+Counting rules, published beside the number: one root event per distinct underlying matter; developments in a matter are child records that do not increase the event count; retracted records are excluded from all metrics; records at evidence grade 5 (single-source allegation) are retained as leads and excluded from all metrics; the event count uses the date of the underlying conduct or first report, never the date the record was added.
 
-1. **Frequency: the clock.** The headline number, counting. A strip beneath it shows the last seven days as seven columns of marks, so a reader sees that the cadence is not a historical average but this week.
-2. **Pervasiveness: the map of the government.** Every cabinet department, major agency, White House office, and family member as a tile on an org-chart layout. Each tile carries its count and lights by density. The reader's eye does the argument: it is not one man, it is the chart. Hover or tap a tile to see its entries.
-3. **Scale: the odometer.** Total reported dollars across entries that carry a figure, with the basis for every figure one click away and the count of entries that carry no figure stated beside it. Three comparisons chosen for size, not for a punchline (for example the annual budget of a named federal agency, a named state's annual education spend, the median household's lifetime earnings), each with its own source.
-4. **Corrosiveness: who's left to watch.** Every inspector general, ethics office, independent commission seat, and oversight role as a light. Lights that went dark since 20 January 2025 are shown dark with the date and the reported reason. This instrument is the one that explains why the other three keep rising.
+## The instruments
+
+1. **Frequency: the cadence.** The headline counts and the average interval. A seven-day strip beneath shows records added in each of the last seven days, labelled as additions to the record, kept visually separate from event dates.
+2. **Pervasiveness: the map of the government.** Every cabinet department, major agency and White House office as a tile on an org-chart layout, lit by count of root events. Family members and private associates are not on the government chart; they get a separate relationships view that shows which official or office each private actor is connected to. Each tile carries its count and its evidence-grade mix, so a tile lit by one official finding reads differently from a tile lit by five corroborated allegations. The denominator problem (big agencies get more coverage) is addressed by showing counts, never rates, and by publishing the search universe and the exclusion log.
+3. **Scale: financial stakes.** No grand total. Separate, non-overlapping rows, each with its own subtotal and entry count: documented private benefit received; public funds disbursed; contract or asset face value; estimated or potential exposure; entries with no defensible amount. Every figure keeps its basis. Overlap groups prevent a parent and its children from being summed twice. No comparison cards.
+4. **Corrosiveness: who's left to watch.** Every inspector general, ethics office, independent commission seat and oversight role as a light. Lights that went dark since 20 January 2025 are shown dark with the date and the reported reason. The instrument states what happened to oversight; it does not claim that oversight loss caused the other counts.
 
 The stream, filters, charts and detail drawer already built in app v1 remain as the archive beneath the instruments.
 
 ## Virality without gimmicks
 
-- **Receipts.** Every entry has a permanent URL and an auto-generated share card (date, one-line headline, outlet, the dollar figure if any, the ledger's name). The card is plain, typeset, and carries the source. It is the unit that travels.
-- **Daily page.** "/today" lists what was added in the last 24 hours. A daily card summarises it. This is what people share on a schedule.
-- **Open data.** The full dataset as JSON and CSV, with the rubric, the source tiers, and a changelog. A stable URL per version. Being the dataset others cite is the strongest distribution there is.
-- **Embeds.** The clock and any one instrument as an embeddable iframe for newsletters and sites.
-- **Corrections page.** Public, dated, every change to an entry after publication. Credibility is the product.
+- **Receipts.** Every record has a permanent URL and an auto-generated share card: date, one-line headline, evidence grade, outlet or document, the figure and its type if any, the record's name. Plain, typeset, sourced.
+- **Subscriptions.** Email and RSS/Atom feeds, filterable by agency, actor and category, plus a weekly digest of status changes and corrections. This is what brings readers back; share cards and downloads alone are destinations.
+- **Daily review, not daily publication.** `/recent` lists what was added or changed in the last 24 hours, with timestamps. Quiet days stay quiet.
+- **Open data.** Full dataset as JSON and CSV, versioned at a stable URL, with the rubric, the evidence grades, the counting rules, the search universe, the candidate-and-exclusion log, and a changelog.
+- **Embeds.** The headline and any one instrument as an embeddable iframe.
+- **Corrections page.** Public, dated, every post-publication change to a record.
 
-Explicitly out: games, outrage leaderboards, countdowns, AI-generated imagery, comparisons engineered for a punchline, anything that would make a hostile reader's first screenshot look like a meme rather than a record.
+Explicitly out: games, leaderboards, countdowns, AI-generated imagery, comparison cards, a grand dollar total, any phrasing that asserts a person committed a crime.
 
-## Credibility rules (already in docs/schema.md and docs/sources.md, restated as product rules)
+## Credibility rules (product-level; the schema carries the field definitions)
 
-Every entry cites a Tier-1 outlet or a primary document reported on by one. Summaries are attributive and neutral. Status reflects the latest known development, including "disputed" and "retracted". Every dollar figure carries its basis. Items that fail verification are dropped, not caveated. A fairness audit by outside counsel runs before every public release and asks one question: can a hostile, numerate reader find a false or unfair entry?
+- **Evidence grades, assigned per claim, replace outlet tiers.** 1 adjudicated or official finding; 2 primary records establishing the material facts; 3 document-based journalistic investigation; 4 independently corroborated allegation; 5 single-source allegation, kept as a lead and excluded from metrics. Outlet identity is recorded, never used as the gate.
+- **Three status fields, not one.** Evidentiary status (what the evidence establishes), procedural status (investigation, litigation, resolved), subject response (denied, no comment, admitted, retracted by outlet).
+- **Every record states the rubric prong it satisfies and the evidence for it.**
+- **A named human editor approves every record before publication.** Machines find leads, draft entries, and verify sources; Sam approves. Nothing reaches the public dataset without that approval.
+- **Counsel reviews the methodology, the unusually risky entries, and a sample of the rest.** Not every release.
+- **Language.** "Reported," "alleged," "found," and "documented" are used according to the evidence grade and never interchangeably. Public-official status does not cover family members and private entities, so entries about them are held to grade 3 or better.
 
 ## The living part
 
-A scheduled daily job (Sonnet 5.5 researchers, Opus 5.5 verifier) sweeps the last 48 hours of reporting, proposes entries against the rubric, verifies them, and opens a review. Nothing goes live without passing verification. The job also re-checks the status of entries marked under-investigation or in litigation once a week.
+A scheduled daily job (Sonnet 5.5 researchers, Opus 5.5 source verifier) sweeps the last 48 hours of reporting, proposes records against the rubric, verifies sources, and places them in a review queue. Sam approves, edits, or rejects from the queue; approved records publish with `first_published_at`. The job re-checks procedural status weekly for anything in investigation or litigation and logs every change. Every source URL is archived at verification time and stored beside the original.
 
 ## Waves
 
-1. Dataset, fact-checked, plus the daily ingest. (Running.)
-2. The ledger front page: the clock, the headline number, receipts, the daily page.
-3. The map, the odometer, the watchdog lights.
-4. Open data, embeds, corrections page, launch on a free host (no purchases).
+1. Dataset, source-verified, migrated to schema v2 (evidence grades, amount types, timestamps, status split), then the editor's first approval pass. (Research running; the public app shows only placeholder data until approval.)
+2. Front page: the headline counts, the cadence, receipts, `/recent`, subscriptions.
+3. The map, the relationships view, financial stakes, who's left to watch.
+4. Open data with the methodology pages, embeds, corrections page, the daily review queue, launch on a free host.
 
-Each wave: plan, counsel attacks the plan (fairness and concept), Opus 5.5 implementers build, Sonnet/Haiku 5.5 lenses review, counsel reviews the shipped result, principal verifies and ships a preview, Linear logged.
+Each wave: plan, counsel attacks the plan, Opus 5.5 implementers build, Sonnet and Haiku 5.5 lenses review, counsel reviews the result, principal verifies and ships a preview, Linear logged.
 
 ## Risks
 
-- **Accuracy and defamation.** Named people, Sam's name on it. Mitigation: the rubric, the verification gate, the corrections page, "reported by" framing throughout, no editorialising.
-- **Perceived partisanship.** Mitigation: the inclusion rubric is public and mechanical; the data is downloadable; the fairness audit is adversarial by design; the page never uses the word "corrupt" about a person, only "reported".
+- **Accuracy and defamation.** Named people, Sam's name on it, and "reported" is not a shield (Ray v. Citizen-News; Milkovich). Mitigation: evidence grades, the editor's approval gate, grade-matched language, the corrections page, grade 3 or better for private persons.
+- **Perceived partisanship.** Mitigation: the rubric is public and evidence-based rather than outlet-based; the data and the exclusion log are downloadable; no outlet is privileged by brand.
+- **The authored numerator.** Mitigation: root-event counting, published rules, child records excluded from the event count.
 - **Sam's employment exposure.** His decision; noted.
-- **Link rot.** Archive every source URL at the time of verification (Wayback) and store the archive link beside the original.
-- **Dataset drift.** Weekly status re-checks; version the dataset.
+- **Link rot.** Archive at verification.
+- **Editor bottleneck.** The approval gate is real work for Sam. Mitigation: batch the queue, rank by evidence grade, show the verifier's evidence inline so approval is a read, not a search.
 
-## Questions for outside counsel
+## What changed from v1 and why
 
-1. Does the headline number survive a hostile reading? What is the strongest attack on it?
-2. Which of the four instruments is weakest, and what replaces it?
-3. What is missing from the virality plan that is not a gimmick?
-4. What is the single biggest credibility hole in the rubric and the source tiers?
-5. Name: The Running Tab, The Ledger, Receipts, Public Record, or something better?
+Counsel's attack on the headline held: "one reported act of corruption every N hours" turned allegations into acts and let the editor's row-splitting set the rate. The headline is now two counts and an average with published rules. The odometer summed non-additive quantities and is replaced by non-overlapping financial-stakes rows with no total. Outlet tiers graded publishers instead of evidence and produced a partisan screenshot by construction; evidence grades replace them. Family members leave the government chart. The causal line about oversight is gone. Daily publication becomes daily review. The final gate is a named human, not a model. Subscriptions are added because nothing in v1 brought a reader back. The name changes because the alternatives were taken or implied proof. Counsel's suggestion to cut the running dataset was declined: the research continues, it simply publishes nothing until it passes migration and approval.
