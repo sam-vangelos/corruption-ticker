@@ -18,7 +18,8 @@ npm run dev        # http://localhost:5173
 ## Build and check
 
 ```sh
-npm run build      # tsc --noEmit, then vite build, then scripts/prerender.mjs
+SITE_URL=https://example.org npm run build   # tsc --noEmit, vite build, scripts/prerender.mjs
+ALLOW_PLACEHOLDER_SITE_URL=1 npm run build   # same, with the placeholder origin
 npm run smoke      # serves dist/ with `vite preview` and checks the pages and files below
 ```
 
@@ -54,9 +55,24 @@ corrections log.
   any correction notice and the summary. Slugs come from `src/feeds.ts`,
   which `/subscribe` also uses.
 
-Absolute URLs (canonical, `og:url`) use `SITE_URL`; no domain exists yet, so
-the default is the reserved `https://ethics-record.example`. Set it at build
-time: `SITE_URL=https://example.org npm run build`.
+Absolute URLs (canonical, `og:url`, feeds) use `SITE_URL`, which must be an
+`https://` origin: `SITE_URL=https://example.org npm run build`. Without it the
+build fails, unless `ALLOW_PLACEHOLDER_SITE_URL=1` asks for the reserved
+placeholder origin `https://ethics-record.example` (no domain exists yet; the
+smoke test sets it). A set but invalid `SITE_URL` always fails.
+
+The build also fails, printing every problem, when the raw dataset holds:
+
+- a record id that does not match `/^[a-z0-9][a-z0-9-]{2,120}$/` (ids become
+  URL segments and directories: no `..`, no spaces, no capitals), or a
+  duplicate id;
+- a source `url` or `archive_url` that is not an absolute `http(s)` URL;
+- a correction missing a required field, or whose `record_id` names no record
+  in the public dataset (the offending correction is printed).
+
+Drafts and rubric failures are not errors: they are left out of the public
+files and listed in the build log. `DATASET_DIR=<dir>` builds from another
+directory's `entries.json` and `corrections.json` (for testing fixtures).
 
 ## Data
 

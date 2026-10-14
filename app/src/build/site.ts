@@ -4,7 +4,8 @@
  * and labels, so a record page says exactly what the app's drawer says.
  */
 import type { Correction, Item } from '../types';
-import { interpret, interpretCorrections } from '../data/load';
+import { checkCorrections, interpret } from '../data/load';
+import type { SkipCode } from '../types';
 import { computeHeadline } from '../data/metrics';
 import { formatDate, parseDay } from '../data/dates';
 import { formatInt } from '../data/format';
@@ -151,14 +152,25 @@ const ROUTES: Array<{ path: string; title: string; description: string }> = [
   { path: 'subscribe', title: 'Subscribe', description: 'Atom feeds of The Ethics Record: every new record, or one office or category.' },
 ];
 
+/** Rejections that stop the build: they would break URLs or hosting, or hide a data error. */
+const FATAL: readonly SkipCode[] = ['id', 'duplicate', 'url'];
+
+/** Thrown when the data cannot be published as is; the message lists every problem. */
+export class BuildError extends Error {}
+
 export function buildSite(input: SiteInput): SiteOutput {
   const notes: string[] = [];
   const state = interpret(input.entries);
   if (state.kind !== 'ready') {
     throw new Error(`prerender: the dataset did not load (${state.kind}${'detail' in state ? `: ${state.detail}` : ''})`);
   }
+  const fatal: string[] = [];
   // The build log is private; the site never names a left-out record.
-  for (const s of state.skipped) notes.push(`left out of the public dataset: #${s.index}${s.id ? ` (${s.id})` : ''} [${s.code}] ${s.reason}`);
+  for (const s of state.skipped) {
+    const line = `#${s.index}${s.id ? ` (${s.id})` : ''} [${s.code}] ${s.reason}`;
+    if (FATAL.includes(s.code)) fatal.push(`record ${line}`);
+    else notes.push(`left out of the public dataset: ${line}`);
+  }
   const items = state.items;
   const rawById = new Map<string, unknown>();
   if (Array.isArray(input.entries)) {
@@ -169,16 +181,22 @@ export function buildSite(input: SiteInput): SiteOutput {
   }
   const byId = new Map(items.map((it) => [it.id, it]));
 
+  // Every correction must be well formed and name a record in the public
+  // dataset; anything else fails the build with the correction printed.
   let corrections: Correction[] = [];
   if (input.corrections !== null) {
-    const cs = interpretCorrections(input.corrections);
-    if (cs.kind === 'ready') {
+    const cs = checkCorrections(input.corrections);
+    if (!cs) {
+      fatal.push('corrections log: the file is not a JSON array');
+    } else {
+      for (const p of cs.problems) fatal.push(`correction #${p.index}: ${p.reason}: ${JSON.stringify(p.raw)}`);
+      for (const c of cs.corrections) {
+        if (!byId.has(c.record_id)) fatal.push(`correction for "${c.record_id}" names no record in the public dataset: ${JSON.stringify(c)}`);
+      }
       corrections = cs.corrections;
-      if (cs.skipped) notes.push(`skipped ${cs.skipped} malformed correction(s)`);
-    } else if (cs.kind === 'unavailable') {
-      notes.push(`corrections log unreadable: ${cs.detail}`);
     }
   }
+  if (fatal.length) throw new BuildError(`the dataset cannot be published:\n  ${fatal.join('\n  ')}`);
 
   const site = input.siteUrl.replace(/\/+$/, '');
   const files: SiteFile[] = [];

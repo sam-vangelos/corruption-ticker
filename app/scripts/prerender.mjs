@@ -11,7 +11,8 @@
 //    shells, 404.html, and the Atom feeds.
 //
 // SITE_URL sets the absolute origin used in og:url, canonical links and
-// feeds. No domain exists yet, so the default is a reserved .example origin.
+// feeds; it is required (see siteOrigin below). Any rejected or duplicate id,
+// non-http(s) source URL, or malformed or unmatched correction fails the build.
 import { build } from 'vite';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
@@ -22,7 +23,31 @@ const appDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dist = path.join(appDir, 'dist');
 const cacheDir = path.join(appDir, 'node_modules', '.cache', 'ethics-record-prerender');
 const DEFAULT_SITE_URL = 'https://ethics-record.example';
-const siteUrl = (process.env.SITE_URL || DEFAULT_SITE_URL).replace(/\/+$/, '');
+
+const fail = (msg) => {
+  console.error(`prerender: ${msg}`);
+  process.exit(1);
+};
+
+/**
+ * SITE_URL must be an https:// origin (no path, query or fragment). Without it
+ * the build fails, unless ALLOW_PLACEHOLDER_SITE_URL=1 asks for the reserved
+ * placeholder origin (the smoke test does). A set but invalid SITE_URL always
+ * fails, so a typo is never masked.
+ */
+function siteOrigin() {
+  const raw = process.env.SITE_URL;
+  if (raw) {
+    let u;
+    try { u = new URL(raw); } catch { fail(`SITE_URL "${raw}" is not a URL.`); }
+    const bare = u.pathname === '/' && !u.search && !u.hash && !u.username && !u.password;
+    if (u.protocol !== 'https:' || !bare) fail(`SITE_URL "${raw}" must be an https:// origin, e.g. https://example.org`);
+    return u.origin;
+  }
+  if (process.env.ALLOW_PLACEHOLDER_SITE_URL === '1') return DEFAULT_SITE_URL;
+  fail('SITE_URL is not set. Set it to the https:// origin the site will live at, or set ALLOW_PLACEHOLDER_SITE_URL=1 to build with the placeholder origin.');
+}
+const siteUrl = siteOrigin();
 
 if (!existsSync(path.join(dist, 'index.html'))) {
   console.error('prerender: dist/index.html is missing; run `vite build` first.');
@@ -64,19 +89,25 @@ if (!builtIndex.includes('property="og:title"')) {
 
 // The raw dataset lives outside public/, so Vite never copies it into dist/.
 // buildSite writes the filtered public files to dist/data/.
-const datasetDir = path.join(appDir, 'dataset');
-const out = buildSite({
-  indexHtml: await readFile(shellCopy, 'utf8'),
-  entries: await readJson(path.join(datasetDir, 'entries.json')),
-  corrections: await readJson(path.join(datasetDir, 'corrections.json'), true),
-  siteUrl,
-});
+// DATASET_DIR overrides the source directory (for tests against other fixtures).
+const datasetDir = process.env.DATASET_DIR ? path.resolve(process.env.DATASET_DIR) : path.join(appDir, 'dataset');
+let out;
+try {
+  out = buildSite({
+    indexHtml: await readFile(shellCopy, 'utf8'),
+    entries: await readJson(path.join(datasetDir, 'entries.json')),
+    corrections: await readJson(path.join(datasetDir, 'corrections.json'), true),
+    siteUrl,
+  });
+} catch (err) {
+  fail(err instanceof Error ? err.message : String(err));
+}
 
 for (const f of out.files) {
   const target = path.join(dist, ...f.path.split('/'));
   await mkdir(path.dirname(target), { recursive: true });
   await writeFile(target, f.content);
 }
-if (siteUrl === DEFAULT_SITE_URL) console.log(`prerender: SITE_URL not set; absolute links use ${DEFAULT_SITE_URL}`);
+if (siteUrl === DEFAULT_SITE_URL) console.log(`prerender: ALLOW_PLACEHOLDER_SITE_URL=1; absolute links use ${DEFAULT_SITE_URL}`);
 for (const n of out.notes) console.log(`prerender: ${n}`);
 console.log(`prerender: wrote ${out.files.length} files under dist/`);

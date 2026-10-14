@@ -18,6 +18,24 @@ const strList = (v: unknown): string[] => (Array.isArray(v) ? v.filter(isStr) : 
 const oneOf = <T extends string | number>(list: readonly T[], v: unknown): v is T => (list as readonly unknown[]).includes(v);
 
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Record ids become URL path segments (/r/<id>/) and directory names in
+ * dist/, so they are restricted: lowercase letters, digits and hyphens,
+ * starting with a letter or digit, 3 to 121 characters. No "..", no spaces,
+ * no case collisions.
+ */
+export const ID_RE = /^[a-z0-9][a-z0-9-]{2,120}$/;
+
+/** Source and archive links must be absolute http(s) URLs. */
+export function isHttpUrl(v: string): boolean {
+  try {
+    const u = new URL(v);
+    return (u.protocol === 'http:' || u.protocol === 'https:') && u.hostname !== '';
+  } catch {
+    return false;
+  }
+}
 const TS_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})$/;
 
 /** ms since epoch for a strict ISO 8601 timestamp with a zone, or null. */
@@ -35,12 +53,14 @@ function looksLikeV1(o: Record<string, unknown>): boolean {
 export const V1_REASON =
   'schema v1 record (it has "status" or "dollar_amount_usd" and no "evidence_grade"); migrate it to schema v2 per docs/schema.md';
 
-function toSource(v: unknown, i: number): Source | string {
+function toSource(v: unknown, i: number): Source | Rejection | string {
   if (!v || typeof v !== 'object') return `source ${i + 1} is not an object`;
   const o = v as Record<string, unknown>;
   if (!nonEmpty(o.outlet)) return `source ${i + 1} has no outlet`;
   if (!nonEmpty(o.url)) return `source ${i + 1} has no url`;
+  if (!isHttpUrl(o.url)) return { code: 'url', reason: `source ${i + 1} url "${o.url}" is not an http(s) URL` };
   if (!nonEmpty(o.archive_url)) return `source ${i + 1} has no archive_url (required for publication)`;
+  if (!isHttpUrl(o.archive_url)) return { code: 'url', reason: `source ${i + 1} archive_url "${o.archive_url}" is not an http(s) URL` };
   if (!oneOf(SOURCE_KINDS, o.kind)) return `source ${i + 1} has unknown kind "${String(o.kind)}"`;
   if (o.date !== undefined && o.date !== '' && !(isStr(o.date) && DAY_RE.test(o.date) && parseDay(o.date) !== null)) {
     return `source ${i + 1} has unparseable date "${String(o.date)}"`;
@@ -88,6 +108,7 @@ export function toItem(raw: unknown): Item | Rejection {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return bad('not an object');
   const o = raw as Record<string, unknown>;
   if (!nonEmpty(o.id)) return bad('missing id');
+  if (!ID_RE.test(o.id)) return { code: 'id', reason: `id "${o.id}" must match ${String(ID_RE)} (lowercase letters, digits, hyphens)` };
   if (looksLikeV1(o)) return { code: 'v1', reason: V1_REASON };
   if (!nonEmpty(o.approved_by)) return { code: 'unapproved', reason: 'approved_by is null, so the record is not in the public dataset' };
   const res = validate(o, o.id);
@@ -150,7 +171,7 @@ function validate(o: Record<string, unknown>, id: string): Item | Rejection | st
   const sources: Source[] = [];
   for (const [i, s] of o.sources.entries()) {
     const res = toSource(s, i);
-    if (typeof res === 'string') return res;
+    if (typeof res === 'string' || 'code' in res) return res;
     sources.push(res);
   }
 
@@ -294,34 +315,56 @@ export async function loadEntries(url = DATA_URL): Promise<LoadState> {
 
 const isJson = (v: unknown): v is JsonValue => v === null || ['string', 'number', 'boolean', 'object'].includes(typeof v);
 
-/** Validate the corrections log: an array of {date, record_id, field, old_value, new_value, reason}. */
-export function interpretCorrections(body: unknown): CorrectionsState {
-  if (!Array.isArray(body)) return { kind: 'unavailable', detail: 'The corrections file is not an array.' };
+export interface CorrectionProblem {
+  index: number;
+  reason: string;
+  raw: unknown;
+}
+
+/**
+ * Validate the corrections log: an array of {date, record_id, field,
+ * old_value, new_value, reason}. Returns the good entries (newest first) and
+ * every malformed one with the reason. The build fails on any problem; the app
+ * shows only the good entries.
+ */
+export function checkCorrections(body: unknown): { corrections: Correction[]; problems: CorrectionProblem[] } | null {
+  if (!Array.isArray(body)) return null;
   const corrections: Correction[] = [];
-  let skipped = 0;
-  for (const raw of body) {
-    const o = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : null;
-    if (
-      !o || !isStr(o.date) || !DAY_RE.test(o.date) || parseDay(o.date) === null
-      || !nonEmpty(o.record_id) || !nonEmpty(o.field) || !nonEmpty(o.reason)
-      || !('old_value' in o) || !('new_value' in o) || !isJson(o.old_value) || !isJson(o.new_value)
-    ) {
-      skipped += 1;
-      continue;
+  const problems: CorrectionProblem[] = [];
+  body.forEach((raw, index) => {
+    const o = raw && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, unknown>) : null;
+    const reason = !o ? 'not an object'
+      : !isStr(o.date) || !DAY_RE.test(o.date) || parseDay(o.date) === null ? 'date is not YYYY-MM-DD'
+      : !nonEmpty(o.record_id) ? 'missing record_id'
+      : !nonEmpty(o.field) ? 'missing field'
+      : !nonEmpty(o.reason) ? 'missing reason'
+      : !('old_value' in o) || !isJson(o.old_value) ? 'missing old_value'
+      : !('new_value' in o) || !isJson(o.new_value) ? 'missing new_value'
+      : null;
+    if (reason || !o) {
+      problems.push({ index, reason: reason ?? 'not an object', raw });
+      return;
     }
     corrections.push({
-      date: o.date,
-      record_id: o.record_id,
-      field: o.field,
-      old_value: o.old_value,
-      new_value: o.new_value,
-      reason: o.reason,
+      date: o.date as string,
+      record_id: o.record_id as string,
+      field: o.field as string,
+      old_value: o.old_value as JsonValue,
+      new_value: o.new_value as JsonValue,
+      reason: o.reason as string,
       placeholder: o.placeholder === true ? true : undefined,
     });
-  }
+  });
   // Newest first; stable by record id then field.
   corrections.sort((a, b) => b.date.localeCompare(a.date) || a.record_id.localeCompare(b.record_id) || a.field.localeCompare(b.field));
-  return { kind: 'ready', corrections, skipped };
+  return { corrections, problems };
+}
+
+/** The app's view of the corrections log. */
+export function interpretCorrections(body: unknown): CorrectionsState {
+  const res = checkCorrections(body);
+  if (!res) return { kind: 'unavailable', detail: 'The corrections file is not an array.' };
+  return { kind: 'ready', corrections: res.corrections, skipped: res.problems.length };
 }
 
 export async function loadCorrections(url = CORRECTIONS_URL): Promise<CorrectionsState> {
