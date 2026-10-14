@@ -1,24 +1,21 @@
-import { useId, useState } from 'react';
-import type { Stats } from '../data/derive';
+import type { Stats } from '../data/metrics';
 import { formatDate } from '../data/dates';
-import { formatInt, formatRate, formatUsd, formatUsdCompact } from '../data/format';
+import { formatInt } from '../data/format';
 
 interface CountersProps {
   stats: Stats;
-  /** Size of the unfiltered dataset, for the "of N" context. */
-  overall: number;
-  filtered: boolean;
 }
 
-/** Five stat tiles. Values follow the active filters (days-since excepted). */
-export function Counters({ stats, overall, filtered }: CountersProps) {
-  const tipId = useId();
-  const [tipOpen, setTipOpen] = useState(false);
-  const windowWeeks = (stats.windowTo - stats.windowFrom + 1) / 7;
-
+/**
+ * Four counters beside the headline. Like the headline they describe the
+ * whole record (filters never change them) and count qualifying records only:
+ * grade 1 to 4, not retracted. There is no dollar total: figures of different
+ * kinds do not add up to one number.
+ */
+export function Counters({ stats }: CountersProps) {
   return (
     <section className="counters" aria-labelledby="counters-h">
-      <h2 id="counters-h" className="visually-hidden">{filtered ? 'Counts for the filtered items' : 'Counts for all items'}</h2>
+      <h2 id="counters-h" className="visually-hidden">Counts for the whole record</h2>
       <div className="tile">
         <p className="tile__label">Days since 20 January 2025</p>
         <p className="tile__value">{formatInt(stats.daysSince)}</p>
@@ -26,47 +23,21 @@ export function Counters({ stats, overall, filtered }: CountersProps) {
       </div>
 
       <div className="tile">
-        <p className="tile__label">Items</p>
-        <p className="tile__value">{formatInt(stats.total)}</p>
-        <p className="tile__note">{filtered ? `Of ${formatInt(overall)} in the dataset` : 'In the dataset'}</p>
+        <p className="tile__label">Records with a stated amount</p>
+        <p className="tile__value">{formatInt(stats.withAmount)}</p>
+        <p className="tile__note">Of {formatInt(stats.total)} qualifying records; amounts are not summed</p>
       </div>
 
       <div className="tile">
-        <p className="tile__label">Items per week</p>
-        <p className="tile__value">{formatRate(stats.perWeek)}</p>
-        <p className="tile__note">
-          Over {formatRate(windowWeeks)} weeks from {formatDate(stats.windowFrom)}
-        </p>
-      </div>
-
-      <div
-        className="tile tile--tip"
-        tabIndex={0}
-        aria-describedby={tipId}
-        onMouseEnter={() => setTipOpen(true)}
-        onMouseLeave={() => setTipOpen(false)}
-        onFocus={() => setTipOpen(true)}
-        onBlur={() => setTipOpen(false)}
-        onKeyDown={(e) => { if (e.key === 'Escape') setTipOpen(false); }}
-      >
-        <p className="tile__label">Reported dollars</p>
-        <p className="tile__value" title={formatUsd(stats.dollars)}>
-          {formatUsdCompact(stats.dollars)}
-        </p>
-        <p className="tile__note">
-          From {formatInt(stats.withDollar)} of {formatInt(stats.total)} items
-        </p>
-        <p id={tipId} role="tooltip" className="tooltip tile__tip" data-open={tipOpen || undefined}>
-          {formatInt(stats.withDollar)} of {formatInt(stats.total)} {stats.total === 1 ? 'item carries' : 'items carry'} a
-          dollar figure, totalling {formatUsd(stats.dollars)}. Figures are summed as reported by the
-          sources, not adjudicated, and separate items may describe overlapping money.
-        </p>
+        <p className="tile__label">Records added in the last 30 days</p>
+        <p className="tile__value">{formatInt(stats.added30)}</p>
+        <p className="tile__note">By the date each was added to the record</p>
       </div>
 
       <div className="tile">
-        <p className="tile__label">Items in the last 30 days</p>
-        <p className="tile__value">{formatInt(stats.last30)}</p>
-        <p className="tile__note">Dated after {formatDate(stats.now - 30)}</p>
+        <p className="tile__label">Records in investigation or litigation</p>
+        <p className="tile__value">{formatInt(stats.inProcess)}</p>
+        <p className="tile__note">By current procedural status</p>
       </div>
     </section>
   );

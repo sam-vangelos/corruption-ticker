@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Corruption Ticker: tokens and base
+   The Ethics Record: tokens and base
    Color carries exactly two meanings in this app: category identity and
    status. Everything else (chrome, text, aggregate chart marks) is neutral ink.
    Dark is the default theme. Text tokens are measured for WCAG AA or better.
@@ -33,12 +33,11 @@
   --cat-5: #d55181;  --cat-6: #ad6c24;  --cat-7: #0e9cb0;  --cat-8: #d95926;
   --cat-9: #199e70;  --cat-10: #b46ac2; --cat-11: #e66767;
 
-  /* Status palette: reserved, never themed, always icon + label. */
-  --status-reported: #9e9c95;
+  /* Status palette: reserved, never themed, always inside an icon beside a
+     field name and a text label. Wave 2 keeps three of v1's six hues, for the
+     states a reader most needs to spot; every other status icon is ink. */
   --status-investigation: #fab219;
   --status-litigation: #ec835a;
-  --status-confirmed: #d03b3b;
-  --status-disputed: #8a93a6;
   --status-retracted: #6b6a65;
 
   --sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -151,7 +150,9 @@ button, input, select { font: inherit; color: inherit; }
   padding-bottom: var(--space-4);
 }
 
-.masthead h1 { font-size: 1.75rem; letter-spacing: -0.01em; }
+.brand { font-size: 1.75rem; font-weight: 650; line-height: 1.2; letter-spacing: -0.01em; }
+.brand__link { color: var(--text); text-decoration: none; }
+.brand__link:hover { text-decoration: underline; text-decoration-thickness: 2px; }
 .masthead__sub { color: var(--text-2); margin-top: var(--space-1); max-width: var(--measure); }
 
 .placeholder-notice {
@@ -309,7 +310,6 @@ button, input, select { font: inherit; color: inherit; }
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(11rem, calc(50% - var(--space-3))), 1fr));
   gap: var(--space-3);
-  margin-block: var(--space-5);
 }
 
 .tile {
@@ -324,7 +324,8 @@ button, input, select { font: inherit; color: inherit; }
 }
 .tile__label { font-size: 0.875rem; font-weight: 500; color: var(--text-2); }
 .tile__value {
-  font-size: 2.25rem;
+  /* Deliberately below display size: the headline is the only display type. */
+  font-size: 1.625rem;
   font-weight: 620;
   line-height: 1.1;
   letter-spacing: -0.01em;
@@ -554,12 +555,6 @@ button, input, select { font: inherit; color: inherit; }
 .chip--removable { color: var(--text); background: var(--surface); }
 .chip--removable svg { color: var(--text-2); }
 
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  color: var(--text-2);
-}
 .status-icon { flex: none; width: 0.875rem; height: 0.875rem; color: var(--text); }
 
 /* ---------- stream ---------- */
@@ -820,8 +815,6 @@ button, input, select { font: inherit; color: inherit; }
 .drawer__title:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }
 
 .drawer__status { display: grid; gap: var(--space-1); }
-.drawer__status-line { display: inline-flex; align-items: center; gap: var(--space-2); }
-.drawer__status-line .status-icon { width: 1rem; height: 1rem; }
 .drawer__note { color: var(--text-2); }
 
 .drawer__summary {
@@ -924,3 +917,287 @@ button, input, select { font: inherit; color: inherit; }
   .glyph, .status-icon { forced-color-adjust: none; }
   .pref[aria-pressed='true'], .ms__count { forced-color-adjust: none; outline: 2px solid CanvasText; }
 }
+
+/* ---------- wave 2: amounts ---------- */
+
+.card__amounts { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.125rem; justify-items: end; }
+.amounts { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
+
+/* ---------- wave 2: headline block ---------- */
+
+.front {
+  display: grid;
+  gap: var(--space-5);
+  margin-block: var(--space-4) var(--space-6);
+  padding-bottom: var(--space-6);
+  border-bottom: 1px solid var(--rule);
+}
+
+.headline { display: grid; gap: var(--space-3); }
+.headline__tag {
+  justify-self: start;
+  padding: 0.125rem var(--space-3);
+  border: 1px dashed var(--text-2);
+  border-radius: 999px;
+  color: var(--text-2);
+  font-size: 0.8125rem;
+}
+/* The one element allowed display type. */
+.headline__text {
+  max-width: 34ch;
+  font-family: var(--serif);
+  font-size: clamp(1.875rem, 1.1rem + 2.6vw, 3.25rem);
+  font-weight: 450;
+  line-height: 1.12;
+  letter-spacing: -0.012em;
+  text-wrap: balance;
+}
+.headline__num { font-weight: 700; font-variant-numeric: lining-nums tabular-nums; }
+.headline__interval { max-width: var(--measure); font-size: 1.125rem; color: var(--text-2); }
+.headline__how { color: var(--text); white-space: nowrap; }
+
+/* ---------- wave 2: cadence strip ---------- */
+
+.cadence {
+  margin: 0;
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-m);
+}
+.cadence__head { display: grid; gap: var(--space-1); margin-bottom: var(--space-4); }
+.cadence__title { font-size: 1rem; font-weight: 620; }
+.cadence__note { max-width: var(--measure); font-size: 0.8125rem; color: var(--text-3); }
+.cadence__days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.cadence__day { display: grid; grid-template-rows: auto 1fr auto; gap: var(--space-1); justify-items: center; min-width: 0; }
+.cadence__count { font-size: 0.8125rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+/* Marks stack from the baseline up, so a busy day reads as a taller column. */
+.cadence__marks {
+  display: flex;
+  flex-wrap: wrap-reverse;
+  align-content: flex-start;
+  justify-content: center;
+  gap: 0.375rem;
+  width: 100%;
+  min-height: 4.5rem;
+  margin: 0;
+  padding: 0 0 0.375rem;
+  list-style: none;
+  border-bottom: 1px solid var(--rule);
+}
+/* 18px marks on 24px centres: meets the WCAG 2.2 target-size spacing exception. */
+.cadence__mark {
+  display: block;
+  width: 1.125rem;
+  height: 1.125rem;
+  border-radius: 3px;
+  background: var(--ink-data);
+}
+.cadence__mark:hover { background: var(--text); }
+.cadence__mark:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.cadence__label { font-size: 0.75rem; color: var(--text-3); line-height: 1.25; text-align: center; }
+.cadence__label time { display: grid; justify-items: center; }
+.cadence__date { font-variant-numeric: tabular-nums; }
+.cadence__day[data-today] .cadence__label { color: var(--text); font-weight: 600; }
+
+@media (forced-colors: active) {
+  .cadence__mark { forced-color-adjust: none; background: CanvasText; }
+}
+
+/* ---------- wave 2: site navigation ---------- */
+
+.site-nav { padding-bottom: var(--space-3); }
+.site-nav ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-5);
+  margin: 0;
+  padding: 0 0 var(--space-2);
+  list-style: none;
+  border-bottom: 1px solid var(--rule);
+}
+.site-nav a {
+  display: inline-block;
+  padding-block: var(--space-2);
+  color: var(--text-2);
+  text-decoration: none;
+  font-size: 0.9375rem;
+}
+.site-nav a:hover { color: var(--text); text-decoration: underline; }
+/* Current page: ink, weight and an underline bar; never color alone. */
+.site-nav a[aria-current='page'] {
+  color: var(--text);
+  font-weight: 650;
+  box-shadow: inset 0 -2px 0 var(--text);
+}
+
+/* ---------- wave 2: standalone pages ---------- */
+
+.main--page { padding-top: var(--space-4); }
+.page { max-width: var(--measure); display: grid; gap: var(--space-5); }
+.page__title { font-size: 1.75rem; }
+.page__title:focus { outline: none; }
+.page__title:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }
+.page__lead { font-size: 1.125rem; color: var(--text-2); }
+.page__section { display: grid; gap: var(--space-3); scroll-margin-top: var(--space-5); }
+.page__section h2 { font-size: 1.25rem; padding-top: var(--space-4); border-top: 1px solid var(--hairline); }
+.page__section h2:focus { outline: none; }
+.page__section h2:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }
+.page__section p { max-width: var(--measure); }
+
+.table-wrap--page { max-height: none; }
+.method-grades td, .method-grades th { vertical-align: top; }
+.method-grades tbody th { font-weight: 650; white-space: nowrap; }
+.grade-cell { display: inline-flex; align-items: center; gap: var(--space-2); }
+
+.rules { margin: 0; display: grid; gap: var(--space-4); }
+.rules > div { display: grid; gap: var(--space-1); scroll-margin-top: var(--space-5); }
+.rules dt { font-weight: 650; }
+.rules dd { margin: 0; color: var(--text-2); }
+.rules__list { margin: var(--space-2) 0 0; padding-left: 1.25rem; display: grid; gap: var(--space-1); }
+
+.version { padding: 0.0625rem 0.375rem; border: 1px solid var(--rule); border-radius: var(--radius-s); }
+.citation {
+  margin: 0;
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-left: 3px solid var(--text-2);
+  border-radius: var(--radius-s);
+  font-family: var(--serif);
+  font-size: 1.0625rem;
+  line-height: 1.55;
+  user-select: all;
+}
+.citation__actions { display: flex; align-items: center; gap: var(--space-3); }
+.citation__status { color: var(--text-2); font-size: 0.875rem; }
+
+.corrections { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-4); }
+.correction {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-m);
+}
+.correction__meta { color: var(--text-2); font-size: 0.875rem; font-variant-numeric: tabular-nums; }
+.correction__title { font-family: var(--serif); font-size: 1.1875rem; font-weight: 600; line-height: 1.3; }
+.correction__facts { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: var(--space-1) var(--space-4); }
+.correction__facts > div { display: contents; }
+.correction__facts dt { color: var(--text-3); font-size: 0.875rem; }
+.correction__facts dd { margin: 0; overflow-wrap: anywhere; }
+
+/* ---------- wave 2: record pages and corrections notices ---------- */
+
+.record-correction {
+  padding: var(--space-2) var(--space-3);
+  border-left: 3px solid var(--text);
+  background: var(--raised);
+  font-size: 0.9375rem;
+}
+.drawer__permalink { font-size: 0.875rem; overflow-wrap: anywhere; }
+
+/* The prerendered record body, shown before (or without) JavaScript. */
+.static-record {
+  max-width: var(--measure);
+  margin-inline: auto;
+  padding: var(--space-5);
+  display: grid;
+  gap: var(--space-4);
+}
+.static-record article { display: grid; gap: var(--space-4); }
+.static-record h2 { font-size: 1.125rem; padding-top: var(--space-3); border-top: 1px solid var(--hairline); }
+.static-record ol, .static-record ul { display: grid; gap: var(--space-2); padding-left: 1.25rem; margin: 0; }
+.static-record__site { font-weight: 650; font-size: 1.25rem; }
+
+/* ---------- wave 2: recent changes and feeds ---------- */
+
+.recent { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
+.recent__row {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-m);
+}
+.recent__meta { font-size: 0.875rem; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.recent__what { font-weight: 650; color: var(--text); }
+.recent__title { font-family: var(--serif); font-size: 1.125rem; }
+.recent__grade { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); font-size: 0.875rem; color: var(--text-2); }
+.lead-tag {
+  padding: 0 var(--space-2);
+  border: 1px dashed var(--text-2);
+  border-radius: 999px;
+  color: var(--text);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.feeds { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
+.feeds li { display: grid; gap: 0.125rem; }
+.feeds__cat { display: inline-flex; align-items: center; gap: var(--space-2); }
+.feed-url { display: block; color: var(--text-3); font-size: 0.8125rem; }
+
+/* ---------- wave 2: evidence grades and status chips ---------- */
+
+/* Grade marks are ink, never hue: shape (filled bars) carries the grade. */
+.grade-mark { flex: none; width: 1.125rem; height: 0.875rem; color: var(--text); overflow: visible; }
+.grade-mark--l { width: 1.5rem; height: 1.1667rem; }
+.grade-badge { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.375rem; color: var(--text); }
+.grade-badge__verb { font-weight: 600; }
+.grade-badge__n { color: var(--text-3); }
+
+.status-chips { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 1.75rem;
+  padding: 0 var(--space-3) 0 var(--space-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-s);
+  font-size: 0.875rem;
+}
+.status-chips--s .status-chip { min-height: 1.5rem; font-size: 0.8125rem; }
+.status-chip__k { color: var(--text-3); }
+.status-chip__v { color: var(--text); }
+/* Retracted reads at a glance without color: a struck-through value. */
+.status-chip[data-value='retracted'] .status-chip__v,
+.status-chip[data-value='retracted-by-outlet'] .status-chip__v { text-decoration: line-through; text-decoration-thickness: 1px; }
+
+.drawer__grade { display: grid; gap: var(--space-2); }
+.drawer__grade-line { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); font-size: 1.0625rem; }
+.drawer__status { display: grid; gap: var(--space-2); }
+
+.chip__role { margin-left: 0.375rem; color: var(--text-3); font-size: 0.75rem; }
+.source__kind { margin-left: 0.25rem; color: var(--text-3); font-weight: 400; font-size: 0.8125rem; }
+.source__archive { font-size: 0.8125rem; color: var(--text-2); justify-self: start; }
+
+.ticker__tag {
+  padding: 0 var(--space-2);
+  border: 1px dashed var(--text-2);
+  border-radius: 999px;
+  color: var(--text-2);
+  font-size: 0.75rem;
+}
+
+/* A lead or retracted card keeps full contrast (it must stay readable) but
+   gets a dashed border, so "not counted" also shows in the card's outline. */
+.card:not([data-counted]) { border-style: dashed; border-color: var(--rule); }
+
+@media (forced-colors: active) {
+  .grade-mark { forced-color-adjust: auto; }
+}
+
+.rules--plain { list-style: disc; padding-left: 1.25rem; gap: var(--space-3); color: var(--text-2); }
+.rules--plain li { scroll-margin-top: var(--space-5); }
+.rules--plain code { color: var(--text); }

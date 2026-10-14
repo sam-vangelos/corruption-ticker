@@ -1,31 +1,56 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { Category, LoadState, Status } from './types';
-import { loadEntries } from './data/load';
-import { buildIndexes, computeStats, optionsFrom } from './data/derive';
+import type { Category, CorrectionsState, EvidenceGrade, EvidentiaryStatus, LoadState, ProceduralStatus } from './types';
+import { loadCorrections, loadEntries } from './data/load';
+import { buildIndexes, optionsFrom } from './data/derive';
+import { cadence, computeHeadline, computeStats } from './data/metrics';
 import { inaugurationDay, parseDay, today } from './data/dates';
 import { plural } from './data/format';
 import { applyFilters, EMPTY_FILTERS, isFiltering, useUrlFilters } from './state/filters';
+import { followLink, navigate, recordPath, useRoute, type Route } from './router';
+import { SITE_DECK, SITE_NAME } from './method';
+import { correctionsFor } from './corrections';
 import { StatePanel } from './components/StatePanel';
 import { Ticker } from './components/Ticker';
 import { Counters } from './components/Counters';
-import { FilterBar } from './components/FilterBar';
+import { Headline } from './components/Headline';
+import { Cadence } from './components/Cadence';
+import { FilterBar, type FacetCounts } from './components/FilterBar';
 import { Stream } from './components/Stream';
 import { ChartsPanel } from './components/charts/ChartsPanel';
 import { Drawer } from './components/Drawer';
+import { MethodPage } from './components/pages/MethodPage';
+import { CorrectionsPage } from './components/pages/CorrectionsPage';
+import { NotFound } from './components/pages/NotFound';
+import { RecentPage } from './components/pages/RecentPage';
+import { SubscribePage } from './components/pages/SubscribePage';
 import { useShortcuts } from './hooks/useShortcuts';
 import { usePrefs } from './hooks/usePrefs';
 
+/** Site navigation, in reading order. */
+const NAV: Array<{ href: string; label: string; kinds: Route['kind'][] }> = [
+  { href: '/', label: 'The record', kinds: ['home', 'record'] },
+  { href: '/recent', label: 'Recent changes', kinds: ['recent'] },
+  { href: '/method', label: 'How we count', kinds: ['method'] },
+  { href: '/corrections', label: 'Corrections', kinds: ['corrections'] },
+  { href: '/subscribe', label: 'Subscribe', kinds: ['subscribe'] },
+];
+
 export function App() {
   const [state, setState] = useState<LoadState>({ kind: 'loading' });
+  const [corrections, setCorrections] = useState<CorrectionsState>({ kind: 'loading' });
   const [filters, setFilters] = useUrlFilters();
+  const { route } = useRoute();
+  const isHome = route.kind === 'home' || route.kind === 'record';
   const prefs = usePrefs();
   const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let live = true;
     loadEntries().then((s) => { if (live) setState(s); });
+    loadCorrections().then((c) => { if (live) setCorrections(c); });
     return () => { live = false; };
   }, []);
+
 
   const items = state.kind === 'ready' ? state.items : null;
   const now = useMemo(() => today(), []);
@@ -39,26 +64,32 @@ export function App() {
     indexes?.byCategory.forEach((list, k) => m.set(k, list.length));
     return m;
   }, [indexes]);
-  const statusCounts = useMemo(() => {
-    const m = new Map<Status, number>();
-    items?.forEach((it) => m.set(it.status, (m.get(it.status) ?? 0) + 1));
-    return m;
+  const facetCounts = useMemo<FacetCounts>(() => {
+    const grades = new Map<EvidenceGrade, number>();
+    const evidence = new Map<EvidentiaryStatus, number>();
+    const procedural = new Map<ProceduralStatus, number>();
+    items?.forEach((it) => {
+      grades.set(it.evidence_grade, (grades.get(it.evidence_grade) ?? 0) + 1);
+      evidence.set(it.evidentiary_status, (evidence.get(it.evidentiary_status) ?? 0) + 1);
+      procedural.set(it.procedural_status, (procedural.get(it.procedural_status) ?? 0) + 1);
+    });
+    return { grades, evidence, procedural };
   }, [items]);
 
   // The active slice: counters, charts and the stream follow it; the ticker does not.
   const filtering = isFiltering(filters);
   const filtered = useMemo(() => (items ? applyFilters(items, filters) : []), [items, filters]);
+  const nowMs = useMemo(() => Date.now(), []);
+  // The headline block (headline, counters, cadence strip) describes the whole
+  // record and never follows the filters; charts and the list do.
+  const headline = useMemo(() => (items ? computeHeadline(items, nowMs) : null), [items, nowMs]);
+  const cadenceDays = useMemo(() => (items ? cadence(items, nowMs) : []), [items, nowMs]);
   const stats = useMemo(
-    () => (items
-      ? computeStats(filtered, {
-          now,
-          inauguration: inaugurationDay(),
-          from: filters.from ? parseDay(filters.from) : null,
-          to: filters.to ? parseDay(filters.to) : null,
-        })
-      : null),
-    [items, filtered, filters.from, filters.to, now],
+    () => (items ? computeStats(items, { now, nowMs, inauguration: inaugurationDay() }) : null),
+    [items, now, nowMs],
   );
+  // Grade-5 leads and retracted records are listed but never charted.
+  const charted = useMemo(() => filtered.filter((it) => it.qualifying), [filtered]);
 
   const isPlaceholder = !!items && items.some((it) => it.placeholder);
 
@@ -72,33 +103,28 @@ export function App() {
     return { from, to: Math.max(from, to) };
   }, [items, filters.from, filters.to, now]);
 
-  // Drawer: which item is open, and where focus goes back to on close.
-  const [openId, setOpenId] = useState<string | null>(null);
+  // Drawer: the open record is the route. /r/<id>/ is the record's permanent
+  // page; opening a card swaps the URL to it (replace, as v1 did with ?item=),
+  // so the address bar always holds the shareable link.
+  const openId = route.kind === 'record' ? route.id : null;
   const openerRef = useRef<HTMLElement | null>(null);
-  const restoredItem = useRef(false);
+  const [missingId, setMissingId] = useState<string | null>(null);
 
-  const writeItemParam = (id: string | null) => {
-    const p = new URLSearchParams(window.location.search);
-    if (id) p.set('item', id); else p.delete('item');
-    const qs = p.toString();
-    window.history.replaceState(window.history.state, '', `${window.location.pathname}${qs ? `?${qs}` : ''}${window.location.hash}`);
-  };
+  /** The current filters' query string, carried across record URLs. */
+  const search = () => window.location.search;
 
   const openItem = useCallback((id: string, opener: HTMLElement) => {
     openerRef.current = opener;
-    setOpenId(id);
-    writeItemParam(id);
+    navigate(`${recordPath(id)}${search()}`, { replace: true });
   }, []);
 
   const navigateItem = useCallback((id: string) => {
-    setOpenId(id);
-    writeItemParam(id);
+    navigate(`${recordPath(id)}${search()}`, { replace: true });
   }, []);
 
   const closeItem = useCallback(() => {
     const closingId = openId;
-    setOpenId(null);
-    writeItemParam(null);
+    navigate(`/${search()}`, { replace: true });
     // Return focus to the opener; if it is gone, to that item's card; else to the list.
     requestAnimationFrame(() => {
       const opener = openerRef.current;
@@ -108,20 +134,29 @@ export function App() {
     });
   }, [openId]);
 
-  // Deep link: ?item=<id> opens that item once the data is ready.
+  // v1 deep links (?item=<id>) move to the record's permanent URL.
   useEffect(() => {
-    if (!indexes || restoredItem.current) return;
-    restoredItem.current = true;
-    const id = new URLSearchParams(window.location.search).get('item');
-    if (id && indexes.byId.has(id)) {
-      openerRef.current = null;
-      setOpenId(id);
-    } else if (id) {
-      writeItemParam(null);
-    }
-  }, [indexes]);
+    const p = new URLSearchParams(window.location.search);
+    const id = p.get('item');
+    if (!id) return;
+    p.delete('item');
+    const qs = p.toString();
+    navigate(`${recordPath(id)}${qs ? `?${qs}` : ''}`, { replace: true });
+  }, []);
+
+  // A record URL for an id the dataset does not hold: say so and show the front page.
+  useEffect(() => {
+    if (!indexes || !openId || indexes.byId.has(openId)) return;
+    setMissingId(openId);
+    navigate(`/${search()}`, { replace: true });
+  }, [indexes, openId]);
 
   const openEntry = openId && indexes ? indexes.byId.get(openId) ?? null : null;
+
+  useEffect(() => {
+    if (openEntry) document.title = `${openEntry.title} | ${SITE_NAME}`;
+    else if (isHome) document.title = SITE_NAME;
+  }, [openEntry, isHome]);
 
   useShortcuts({
     focusSearch: () => { searchRef.current?.focus(); searchRef.current?.select(); },
@@ -134,16 +169,81 @@ export function App() {
   }, [setFilters]);
   const clearFilters = useCallback(() => setFilters(EMPTY_FILTERS), [setFilters]);
 
+  // Development only. The public dataset is filtered at build time, and a
+  // production page never names a rejected record or says why it was rejected.
+  const skippedNotice = import.meta.env.DEV && state.kind === 'ready' && state.skipped.length > 0 && (
+    <p className="skip-notice" role="note">
+      Development build: {plural(state.skipped.length, 'record')} in the raw dataset failed validation and{' '}
+      {state.skipped.length === 1 ? 'is' : 'are'} not shown:{' '}
+      {state.skipped.slice(0, 5).map((s) => `#${s.index}${s.id ? ` (${s.id})` : ''}: ${s.reason}`).join('; ')}
+      {state.skipped.length > 5 ? '; and more.' : '.'}
+    </p>
+  );
+
+  const brand = <a className="brand__link" href="/" onClick={(e) => followLink(e)}>{SITE_NAME}</a>;
+
+  let body: JSX.Element;
+  if (route.kind === 'method') {
+    body = <main id="main" className="main main--page" tabIndex={-1}><MethodPage items={items} /></main>;
+  } else if (route.kind === 'corrections') {
+    body = (
+      <main id="main" className="main main--page" tabIndex={-1}>
+        <CorrectionsPage corrections={corrections} byId={indexes?.byId ?? null} recordHref={recordPath} />
+      </main>
+    );
+  } else if (route.kind === 'recent') {
+    body = <main id="main" className="main main--page" tabIndex={-1}><RecentPage state={state} nowMs={nowMs} /></main>;
+  } else if (route.kind === 'subscribe') {
+    body = <main id="main" className="main main--page" tabIndex={-1}><SubscribePage /></main>;
+  } else if (route.kind === 'notfound') {
+    body = <main id="main" className="main main--page" tabIndex={-1}><NotFound path={route.path} /></main>;
+  } else if (state.kind !== 'ready') {
+    body = <main id="main" className="main"><StatePanel state={state} /></main>;
+  } else {
+    body = (
+      <>
+        <div className="frame">
+          {headline && stats && (
+            <section className="front" aria-label="The count">
+              <Headline headline={headline} placeholder={isPlaceholder} onNavigate={(href, e) => followLink(e, href)} />
+              <Counters stats={stats} />
+              <Cadence days={cadenceDays} onOpen={openItem} />
+            </section>
+          )}
+          {skippedNotice}
+          {missingId && (
+            <p className="skip-notice" role="status">No record has the id “{missingId}”, so the front page is shown instead.</p>
+          )}
+          <FilterBar
+            ref={searchRef}
+            filters={filters}
+            onChange={setFilters}
+            actorOptions={actorOptions}
+            entityOptions={entityOptions}
+            categoryCounts={categoryCounts}
+            facetCounts={facetCounts}
+            shown={filtered.length}
+            total={state.items.length}
+          />
+        </div>
+        <div className="frame">
+          <ChartsPanel items={charted} fromDay={chartWindow.from} toDay={chartWindow.to} />
+        </div>
+        <main id="main" className="main" tabIndex={-1}>
+          <Stream items={filtered} onOpen={openItem} onActor={addActor} onClear={clearFilters} filtered={filtering} />
+        </main>
+      </>
+    );
+  }
+
   return (
     <div className="app">
-      <a className="skip-link" href="#main">Skip to the item list</a>
-      {items && <Ticker items={items} onOpen={openItem} />}
+      <a className="skip-link" href="#main">Skip to the main content</a>
+      {isHome && items && <Ticker items={items} onOpen={openItem} />}
       <header className="masthead">
         <div className="masthead__title">
-          <h1>Corruption Ticker</h1>
-          <p className="masthead__sub">
-            Reported uses of public office for private gain since 20 January 2025, each traced to its sources.
-          </p>
+          {isHome ? <h1 className="brand">{brand}</h1> : <p className="brand">{brand}</p>}
+          <p className="masthead__sub">{SITE_DECK}</p>
         </div>
         <div className="prefs" role="group" aria-label="Display">
           <button type="button" className="pref" aria-pressed={prefs.theme === 'light'} onClick={prefs.toggleTheme}>
@@ -161,70 +261,56 @@ export function App() {
           </button>
         </div>
       </header>
+      <nav className="frame site-nav" aria-label="Site">
+        <ul>
+          {NAV.map((n) => (
+            <li key={n.href}>
+              <a href={n.href} aria-current={n.kinds.includes(route.kind) ? 'page' : undefined} onClick={(e) => followLink(e)}>{n.label}</a>
+            </li>
+          ))}
+        </ul>
+      </nav>
 
       {isPlaceholder && (
         <div className="frame">
           <p className="placeholder-notice" role="note">
-            <strong>Placeholder data.</strong> Every entry on this page is fake and exists only to test the
+            <strong>Placeholder data.</strong> Every record on this site is fake and exists only to test the
             layout. None of it describes a real event, person, or organization.
           </p>
         </div>
       )}
 
-      {state.kind !== 'ready' ? (
-        <main id="main" className="main">
-          <StatePanel state={state} />
-        </main>
-      ) : (
-        <>
-          <div className="frame">
-            {state.skipped.length > 0 && (
-              <p className="skip-notice" role="note">
-                {plural(state.skipped.length, 'record')} in the file failed validation and{' '}
-                {state.skipped.length === 1 ? 'is' : 'are'} not shown:{' '}
-                {state.skipped.slice(0, 5).map((s) => `#${s.index}${s.id ? ` (${s.id})` : ''}: ${s.reason}`).join('; ')}
-                {state.skipped.length > 5 ? '; and more.' : '.'}
-              </p>
-            )}
-            <FilterBar
-              ref={searchRef}
-              filters={filters}
-              onChange={setFilters}
-              actorOptions={actorOptions}
-              entityOptions={entityOptions}
-              categoryCounts={categoryCounts}
-              statusCounts={statusCounts}
-              shown={filtered.length}
-              total={state.items.length}
-            />
-            {stats && <Counters stats={stats} overall={state.items.length} filtered={filtering} />}
-          </div>
-          <div className="frame">
-            <ChartsPanel items={filtered} fromDay={chartWindow.from} toDay={chartWindow.to} />
-          </div>
-          <main id="main" className="main" tabIndex={-1}>
-            <Stream items={filtered} onOpen={openItem} onActor={addActor} onClear={clearFilters} filtered={filtering} />
-          </main>
-          <footer className="frame">
-            <div className="footer">
-            <h2 className="footer__h">Keyboard</h2>
-            <dl className="keys">
-              <div><dt><kbd className="kbd">/</kbd></dt><dd>Search</dd></div>
-              <div><dt><kbd className="kbd">j</kbd> <kbd className="kbd">k</kbd></dt><dd>Next and previous item</dd></div>
-              <div><dt><kbd className="kbd">Enter</kbd></dt><dd>Open the focused item</dd></div>
-              <div><dt><kbd className="kbd">Esc</kbd></dt><dd>Close details or a menu</dd></div>
-              <div><dt><kbd className="kbd">t</kbd></dt><dd>Light or dark theme</dd></div>
-              <div><dt><kbd className="kbd">+</kbd></dt><dd>Large type</dd></div>
-            </dl>
-            <p className="footer__note">
-              Figures are as reported by the cited sources, not adjudicated. Each item links to its sources.
-            </p>
-            </div>
-          </footer>
-          {openEntry && indexes && (
-            <Drawer item={openEntry} byId={indexes.byId} onClose={closeItem} onNavigate={navigateItem} />
+      {body}
+
+      <footer className="frame">
+        <div className="footer">
+          {isHome && (
+            <>
+              <h2 className="footer__h">Keyboard</h2>
+              <dl className="keys">
+                <div><dt><kbd className="kbd">/</kbd></dt><dd>Search</dd></div>
+                <div><dt><kbd className="kbd">j</kbd> <kbd className="kbd">k</kbd></dt><dd>Next and previous record</dd></div>
+                <div><dt><kbd className="kbd">Enter</kbd></dt><dd>Open the focused record</dd></div>
+                <div><dt><kbd className="kbd">Esc</kbd></dt><dd>Close details or a menu</dd></div>
+                <div><dt><kbd className="kbd">t</kbd></dt><dd>Light or dark theme</dd></div>
+                <div><dt><kbd className="kbd">+</kbd></dt><dd>Large type</dd></div>
+              </dl>
+            </>
           )}
-        </>
+          <p className="footer__note">
+            The record states what was reported, by whom, with what evidence, and what happened next. It never
+            calls a person corrupt. <a href="/method" onClick={(e) => followLink(e)}>How we count</a>.
+          </p>
+        </div>
+      </footer>
+      {isHome && openEntry && indexes && (
+        <Drawer
+          item={openEntry}
+          byId={indexes.byId}
+          corrections={corrections.kind === 'ready' ? correctionsFor(corrections.corrections, openEntry.id) : []}
+          onClose={closeItem}
+          onNavigate={navigateItem}
+        />
       )}
     </div>
   );
