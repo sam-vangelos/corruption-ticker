@@ -22,6 +22,8 @@ export interface PageMeta {
   modifiedTime?: string;
   /** Extra <link> tags, already escaped. */
   extraLinks?: string[];
+  /** This build's id, stamped into every page so a test can tell which build a server is serving. */
+  buildId: string;
 }
 
 /**
@@ -31,6 +33,7 @@ export interface PageMeta {
 export function metaTags(m: PageMeta): string {
   const og = m.ogTitle ?? m.title;
   const tags = [
+    `<meta name="build-id" content="${esc(m.buildId)}" />`,
     `<meta name="description" content="${esc(m.description)}" />`,
     `<link rel="canonical" href="${esc(m.url)}" />`,
     `<meta property="og:site_name" content="${esc(m.siteName)}" />`,

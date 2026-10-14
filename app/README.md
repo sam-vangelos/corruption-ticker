@@ -20,15 +20,31 @@ npm run dev        # http://localhost:5173
 ```sh
 SITE_URL=https://example.org npm run build   # tsc --noEmit, vite build, scripts/prerender.mjs
 ALLOW_PLACEHOLDER_SITE_URL=1 npm run build   # same, with the placeholder origin
-npm run smoke      # serves dist/ with `vite preview` and checks the pages and files below
+npm run smoke                                # builds, serves on a free port, checks (below)
 ```
 
-`npm run smoke` needs a build first. It asserts HTTP 200 and content for `/`
-(whose link preview must state the headline counts, recomputed in the smoke
-script itself from the raw data), `/data/entries.json`, `/r/<first id>/`
-(whose `og:title` must equal that record's title), `/feed.xml` and the first
-record's category and office feeds, each route's own page, and the
-corrections log.
+`npm run smoke` builds the site itself (with `ALLOW_PLACEHOLDER_SITE_URL=1`
+unless `SITE_URL` is set; `SMOKE_SKIP_BUILD=1` tests the `dist/` on disk),
+serves it with `vite preview` on a free port (it listens on port 0 and uses the
+port it gets), and requires every page to carry this build's id from
+`dist/build.json`, so a stale server can never answer for it. Against counts
+recomputed in the script, independently of the app's code, it checks:
+
+- no unapproved or rubric-failing record from `dataset/entries.json` appears
+  in `/data/entries.json`, in the front-page HTML, or as a page under
+  `dist/r/`, and every approved, rubric-passing record does;
+- every id is URL-safe;
+- the visible front-page headline (the SPA's own `Headline` component,
+  rendered into the HTML at build time) and the front page's
+  `og:description` equal the recount, and the fixture still contains a
+  qualifying child under a non-qualifying root, so a roots-only event rule
+  would fail;
+- every record page answers 200 with an `og:title` and `<h1>` that, entities
+  decoded, equal the record's title;
+- `/feed.xml` and every office and category feed hold exactly the newest
+  qualifying records they should, each with the right `<updated>`, and feeds
+  exist exactly for the offices and categories with a qualifying record;
+- corrections name only public records, and each route is its own page.
 
 ### The prerender
 

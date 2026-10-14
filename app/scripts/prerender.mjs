@@ -17,6 +17,7 @@ import { build } from 'vite';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 
 const appDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -91,6 +92,11 @@ if (!builtIndex.includes('property="og:title"')) {
 // buildSite writes the filtered public files to dist/data/.
 // DATASET_DIR overrides the source directory (for tests against other fixtures).
 const datasetDir = process.env.DATASET_DIR ? path.resolve(process.env.DATASET_DIR) : path.join(appDir, 'dataset');
+// One id per build: written into every page's <meta name="build-id"> and
+// dist/build.json, so the smoke test can prove which build a server serves.
+const nowMs = Date.now();
+const buildId = `${new Date(nowMs).toISOString().replace(/[-:.]/g, '').slice(0, 15)}-${randomUUID().slice(0, 8)}`;
+
 let out;
 try {
   out = buildSite({
@@ -98,7 +104,8 @@ try {
     entries: await readJson(path.join(datasetDir, 'entries.json')),
     corrections: await readJson(path.join(datasetDir, 'corrections.json'), true),
     siteUrl,
-    nowMs: Date.now(),
+    nowMs,
+    buildId,
   });
 } catch (err) {
   fail(err instanceof Error ? err.message : String(err));

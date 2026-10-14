@@ -1,34 +1,64 @@
-// Smoke test: start `vite preview` on the built app and check the pages and
-// files the wave-2 gate names, then stop the server. Run `npm run build` first.
+// Smoke test for the built site. Run with `npm run smoke`.
 //
-//   /                      200, SPA shell, and a link preview whose headline
-//                          matches counts recomputed here from the raw data
-//   /data/entries.json     200, a JSON array
-//   /r/<first id>/         200, and its index.html carries an og:title equal
-//                          to that record's title
-//   /feed.xml              200, an Atom feed with at least one entry
-//   /feeds/category/<c>.xml, /feeds/office/<slug>.xml for the first record
-//   /method, /recent, /corrections, /subscribe, /data/corrections.json
-//
-// Leak check: unapproved and rubric-failing records from dataset/entries.json
-// are absent from /data/entries.json, the front page, and dist/r/.
-// The headline recount is deliberately independent of the app's TypeScript:
-// grade 1 to 4, evidentiary_status not "retracted"; events are the roots.
-import { spawn } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+// 1. Builds the site (`npm run build`) with ALLOW_PLACEHOLDER_SITE_URL=1 unless
+//    SITE_URL is set. SMOKE_SKIP_BUILD=1 tests the dist/ already on disk.
+// 2. Serves dist/ with `vite preview` on a free port (bound by listening on
+//    port 0), so nothing already listening can answer in its place, and
+//    requires every page to carry this build's id from dist/build.json.
+// 3. Checks, all against data recounted here independently of the app's code:
+//    - the leak: no unapproved or rubric-failing record from dataset/ appears
+//      in /data/entries.json, the front page, or dist/r/;
+//    - every id is URL-safe;
+//    - the visible front-page headline (the SPA's Headline component, rendered
+//      into the HTML at build time) and its og:description equal the recount;
+//    - the fixture still separates the tree-based event rule from a rule that
+//      counts only qualifying roots;
+//    - every record page answers 200, and its decoded og:title and <h1> equal
+//      the record's title;
+//    - /feed.xml and every per-office and per-category feed hold exactly the
+//      qualifying records they should, with <updated> per the correction rule;
+//    - corrections name public records; each route is its own page.
+import { spawn, spawnSync } from 'node:child_process';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { createServer } from 'node:net';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 const appDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const port = Number(process.env.SMOKE_PORT ?? 4317);
-const base = `http://127.0.0.1:${port}`;
+const dist = path.join(appDir, 'dist');
 const viteBin = path.join(appDir, 'node_modules', 'vite', 'bin', 'vite.js');
 
-if (!existsSync(path.join(appDir, 'dist', 'index.html'))) {
-  console.error('smoke: dist/index.html is missing; run `npm run build` first.');
+// ---------- 1. build ----------
+if (process.env.SMOKE_SKIP_BUILD !== '1') {
+  const env = { ...process.env };
+  if (!env.SITE_URL) env.ALLOW_PLACEHOLDER_SITE_URL = '1';
+  const npm = process.env.npm_execpath;
+  const r = npm
+    ? spawnSync(process.execPath, [npm, 'run', 'build'], { cwd: appDir, env, stdio: ['ignore', 'pipe', 'pipe'] })
+    : spawnSync('npm', ['run', 'build'], { cwd: appDir, env, stdio: ['ignore', 'pipe', 'pipe'] });
+  if (r.status !== 0) {
+    console.error(`smoke: build failed (exit ${r.status})\n${r.stdout}${r.stderr}`);
+    process.exit(1);
+  }
+  console.log('smoke: build ok');
+}
+if (!existsSync(path.join(dist, 'build.json'))) {
+  console.error('smoke: dist/build.json is missing; the build did not finish.');
   process.exit(1);
 }
+const stamp = JSON.parse(readFileSync(path.join(dist, 'build.json'), 'utf8'));
+const builtAtMs = Date.parse(stamp.builtAt);
 
+// ---------- 2. serve on a free port ----------
+const port = await new Promise((resolve, reject) => {
+  const s = createServer();
+  s.on('error', reject);
+  s.listen(0, '127.0.0.1', () => {
+    const p = s.address().port;
+    s.close(() => resolve(p));
+  });
+});
+const base = `http://127.0.0.1:${port}`;
 const server = spawn(process.execPath, [viteBin, 'preview', '--host', '127.0.0.1', '--port', String(port), '--strictPort'], {
   cwd: appDir,
   stdio: ['ignore', 'pipe', 'pipe'],
@@ -36,7 +66,6 @@ const server = spawn(process.execPath, [viteBin, 'preview', '--host', '127.0.0.1
 let serverLog = '';
 server.stdout.on('data', (d) => { serverLog += d; });
 server.stderr.on('data', (d) => { serverLog += d; });
-
 const stop = () => { if (!server.killed) server.kill('SIGTERM'); };
 process.on('exit', stop);
 
@@ -44,75 +73,88 @@ async function waitForServer(timeoutMs = 15000) {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
     if (server.exitCode !== null) throw new Error(`vite preview exited early (code ${server.exitCode}).\n${serverLog}`);
-    try {
-      await fetch(base + '/');
-      return;
-    } catch {
-      await new Promise((r) => setTimeout(r, 200));
-    }
+    try { await fetch(`${base}/`); return; } catch { await new Promise((r) => setTimeout(r, 150)); }
   }
   throw new Error(`vite preview did not answer within ${timeoutMs} ms.\n${serverLog}`);
 }
 
+// ---------- helpers ----------
 const checks = [];
-/** GET a path, require 200, then run `validate(body)`; it returns true or a failure note. */
-async function check(urlPath, validate) {
-  let ok = false;
-  let note = '';
+const record = (name, ok, note) => {
+  checks.push({ name, ok, note });
+  console.log(`smoke: ${ok ? 'PASS' : 'FAIL'} ${name}${note ? ` -> ${note}` : ''}`);
+};
+
+/** GET a path; require 200 (and, for HTML, this build's stamp); then validate(body) returns true or a failure note. */
+async function check(urlPath, validate, { html = false } = {}) {
   let body = '';
   try {
     const res = await fetch(base + urlPath);
     body = await res.text();
-    ok = res.status === 200;
-    note = `HTTP ${res.status}`;
-    if (ok && validate) {
-      const extra = validate(body);
-      if (extra !== true) { ok = false; note += `, ${extra}`; }
+    if (res.status !== 200) { record(`GET ${urlPath}`, false, `HTTP ${res.status}`); return body; }
+    if (html) {
+      const id = metas(body).get('build-id');
+      if (id !== stamp.id) { record(`GET ${urlPath}`, false, `build-id ${id ?? 'missing'}, expected ${stamp.id}: this server is not serving this build`); return body; }
     }
+    const v = validate ? validate(body) : true;
+    record(`GET ${urlPath}`, v === true, v === true ? 'HTTP 200' : `HTTP 200, ${v}`);
   } catch (e) {
-    note = `request failed (${e.message})`;
+    record(`GET ${urlPath}`, false, `request failed (${e.message})`);
   }
-  checks.push({ urlPath, ok, note });
-  console.log(`smoke: ${ok ? 'PASS' : 'FAIL'} GET ${urlPath} -> ${note}`);
   return body;
 }
 
-const decode = (s) => s
-  .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+const NAMED = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
+/** Decode HTML/XML character references: named (the common set), decimal and hex. */
+const decode = (s) => s.replace(/&(#[xX][0-9a-fA-F]+|#\d+|[a-zA-Z]+);/g, (m, e) => {
+  if (e[0] === '#') return String.fromCodePoint(e[1] === 'x' || e[1] === 'X' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10));
+  return NAMED[e.toLowerCase()] ?? m;
+});
+const encode = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-const encode = (s) => s
-  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-
-/** content="" of the first <meta property|name="key">, decoded, or null. */
-function metaContent(html, key) {
-  const re = new RegExp(`<meta\\s+(?:property|name)="${key.replace(/[:]/g, '\\$&')}"\\s+content="([^"]*)"`, 'i');
-  const m = re.exec(html);
-  return m ? decode(m[1]) : null;
+/** Every <meta> keyed by its property or name attribute, content decoded; attribute order does not matter. */
+function metas(html) {
+  const out = new Map();
+  for (const [tag] of html.matchAll(/<meta\b[^>]*>/gi)) {
+    const attrs = Object.fromEntries([...tag.matchAll(/([a-zA-Z:-]+)\s*=\s*"([^"]*)"/g)].map(([, k, v]) => [k.toLowerCase(), v]));
+    const key = attrs.property ?? attrs.name;
+    if (key && attrs.content !== undefined && !out.has(key)) out.set(key, decode(attrs.content));
+  }
+  return out;
 }
 
-const ROUTES = [['/method', 'How we count'], ['/corrections', 'Corrections'], ['/recent', 'Recent changes'], ['/subscribe', 'Subscribe']];
+/** Visible text of the first element carrying `cls`, tags and comments stripped, entities decoded, whitespace collapsed. */
+function textOf(html, tag, cls) {
+  const m = new RegExp(`<${tag}\\b[^>]*class="[^"]*\\b${cls}\\b[^"]*"[^>]*>([\\s\\S]*?)</${tag}>`).exec(html);
+  if (!m) return null;
+  return decode(m[1].replace(/<!--[\s\S]*?-->/g, '').replace(/<[^>]+>/g, '')).replace(/\s+/g, ' ').trim();
+}
 
+const ID_RE = /^[a-z0-9][a-z0-9-]{2,120}$/;
 const plural = (n, one, many) => `${n.toLocaleString('en-US')} ${n === 1 ? one : many}`;
+const slug = (n) => n.normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+const treeOf = (e) => (e.root_id === null ? e.id : e.root_id);
 
+// ---------- 3. checks ----------
 try {
   await waitForServer();
+  console.log(`smoke: serving dist/ on free port ${port}, build ${stamp.id}`);
 
+  // The stamp: proves the server answering is serving this build.
+  const home = await check('/', (body) => (body.includes('<div id="root">') ? true : 'root element missing'), { html: true });
+
+  // The public dataset.
   let entries = [];
   await check('/data/entries.json', (body) => {
-    try {
-      const parsed = JSON.parse(body);
-      if (!Array.isArray(parsed)) return 'body is JSON but not an array';
-      if (parsed.length === 0) return 'array is empty, so no record page can be checked';
-      entries = parsed;
-      return true;
-    } catch (e) {
-      return `body is not JSON (${e.message})`;
-    }
+    const parsed = JSON.parse(body);
+    if (!Array.isArray(parsed) || parsed.length === 0) return 'not a non-empty array';
+    entries = parsed;
+    const bad = parsed.filter((e) => !ID_RE.test(e.id));
+    return bad.length ? `ids not URL-safe: ${bad.map((e) => e.id).join(', ')}` : true;
   });
+  const publicIds = new Set(entries.map((e) => e.id));
 
-  // The leak check: no record from the raw dataset that is unapproved, or that
-  // names only private actors below grade 3 or without a response, may appear
-  // in the public dataset, on the front page, or as a record page.
+  // The leak: unapproved and rubric-failing raw records never reach the public.
   const raw = JSON.parse(readFileSync(path.join(appDir, 'dataset', 'entries.json'), 'utf8'));
   const PRIVATE = new Set(['family', 'private-associate', 'private-entity']);
   const failsRubric = (e) => {
@@ -121,76 +163,88 @@ try {
       && (e.evidence_grade > 3 || e.subject_response === null || e.subject_response === 'not-sought');
   };
   const secret = raw.filter((e) => !e.approved_by || failsRubric(e));
-  if (!raw.some((e) => !e.approved_by)) {
-    checks.push({ urlPath: 'fixture', ok: false, note: 'the raw dataset has no approved_by null record, so the leak check proves nothing' });
-  }
-  const publicIds = new Set(entries.map((e) => e.id));
+  record('fixture has an approved_by null record', raw.some((e) => !e.approved_by), 'without one the leak check proves nothing');
   for (const e of secret) {
-    checks.push({ urlPath: `/data/entries.json without ${e.id}`, ok: !publicIds.has(e.id), note: publicIds.has(e.id) ? 'LEAKED into the public dataset' : 'absent' });
-    const onDisk = existsSync(path.join(appDir, 'dist', 'r', e.id));
-    checks.push({ urlPath: `dist/r/${e.id}/ absent`, ok: !onDisk, note: onDisk ? 'a record page was generated' : 'absent' });
+    record(`${e.id} absent from /data/entries.json`, !publicIds.has(e.id), publicIds.has(e.id) ? 'LEAKED' : 'absent');
+    const page = existsSync(path.join(dist, 'r', e.id));
+    record(`${e.id} has no page in dist/r/`, !page, page ? 'a record page was generated' : 'absent');
+    const named = home.includes(e.id) || home.includes(encode(e.title));
+    record(`${e.id} not named in the front-page HTML`, !named, named ? 'LEAKED' : 'absent');
   }
-  await check('/', (body) => {
-    const hit = secret.find((e) => body.includes(e.id) || body.includes(encode(e.title)));
-    return hit ? `front page HTML names left-out record ${hit.id}` : true;
-  });
-  for (const c of checks.filter((c) => c.urlPath.includes(' without ') || c.urlPath.endsWith(' absent') || c.urlPath === 'fixture')) {
-    console.log(`smoke: ${c.ok ? 'PASS' : 'FAIL'} ${c.urlPath} -> ${c.note}`);
+  const missing = raw.filter((e) => !secret.includes(e) && !publicIds.has(e.id));
+  record('every approved, rubric-passing raw record is public', missing.length === 0, missing.length ? `missing: ${missing.map((e) => e.id).join(', ')}` : `${entries.length} records`);
+
+  // Independent recount (docs/schema.md § Counting rules), at the build's own clock.
+  const qualifies = (e) => Number.isInteger(e.evidence_grade) && e.evidence_grade >= 1 && e.evidence_grade <= 4
+    && e.evidentiary_status !== 'retracted' && !!e.approved_by
+    && !!e.first_published_at && Date.parse(e.first_published_at) <= builtAtMs;
+  const qualifying = entries.filter(qualifies);
+  const events = new Set(qualifying.map(treeOf)).size;
+  const rootsOnly = qualifying.filter((e) => e.root_id === null).length;
+  const headline = `${plural(qualifying.length, 'qualifying record', 'qualifying records')} concerning ${plural(events, 'distinct event', 'distinct events')} since 20 January 2025.`;
+  const byId = new Map(entries.map((e) => [e.id, e]));
+  const childUnderNonQualifyingRoot = qualifying.some((e) => e.root_id !== null && !qualifies(byId.get(e.root_id)));
+  record('fixture separates the tree event rule from a roots-only rule', childUnderNonQualifyingRoot && events !== rootsOnly,
+    `${events} events by tree, ${rootsOnly} by qualifying roots`);
+  const visible = textOf(home, 'p', 'headline__text');
+  record('visible front-page headline equals the recount', visible === headline, `"${visible}" vs "${headline}"`);
+  const og = metas(home).get('og:description') ?? '';
+  record('front-page og:description states the recount', og.includes(headline), og.slice(0, 90));
+
+  // Every record page: 200, this build, og:title and <h1> equal to the title.
+  let pagesOk = 0;
+  for (const e of entries) {
+    const before = checks.length;
+    await check(`/r/${e.id}/`, (body) => {
+      const t = metas(body).get('og:title');
+      if (t !== e.title) return `og:title "${t}" is not "${e.title}"`;
+      const h1 = textOf(body, 'h1', 'drawer__title');
+      return h1 === e.title ? true : `<h1> "${h1}" is not the title`;
+    }, { html: true });
+    if (checks.slice(before).every((c) => c.ok)) pagesOk += 1;
   }
+  record('every record page carries its title', pagesOk === entries.length, `${pagesOk}/${entries.length}`);
 
-  // Independent recount of the headline per docs/schema.md counting rules.
-  // Qualifying: grade 1-4, not retracted, approved, published and not in the future.
-  // Events: trees (a root plus its children) holding at least one qualifying record.
-  const nowMs = Date.now();
-  const qualifying = entries.filter((e) => Number.isInteger(e.evidence_grade) && e.evidence_grade >= 1 && e.evidence_grade <= 4
-    && e.evidentiary_status !== 'retracted' && e.approved_by && e.first_published_at && Date.parse(e.first_published_at) <= nowMs);
-  const records = qualifying.length;
-  const events = new Set(qualifying.map((e) => (e.root_id === null ? e.id : e.root_id))).size;
-  const headline = `${plural(records, 'qualifying record', 'qualifying records')} concerning ${plural(events, 'distinct event', 'distinct events')} since 20 January 2025`;
-
-  await check('/', (body) => {
-    if (!body.includes('<div id="root">')) return 'root element missing from HTML';
-    const desc = metaContent(body, 'og:description');
-    if (desc === null) return 'no og:description on the front page';
-    return desc.includes(headline) ? true : `og:description "${desc}" does not contain "${headline}"`;
-  });
-
-  const first = entries[0];
-  if (first && typeof first.id === 'string') {
-    const id = encodeURIComponent(first.id);
-    await check(`/r/${id}/`, (body) => (body.includes(`<h1 class="drawer__title">${encode(first.title)}</h1>`) ? true : 'record title missing from the page body'));
-    await check(`/r/${id}/index.html`, (body) => {
-      const og = metaContent(body, 'og:title');
-      if (og === null) return 'no og:title meta tag';
-      return og === first.title ? true : `og:title "${og}" does not match record title "${first.title}"`;
-    });
-  } else {
-    checks.push({ urlPath: '/r/<first id>/', ok: false, note: 'no first record id to check' });
-    console.log('smoke: FAIL GET /r/<first id>/ -> no first record id to check');
-  }
-
-  await check('/feed.xml', (body) => {
-    if (!/<feed\s+xmlns="http:\/\/www\.w3\.org\/2005\/Atom"/.test(body)) return 'not an Atom <feed>';
-    const n = (body.match(/<entry>/g) ?? []).length;
-    return n > 0 ? true : 'feed has no entries';
-  });
-  // Per-category and per-office feeds for the first record (slug rule mirrors src/feeds.ts).
-  const slug = (n) => n.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'unnamed';
-  const atomWith = (id) => (body) => (/<feed\s+xmlns="http:\/\/www\.w3\.org\/2005\/Atom"/.test(body) && body.includes(`/r/${encodeURIComponent(id)}/</id>`) ? true : 'not an Atom feed carrying the first record');
-  if (first?.category) await check(`/feeds/category/${first.category}.xml`, atomWith(first.id));
-  if (first?.offices?.[0]) await check(`/feeds/office/${slug(first.offices[0])}.xml`, atomWith(first.id));
+  // Feeds: qualifying records only, newest 50, <updated> per the correction rule.
+  let corrections = [];
   await check('/data/corrections.json', (body) => {
-    try { return Array.isArray(JSON.parse(body)) ? true : 'body is JSON but not an array'; } catch (e) { return `body is not JSON (${e.message})`; }
+    corrections = JSON.parse(body);
+    if (!Array.isArray(corrections)) return 'not an array';
+    const orphans = corrections.filter((c) => !publicIds.has(c.record_id));
+    return orphans.length ? `corrections name non-public records: ${orphans.map((c) => c.record_id).join(', ')}` : true;
   });
+  const updated = (e) => Math.max(Date.parse(e.first_published_at), e.last_modified_at ? Date.parse(e.last_modified_at) : 0,
+    ...corrections.filter((c) => c.record_id === e.id).map((c) => Date.parse(`${c.date}T00:00:00Z`)));
+  const newest = (list) => [...list].sort((a, b) => Date.parse(b.first_published_at) - Date.parse(a.first_published_at) || a.id.localeCompare(b.id)).slice(0, 50);
+  const feedEntries = (xml) => [...xml.matchAll(/<entry>([\s\S]*?)<\/entry>/g)].map(([, e]) => ({
+    id: decode(/<id>([^<]*)<\/id>/.exec(e)?.[1] ?? '').replace(/^.*\/r\/([^/]+)\/$/, '$1'),
+    updated: /<updated>([^<]*)<\/updated>/.exec(e)?.[1] ?? '',
+  }));
+  const feedMatches = (want) => (body) => {
+    if (!/<feed\s+xmlns="http:\/\/www\.w3\.org\/2005\/Atom"/.test(body)) return 'not an Atom feed';
+    const got = feedEntries(body);
+    const wantIds = newest(want).map((e) => e.id);
+    if (got.map((g) => g.id).join() !== wantIds.join()) return `entries [${got.map((g) => g.id).join(', ')}] are not [${wantIds.join(', ')}]`;
+    const wrong = got.find((g) => Date.parse(g.updated) !== updated(byId.get(g.id)));
+    return wrong ? `${wrong.id} <updated> ${wrong.updated} is not ${new Date(updated(byId.get(wrong.id))).toISOString()}` : true;
+  };
+  await check('/feed.xml', feedMatches(qualifying));
+  const cats = [...new Set(qualifying.map((e) => e.category))].sort();
+  const offices = [...new Set(qualifying.flatMap((e) => e.offices))].sort();
+  const files = (dir) => (existsSync(path.join(dist, 'feeds', dir)) ? readdirSync(path.join(dist, 'feeds', dir)).sort() : []);
+  const wantCats = cats.map((c) => `${c}.xml`);
+  const wantOffices = offices.map((o) => `${slug(o)}.xml`).sort();
+  record('category feeds exist exactly for categories with a qualifying record', files('category').join() === wantCats.join(), files('category').join(', '));
+  record('office feeds exist exactly for offices with a qualifying record', files('office').join() === wantOffices.join(), files('office').join(', '));
+  for (const c of cats) await check(`/feeds/category/${c}.xml`, feedMatches(qualifying.filter((e) => e.category === c)));
+  for (const o of offices) await check(`/feeds/office/${slug(o)}.xml`, feedMatches(qualifying.filter((e) => e.offices.includes(o))));
+
   // Each route is a real file with its own <title>, not the SPA fallback.
-  for (const [p, title] of ROUTES) {
-    await check(p, (body) => {
-      if (!body.includes('<div id="root">')) return 'SPA shell missing';
-      return body.includes(`<title>${title} | The Ethics Record</title>`) ? true : `no "${title}" <title>; this is the SPA fallback, not the route's own page`;
-    });
+  for (const [p, title] of [['/method', 'How we count'], ['/corrections', 'Corrections'], ['/recent', 'Recent changes'], ['/subscribe', 'Subscribe']]) {
+    await check(p, (body) => (body.includes(`<title>${title} | The Ethics Record</title>`) ? true : `no "${title}" <title>`), { html: true });
   }
 } catch (err) {
-  console.error(`smoke: ERROR ${err.message}`);
+  console.error(`smoke: ERROR ${err.stack ?? err.message}`);
   stop();
   process.exit(1);
 }

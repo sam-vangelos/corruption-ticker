@@ -15,6 +15,9 @@ import { SOURCE_KIND_LABEL, amountLong, amountShort } from '../amounts';
 import { correctionSentence, correctionsFor } from '../corrections';
 import { SITE_DECK, SITE_NAME, START_LABEL, gradeDef, gradeLabel } from '../method';
 import { recordPath } from '../router';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { Headline } from '../components/Headline';
 import { esc, fillShell, type PageMeta } from './html';
 import { notCountedReason } from '../grades';
 import { atomFeed } from './atom';
@@ -31,6 +34,8 @@ export interface SiteInput {
   siteUrl: string;
   /** The build's "now": records first published after it are not yet counted or fed. */
   nowMs: number;
+  /** A unique id for this build, stamped into every page and dist/build.json. */
+  buildId: string;
 }
 
 export interface SiteFile {
@@ -228,6 +233,7 @@ export function buildSite(input: SiteInput): SiteOutput {
       type: 'article',
       publishedTime: it.publishedMs !== null ? new Date(it.publishedMs).toISOString() : undefined,
       modifiedTime: it.modifiedMs !== null ? new Date(it.modifiedMs).toISOString() : undefined,
+      buildId: input.buildId,
     };
     files.push({ path: `r/${encodeURIComponent(it.id)}/index.html`, content: fillShell(input.indexHtml, meta, recordBody(it, cs, byId, input.nowMs), noscriptRecord) });
   }
@@ -235,6 +241,13 @@ export function buildSite(input: SiteInput): SiteOutput {
   // The front page: same shell, with a preview that states the headline and its rules link.
   const headline = headlineSentence(items, input.nowMs);
   const frontDescription = `${placeholder ? 'Placeholder data. ' : ''}${headline} Counting rules: ${site}/method`;
+  // The visible headline is the SPA's own component, rendered here so the
+  // count is readable without JavaScript and testable in the built HTML.
+  const headlineHtml = renderToStaticMarkup(createElement(Headline, {
+    headline: computeHeadline(items, input.nowMs),
+    placeholder,
+    onNavigate: () => {},
+  }));
   files.push({
     path: 'index.html',
     content: fillShell(input.indexHtml, {
@@ -244,7 +257,8 @@ export function buildSite(input: SiteInput): SiteOutput {
       siteName: SITE_NAME,
       type: 'website',
       ogTitle: `${SITE_NAME}: ${SITE_DECK.replace(/\.$/, '')}`,
-    }, '', noscriptShell),
+      buildId: input.buildId,
+    }, `<div class="frame"><section class="front" aria-label="The count">${headlineHtml}</section></div>`, noscriptShell),
   });
 
   // Written twice: /method resolves to method.html on most static hosts,
@@ -256,6 +270,7 @@ export function buildSite(input: SiteInput): SiteOutput {
       url: `${site}/${r.path}`,
       siteName: SITE_NAME,
       type: 'website',
+      buildId: input.buildId,
     }, '', noscriptShell);
     files.push({ path: `${r.path}.html`, content }, { path: `${r.path}/index.html`, content });
   }
@@ -264,7 +279,7 @@ export function buildSite(input: SiteInput): SiteOutput {
   files.push({
     path: '404.html',
     content: fillShell(input.indexHtml, {
-      title: `Page not found | ${SITE_NAME}`, description: SITE_DECK, url: `${site}/`, siteName: SITE_NAME, type: 'website',
+      title: `Page not found | ${SITE_NAME}`, description: SITE_DECK, url: `${site}/`, siteName: SITE_NAME, type: 'website', buildId: input.buildId,
     }, '', noscriptShell),
   });
 
@@ -294,6 +309,7 @@ export function buildSite(input: SiteInput): SiteOutput {
     feed(c.path, `${SITE_NAME}: ${CATEGORY_LABEL[c.key]}`, qualifying.filter((it) => it.category === c.key), `${site}/subscribe`);
   }
 
-  notes.push(`${items.length} record pages; ${1 + index.offices.length + index.categories.length} feeds; headline: ${headline}`);
+  files.push({ path: 'build.json', content: `${JSON.stringify({ id: input.buildId, builtAt: new Date(input.nowMs).toISOString() }, null, 2)}\n` });
+  notes.push(`build ${input.buildId}; ${items.length} record pages; ${1 + index.offices.length + index.categories.length} feeds; headline: ${headline}`);
   return { files, notes, headline };
 }
