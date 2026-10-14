@@ -2,13 +2,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Category, EvidenceGrade, EvidentiaryStatus, LoadState, ProceduralStatus } from './types';
 import { loadEntries } from './data/load';
 import { buildIndexes, optionsFrom } from './data/derive';
-import { computeStats } from './data/metrics';
+import { cadence, computeHeadline, computeStats } from './data/metrics';
 import { inaugurationDay, parseDay, today } from './data/dates';
 import { plural } from './data/format';
 import { applyFilters, EMPTY_FILTERS, isFiltering, useUrlFilters } from './state/filters';
 import { StatePanel } from './components/StatePanel';
 import { Ticker } from './components/Ticker';
 import { Counters } from './components/Counters';
+import { Headline } from './components/Headline';
+import { Cadence } from './components/Cadence';
 import { FilterBar, type FacetCounts } from './components/FilterBar';
 import { Stream } from './components/Stream';
 import { ChartsPanel } from './components/charts/ChartsPanel';
@@ -56,10 +58,16 @@ export function App() {
   const filtering = isFiltering(filters);
   const filtered = useMemo(() => (items ? applyFilters(items, filters) : []), [items, filters]);
   const nowMs = useMemo(() => Date.now(), []);
+  // The headline block (headline, counters, cadence strip) describes the whole
+  // record and never follows the filters; charts and the list do.
+  const headline = useMemo(() => (items ? computeHeadline(items, nowMs) : null), [items, nowMs]);
+  const cadenceDays = useMemo(() => (items ? cadence(items, nowMs) : []), [items, nowMs]);
   const stats = useMemo(
-    () => (items ? computeStats(filtered, { now, nowMs, inauguration: inaugurationDay() }) : null),
-    [items, filtered, now, nowMs],
+    () => (items ? computeStats(items, { now, nowMs, inauguration: inaugurationDay() }) : null),
+    [items, now, nowMs],
   );
+  // Grade-5 leads and retracted records are listed but never charted.
+  const charted = useMemo(() => filtered.filter((it) => it.qualifying), [filtered]);
 
   const isPlaceholder = !!items && items.some((it) => it.placeholder);
 
@@ -179,6 +187,13 @@ export function App() {
       ) : (
         <>
           <div className="frame">
+            {headline && stats && (
+              <section className="front" aria-label="The count">
+                <Headline headline={headline} placeholder={isPlaceholder} onNavigate={() => {}} />
+                <Counters stats={stats} />
+                <Cadence days={cadenceDays} onOpen={openItem} />
+              </section>
+            )}
             {state.skipped.length > 0 && (
               <p className="skip-notice" role="note">
                 {plural(state.skipped.length, 'record')} in the file failed validation and{' '}
@@ -198,10 +213,9 @@ export function App() {
               shown={filtered.length}
               total={state.items.length}
             />
-            {stats && <Counters stats={stats} filtered={filtering} />}
           </div>
           <div className="frame">
-            <ChartsPanel items={filtered} fromDay={chartWindow.from} toDay={chartWindow.to} />
+            <ChartsPanel items={charted} fromDay={chartWindow.from} toDay={chartWindow.to} />
           </div>
           <main id="main" className="main" tabIndex={-1}>
             <Stream items={filtered} onOpen={openItem} onActor={addActor} onClear={clearFilters} filtered={filtering} />

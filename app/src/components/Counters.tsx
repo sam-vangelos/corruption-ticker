@@ -4,19 +4,18 @@ import { formatInt } from '../data/format';
 
 interface CountersProps {
   stats: Stats;
-  filtered: boolean;
 }
 
 /**
- * Four counters. Values follow the active filters (days-since excepted) and
- * count qualifying records only: grade 1 to 4, not retracted. There is no
- * dollar total: figures of different kinds do not add up to one number.
+ * Four counters beside the headline. Like the headline they describe the
+ * whole record (filters never change them) and count qualifying records only:
+ * grade 1 to 4, not retracted. There is no dollar total: figures of different
+ * kinds do not add up to one number.
  */
-export function Counters({ stats, filtered }: CountersProps) {
-  const scope = filtered ? 'Qualifying records in this filtered view' : 'Qualifying records';
+export function Counters({ stats }: CountersProps) {
   return (
     <section className="counters" aria-labelledby="counters-h">
-      <h2 id="counters-h" className="visually-hidden">{filtered ? 'Counts for the filtered records' : 'Counts for all records'}</h2>
+      <h2 id="counters-h" className="visually-hidden">Counts for the whole record</h2>
       <div className="tile">
         <p className="tile__label">Days since 20 January 2025</p>
         <p className="tile__value">{formatInt(stats.daysSince)}</p>
@@ -26,7 +25,7 @@ export function Counters({ stats, filtered }: CountersProps) {
       <div className="tile">
         <p className="tile__label">Records with a stated amount</p>
         <p className="tile__value">{formatInt(stats.withAmount)}</p>
-        <p className="tile__note">Of {formatInt(stats.total)}. {scope}; amounts are not summed</p>
+        <p className="tile__note">Of {formatInt(stats.total)} qualifying records; amounts are not summed</p>
       </div>
 
       <div className="tile">

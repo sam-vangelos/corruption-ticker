@@ -56,15 +56,28 @@ carries the placeholder flag.
 
 ## Using it
 
-- **Ticker** (top): every item, newest first. Hover pauses it; the Pause
-  control or keyboard focus freezes it into a scrollable strip. With
+- **Headline** (top of the page): "X qualifying records concerning Y distinct
+  events since 20 January 2025", the average interval beneath it, and a "How
+  we count" link to the methodology. Beside it, four counters: days since
+  inauguration, records with a stated amount, records added in the last 30
+  days, and records in investigation or litigation. Then the **cadence
+  strip**: seven columns, one per calendar day in the viewer's time zone,
+  with one mark per qualifying record added to the record that day (by
+  `first_published_at`, never the event date). Each mark links to its record.
+  The headline, counters and strip always describe the whole record; filters
+  never change them, so a filtered view can never be passed off as the count.
+- **Ticker** (very top): every record, newest first. Hover pauses it; the
+  Pause control or keyboard focus freezes it into a scrollable strip. With
   reduced motion turned on in the OS it is always a static strip.
-- **Filters**: search, category, actor, entity, status, date range, minimum
-  dollars. Every filter is written to the URL, so a filtered view can be
-  bookmarked or shared; `?item=<id>` opens one item's details. Within one
-  filter, values are alternatives (OR); across filters, all must hold (AND).
-- **Counters and charts** follow the filters. The ticker always shows
-  everything. Each chart has a "Show table" view with the same numbers.
+- **Filters**: search, category, actor, entity, evidence grade, evidentiary
+  status, procedural status, date range, minimum dollars (compared with a
+  record's largest stated figure). Every filter is written to the URL. Within
+  one filter, values are alternatives (OR); across filters, all must hold
+  (AND).
+- **Charts and the list** follow the filters. Charts count qualifying records
+  only; grade-5 leads and retracted records appear in the list, labelled,
+  but are never charted. Each chart has a "Show table" view with the same
+  numbers. There is no dollar chart and no dollar total anywhere.
 - **Keyboard**: `/` search, `j`/`k` next and previous item, `Enter` open,
   `Esc` close, `t` light or dark theme, `+` large type (16px to 20px).
 

@@ -45,7 +45,7 @@ export function CategoryBars({ rows, total }: CategoryBarsProps) {
     const r = rows[i];
     if (!r) return { value: '', label: '' };
     const pct = total ? Math.round((r.count / total) * 100) : 0;
-    return { value: `${formatInt(r.count)} ${r.count === 1 ? 'item' : 'items'}`, label: CATEGORY_LABEL[r.category], extra: `${pct}% of the items shown` };
+    return { value: `${formatInt(r.count)} ${r.count === 1 ? 'record' : 'records'}`, label: CATEGORY_LABEL[r.category], extra: `${pct}% of the records charted` };
   };
   const liveText = focused && active !== null ? (() => { const d = describe(active); return `${d.label}: ${d.value}. ${d.extra}`; })() : '';
 
@@ -55,7 +55,7 @@ export function CategoryBars({ rows, total }: CategoryBarsProps) {
         <div
           className="plot__focus"
           role="group"
-          aria-label="Items by category. Use the up and down arrow keys to read each category."
+          aria-label="Qualifying records by category. Use the up and down arrow keys to read each category."
           {...plotProps}
         >
           <svg className="plot__svg" width={width} height={height} aria-hidden="true" focusable="false">

@@ -10,7 +10,7 @@ import { MonthChart } from './MonthChart';
 import { CategoryBars } from './CategoryBars';
 
 interface ChartsPanelProps {
-  /** The filtered slice. */
+  /** The filtered slice, qualifying records only (no grade-5 leads, nothing retracted). */
   items: Item[];
   /** Month window: first and last day number to cover. */
   fromDay: number;
@@ -19,7 +19,7 @@ interface ChartsPanelProps {
 
 const STORAGE_KEY = 'ct.chartsOpen';
 
-/** Collapsible panel of four charts, each with a table view. Follows the active filters. */
+/** Collapsible panel of three charts, each with a table view. Follows the active filters; counts qualifying records only. */
 export function ChartsPanel({ items, fromDay, toDay }: ChartsPanelProps) {
   const [open, setOpen] = useState(() => localStorage.getItem(STORAGE_KEY) !== '0');
   const regionId = useId();
@@ -44,53 +44,53 @@ export function ChartsPanel({ items, fromDay, toDay }: ChartsPanelProps) {
             Charts
           </button>
         </h2>
-        <p className="charts__scope">{plural(items.length, 'item')}, {span}</p>
+        <p className="charts__scope">{plural(items.length, 'qualifying record')}, {span}, by event date. Leads and retracted records are not charted.</p>
       </div>
 
       {open && (
         <div id={regionId} className="charts__grid">
           {items.length === 0 ? (
-            <p className="charts__empty">No items to chart under these filters.</p>
+            <p className="charts__empty">No qualifying records to chart under these filters.</p>
           ) : (
             <>
               <ChartCard
-                title="Items per month"
+                title="Qualifying records per month"
                 subtitle={span}
                 chart={
                   <MonthChart
                     kind="columns"
-                    name="Items per month"
+                    name="Qualifying records per month"
                     months={months}
                     values={series.map((b) => b.count)}
                     format={formatInt}
-                    describe={(i) => ({ value: plural(series[i]?.count ?? 0, 'item'), label: monthLabel(months[i] ?? '') })}
+                    describe={(i) => ({ value: plural(series[i]?.count ?? 0, 'record'), label: monthLabel(months[i] ?? '') })}
                   />
                 }
                 table={
                   <DataTable
-                    caption="Items per month"
-                    head={['Month', 'Items']}
+                    caption="Qualifying records per month"
+                    head={['Month', 'Records']}
                     rows={series.map((b) => [monthLabel(b.month), formatInt(b.count)])}
                   />
                 }
               />
 
               <ChartCard
-                title="Cumulative items"
-                subtitle={priorCount ? `Running total, including ${plural(priorCount, 'item')} dated before ${monthShort(startsAt)}` : 'Running total at the end of each month'}
+                title="Cumulative qualifying records"
+                subtitle={priorCount ? `Running total, including ${plural(priorCount, 'record')} dated before ${monthShort(startsAt)}` : 'Running total at the end of each month'}
                 chart={
                   <MonthChart
                     kind="line"
-                    name="Cumulative items"
+                    name="Cumulative qualifying records"
                     months={months}
                     values={series.map((b) => b.cumulative)}
                     format={formatInt}
-                    describe={(i) => ({ value: plural(series[i]?.cumulative ?? 0, 'item'), label: `Through ${monthLabel(months[i] ?? '')}`, extra: `${formatInt(series[i]?.count ?? 0)} added that month` })}
+                    describe={(i) => ({ value: plural(series[i]?.cumulative ?? 0, 'record'), label: `Through ${monthLabel(months[i] ?? '')}`, extra: `${formatInt(series[i]?.count ?? 0)} added that month` })}
                   />
                 }
                 table={
                   <DataTable
-                    caption="Cumulative items"
+                    caption="Cumulative qualifying records"
                     head={['Month', 'Added', 'Running total']}
                     rows={series.map((b) => [monthLabel(b.month), formatInt(b.count), formatInt(b.cumulative)])}
                   />
@@ -98,13 +98,13 @@ export function ChartsPanel({ items, fromDay, toDay }: ChartsPanelProps) {
               />
 
               <ChartCard
-                title="Items by category"
+                title="Qualifying records by category"
                 subtitle="Largest first"
                 chart={<CategoryBars rows={cats} total={items.length} />}
                 table={
                   <DataTable
-                    caption="Items by category"
-                    head={['Category', 'Items', 'Share']}
+                    caption="Qualifying records by category"
+                    head={['Category', 'Records', 'Share']}
                     rows={cats.map((r) => [
                       <span className="table-cat" key={r.category}><CategoryGlyph category={r.category} />{CATEGORY_LABEL[r.category]}</span>,
                       formatInt(r.count),

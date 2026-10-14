@@ -309,7 +309,6 @@ button, input, select { font: inherit; color: inherit; }
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(11rem, calc(50% - var(--space-3))), 1fr));
   gap: var(--space-3);
-  margin-block: var(--space-5);
 }
 
 .tile {
@@ -324,7 +323,8 @@ button, input, select { font: inherit; color: inherit; }
 }
 .tile__label { font-size: 0.875rem; font-weight: 500; color: var(--text-2); }
 .tile__value {
-  font-size: 2.25rem;
+  /* Deliberately below display size: the headline is the only display type. */
+  font-size: 1.625rem;
   font-weight: 620;
   line-height: 1.1;
   letter-spacing: -0.01em;
@@ -929,3 +929,91 @@ button, input, select { font: inherit; color: inherit; }
 
 .card__amounts { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.125rem; justify-items: end; }
 .amounts { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
+
+/* ---------- wave 2: headline block ---------- */
+
+.front {
+  display: grid;
+  gap: var(--space-5);
+  margin-block: var(--space-4) var(--space-6);
+  padding-bottom: var(--space-6);
+  border-bottom: 1px solid var(--rule);
+}
+
+.headline { display: grid; gap: var(--space-3); }
+.headline__tag {
+  justify-self: start;
+  padding: 0.125rem var(--space-3);
+  border: 1px dashed var(--text-2);
+  border-radius: 999px;
+  color: var(--text-2);
+  font-size: 0.8125rem;
+}
+/* The one element allowed display type. */
+.headline__text {
+  max-width: 34ch;
+  font-family: var(--serif);
+  font-size: clamp(1.875rem, 1.1rem + 2.6vw, 3.25rem);
+  font-weight: 450;
+  line-height: 1.12;
+  letter-spacing: -0.012em;
+  text-wrap: balance;
+}
+.headline__num { font-weight: 700; font-variant-numeric: lining-nums tabular-nums; }
+.headline__interval { max-width: var(--measure); font-size: 1.125rem; color: var(--text-2); }
+.headline__how { color: var(--text); white-space: nowrap; }
+
+/* ---------- wave 2: cadence strip ---------- */
+
+.cadence {
+  margin: 0;
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-m);
+}
+.cadence__head { display: grid; gap: var(--space-1); margin-bottom: var(--space-4); }
+.cadence__title { font-size: 1rem; font-weight: 620; }
+.cadence__note { max-width: var(--measure); font-size: 0.8125rem; color: var(--text-3); }
+.cadence__days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.cadence__day { display: grid; grid-template-rows: auto 1fr auto; gap: var(--space-1); justify-items: center; min-width: 0; }
+.cadence__count { font-size: 0.8125rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+/* Marks stack from the baseline up, so a busy day reads as a taller column. */
+.cadence__marks {
+  display: flex;
+  flex-wrap: wrap-reverse;
+  align-content: flex-start;
+  justify-content: center;
+  gap: 0.375rem;
+  width: 100%;
+  min-height: 4.5rem;
+  margin: 0;
+  padding: 0 0 0.375rem;
+  list-style: none;
+  border-bottom: 1px solid var(--rule);
+}
+/* 18px marks on 24px centres: meets the WCAG 2.2 target-size spacing exception. */
+.cadence__mark {
+  display: block;
+  width: 1.125rem;
+  height: 1.125rem;
+  border-radius: 3px;
+  background: var(--ink-data);
+}
+.cadence__mark:hover { background: var(--text); }
+.cadence__mark:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.cadence__label { font-size: 0.75rem; color: var(--text-3); line-height: 1.25; text-align: center; }
+.cadence__label time { display: grid; justify-items: center; }
+.cadence__date { font-variant-numeric: tabular-nums; }
+.cadence__day[data-today] .cadence__label { color: var(--text); font-weight: 600; }
+
+@media (forced-colors: active) {
+  .cadence__mark { forced-color-adjust: none; background: CanvasText; }
+}
