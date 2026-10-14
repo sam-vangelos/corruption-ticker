@@ -79,7 +79,11 @@ Absolute URLs (canonical, `og:url`, feeds) use `SITE_URL`, which must be an
 `https://` origin: `SITE_URL=https://example.org npm run build`. Without it the
 build fails, unless `ALLOW_PLACEHOLDER_SITE_URL=1` asks for the reserved
 placeholder origin `https://ethics-record.example` (no domain exists yet; the
-smoke test sets it). A set but invalid `SITE_URL` always fails.
+smoke test sets it). A set but malformed `SITE_URL` always fails. A
+well-formed one that is not a public origin (the placeholder origin or any
+`.example` host, `localhost`, 127.0.0.0/8, 10.0.0.0/8, 172.16.0.0/12,
+192.168.0.0/16, `.local` or `.test`) fails unless
+`ALLOW_PLACEHOLDER_SITE_URL=1`.
 
 The build also fails, printing every problem, when the raw dataset holds:
 
@@ -90,9 +94,20 @@ The build also fails, printing every problem, when the raw dataset holds:
 - a correction missing a required field, or whose `record_id` names no record
   in the public dataset (the offending correction is printed).
 
-Drafts and rubric failures are not errors: they are left out of the public
-files and listed in the build log. `DATASET_DIR=<dir>` builds from another
-directory's `entries.json` and `corrections.json` (for testing fixtures).
+Drafts are not errors: they are left out of the public files and listed in
+the build log, as are approved records not yet published.
+
+The raw dataset directory is resolved in one place, `scripts/dataset-dir.mjs`,
+used by the prerender, the smoke test and the dev server alike. It is
+`app/dataset/` unless `DATASET_DIR=<dir>` (resolved against `app/`) names
+another, which is refused unless `ALLOW_DATASET_DIR=1` is also set, so a stray
+variable can never publish other data. Every build logs the directory it read
+and records it in `dist/build.json`.
+
+Before writing, the prerender deletes everything it generates (`dist/r`,
+`dist/feeds`, `dist/data`, `dist/feed.xml`, `dist/build.json`, the route pages
+and `404.html`), so `npm run prerender` on its own can never leave a stale
+record page or feed behind.
 
 ## Data
 

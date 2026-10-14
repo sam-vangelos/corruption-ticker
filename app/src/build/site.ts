@@ -37,6 +37,8 @@ export interface SiteInput {
   nowMs: number;
   /** A unique id for this build, stamped into every page and dist/build.json. */
   buildId: string;
+  /** Where the raw dataset was read from, recorded in dist/build.json. */
+  dataset: { label: string; isDefault: boolean };
 }
 
 export interface SiteFile {
@@ -151,7 +153,7 @@ export function headlineSentence(items: readonly Item[], nowMs: number): string 
 }
 
 /** Static route shells: the SPA with the right title and preview for each page. */
-const ROUTES: Array<{ path: string; title: string; description: string }> = [
+export const ROUTES: Array<{ path: string; title: string; description: string }> = [
   { path: 'method', title: 'How we count', description: 'Evidence grades, counting rules, the inclusion rubric and the recommended citation for The Ethics Record.' },
   { path: 'corrections', title: 'Corrections', description: 'Every change made to a record of The Ethics Record after publication, with the old value, the new value, and the reason.' },
   { path: 'recent', title: 'Recent changes', description: 'Records added to or changed in The Ethics Record in the last 24 hours and the last 7 days.' },
@@ -167,6 +169,16 @@ const QUIET: readonly SkipCode[] = ['unapproved'];
 
 /** Thrown when the data cannot be published as is; the message lists every problem. */
 export class BuildError extends Error {}
+
+/**
+ * Every path under dist/ the prerender writes. The prerender deletes them all
+ * before writing, so a record removed from the data can never leave its page
+ * behind. (dist/index.html is Vite's and is rewritten in place.)
+ */
+export const GENERATED_PATHS: readonly string[] = [
+  'r', 'feeds', 'data', 'build.json', '404.html', 'feed.xml',
+  ...ROUTES.flatMap((r) => [`${r.path}.html`, r.path]),
+];
 
 export function buildSite(input: SiteInput): SiteOutput {
   const notes: string[] = [];
@@ -327,7 +339,7 @@ export function buildSite(input: SiteInput): SiteOutput {
     feed(c.path, `${SITE_NAME}: ${CATEGORY_LABEL[c.key]}`, qualifying.filter((it) => it.category === c.key), `${site}/subscribe`);
   }
 
-  files.push({ path: 'build.json', content: `${JSON.stringify({ id: input.buildId, builtAt: new Date(input.nowMs).toISOString() }, null, 2)}\n` });
+  files.push({ path: 'build.json', content: `${JSON.stringify({ id: input.buildId, builtAt: new Date(input.nowMs).toISOString(), dataset: input.dataset }, null, 2)}\n` });
   notes.push(`build ${input.buildId}; ${items.length} record pages; ${1 + index.offices.length + index.categories.length} feeds; headline: ${headline}`);
   return { files, notes, headline };
 }

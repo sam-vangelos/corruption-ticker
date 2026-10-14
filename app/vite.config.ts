@@ -1,8 +1,7 @@
 import { defineConfig, type Plugin } from 'vite';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-
-const DATASET_DIR = path.resolve(__dirname, 'dataset');
+import { resolveDatasetDir } from './scripts/dataset-dir.mjs';
 
 /**
  * Development only: serve the raw dataset files at /data/*.json. In a build
@@ -14,11 +13,14 @@ function devDataset(): Plugin {
     name: 'ethics-record-dev-dataset',
     apply: 'serve',
     configureServer(server) {
+      // Same resolver as the build: DATASET_DIR needs ALLOW_DATASET_DIR=1 here too.
+      const dataset = resolveDatasetDir(process.env);
+      server.config.logger.info(`dev dataset: ${dataset.label}`);
       server.middlewares.use(async (req, res, next) => {
         const m = /^\/data\/(entries|corrections)\.json(?:\?.*)?$/.exec(req.url ?? '');
         if (!m) return next();
         try {
-          const body = await readFile(path.join(DATASET_DIR, `${m[1]}.json`));
+          const body = await readFile(path.join(dataset.dir, `${m[1]}.json`));
           res.setHeader('Content-Type', 'application/json; charset=utf-8');
           res.end(body);
         } catch {
