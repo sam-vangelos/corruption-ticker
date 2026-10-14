@@ -182,8 +182,11 @@ none of it reaches `dist/`. Its API:
 - `POST /__review/edit {id, patch}`: apply editable fields and clear approval.
 
 The page shows one record at a time, keyboard-driven: `a` approve, `r` reject
-(asks for a reason), `n`/`p` next and previous, `/` jump to an id, `Esc`
-cancel. It shows any validation errors and lint findings in red first (and
+(asks for a reason), `e` edit, `n`/`p` next and previous, `/` jump to an id,
+`Esc` cancel. Edit mode is a form over the schema fields (never raw JSON):
+text fields, selects for every enum, and list editors for actors with roles,
+entities, offices, sources and amounts. Saving clears any approval and
+re-validates; the record stays unapproved until `a`. It shows any validation errors and lint findings in red first (and
 disables approval until an edit fixes them), then the title, the summary
 with its grade verb marked, the grade and evidence note, the rubric prong and
 its evidence, actors with roles, every source (outlet, kind, headline, link,

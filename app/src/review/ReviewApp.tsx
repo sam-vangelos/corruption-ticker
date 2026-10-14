@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { QueueView, RecordState } from './api';
 import * as api from './api';
 import { ReviewRecord } from './ReviewRecord';
+import { ReviewEdit } from './ReviewEdit';
 import { CATEGORIES } from '../types';
 import { CATEGORY_LABEL } from '../categories';
 
@@ -25,14 +26,14 @@ export function applyQueueFilters(records: RecordState[], f: QueueFilters): Reco
     && (!f.errorsOnly || hasProblems(s)));
 }
 
-type Mode = 'record' | 'reject' | 'jump';
+type Mode = 'record' | 'reject' | 'jump' | 'edit';
 
 const isTyping = (el: Element | null) => !!el && (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement);
 
 /**
  * The editor's review queue (development only). One record at a time,
- * keyboard-driven: a approve, r reject (asks for a reason), n / p next and
- * previous, / jump to an id. Approval is refused while the record has
+ * keyboard-driven: a approve, r reject (asks for a reason), e edit, n / p
+ * next and previous, / jump to an id. Approval is refused while the record has
  * validation errors or lint findings; the server refuses it too.
  */
 export function ReviewApp() {
@@ -94,6 +95,24 @@ export function ReviewApp() {
     await reload();
   }, [current, busy, reason, reload]);
 
+  const doSave = useCallback(async (patch: Record<string, unknown>) => {
+    if (!current || busy) return;
+    const id = current.id;
+    setBusy(true);
+    const { status, data } = await api.edit(id, patch);
+    setBusy(false);
+    if (status !== 200) { setMessage(`Not saved: ${data.error ?? `HTTP ${status}`}`); return; }
+    const problems = (data.state?.errors.length ?? 0) + (data.state?.lint ? 1 : 0);
+    setMessage(`Saved ${id}; ${problems ? `${problems} problem(s) remain, so it cannot be approved yet` : 'it validates; press a to approve'}.`);
+    setMode('record');
+    const fresh = await reload();
+    // Stay on the edited record.
+    if (fresh) {
+      const i = applyQueueFilters(fresh.records, filters).findIndex((s) => s.id === id);
+      if (i >= 0) setPos(i);
+    }
+  }, [current, busy, reload, filters]);
+
   const doJump = useCallback(() => {
     if (!view) return;
     const id = jumpTo.trim();
@@ -120,6 +139,7 @@ export function ReviewApp() {
       switch (e.key) {
         case 'a': e.preventDefault(); void doApprove(); break;
         case 'r': if (current) { e.preventDefault(); setMode('reject'); } break;
+        case 'e': if (current) { e.preventDefault(); setMode('edit'); } break;
         case 'n': e.preventDefault(); go(1); break;
         case 'p': e.preventDefault(); go(-1); break;
         case '/': e.preventDefault(); setMode('jump'); break;
@@ -163,7 +183,7 @@ export function ReviewApp() {
           <label className="rq-check"><input type="checkbox" checked={filters.includeRejected} onChange={(e) => set('includeRejected', e.target.checked)} /> Include rejected</label>
         </div>
         <p className="rq-keys">
-          <kbd className="kbd">a</kbd> approve · <kbd className="kbd">r</kbd> reject · <kbd className="kbd">n</kbd>/<kbd className="kbd">p</kbd> next/previous ·{' '}
+          <kbd className="kbd">a</kbd> approve · <kbd className="kbd">r</kbd> reject · <kbd className="kbd">e</kbd> edit · <kbd className="kbd">n</kbd>/<kbd className="kbd">p</kbd> next/previous ·{' '}
           <kbd className="kbd">/</kbd> jump to id · <kbd className="kbd">Esc</kbd> cancel
         </p>
       </header>
@@ -205,8 +225,11 @@ export function ReviewApp() {
               Approve
             </button>
             <button type="button" className="button" onClick={() => setMode('reject')} disabled={busy}>Reject</button>
+            <button type="button" className="button" onClick={() => setMode('edit')} disabled={busy}>Edit</button>
           </nav>
-          <ReviewRecord state={current} />
+          {mode === 'edit'
+            ? <ReviewEdit key={current.id} state={current} busy={busy} onSave={(p) => void doSave(p)} onCancel={() => setMode('record')} />
+            : <ReviewRecord state={current} />}
         </>
       )}
     </div>
