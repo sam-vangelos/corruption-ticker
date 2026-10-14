@@ -1,0 +1,46 @@
+/* The editor's review queue (development only). Same tokens as the site. */
+.review-queue { max-width: 52rem; margin-inline: auto; padding: var(--space-5); display: grid; gap: var(--space-4); }
+.rq-head { display: grid; gap: var(--space-2); padding-bottom: var(--space-3); border-bottom: 1px solid var(--rule); }
+.rq-kicker { color: var(--text-3); font-size: 0.8125rem; }
+.rq-h { font-size: 1.5rem; }
+.rq-progress { color: var(--text-2); font-variant-numeric: tabular-nums; }
+.rq-progress strong { color: var(--text); }
+.rq-filters { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); align-items: center; font-size: 0.875rem; color: var(--text-2); }
+.rq-filters select { margin-left: var(--space-1); min-height: 2rem; background: var(--surface); color: var(--text); border: 1px solid var(--control); border-radius: var(--radius-s); }
+.rq-check { display: inline-flex; align-items: center; gap: var(--space-1); }
+.rq-keys { font-size: 0.8125rem; color: var(--text-3); }
+.rq-message { min-height: 1.5rem; color: var(--text); }
+.rq-empty { color: var(--text-2); }
+
+.rq-panel { display: grid; gap: var(--space-2); padding: var(--space-4); background: var(--surface); border: 1px solid var(--control); border-radius: var(--radius-m); }
+.rq-panel input, .rq-panel textarea, .rq-panel select { background: var(--page); color: var(--text); border: 1px solid var(--control); border-radius: var(--radius-s); padding: var(--space-2); font: inherit; }
+.rq-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+.rq-nav { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); color: var(--text-2); font-variant-numeric: tabular-nums; }
+.rq-approve:not(:disabled) { border-color: var(--text); font-weight: 650; }
+
+/* Problems read at a glance without color too: a heavy left rule and a heading. */
+.rq-problems { padding: var(--space-3) var(--space-4); border-left: 6px solid #f08c8c; background: var(--raised); color: var(--text); }
+.rq-problems__h { font-size: 1rem; margin-bottom: var(--space-2); color: #f08c8c; }
+:root[data-theme='light'] .rq-problems { border-left-color: #b42318; }
+:root[data-theme='light'] .rq-problems__h { color: #b42318; }
+.rq-problems ul { margin: 0; padding-left: 1.25rem; display: grid; gap: var(--space-1); }
+.rq-bad { color: #f08c8c; font-weight: 600; }
+:root[data-theme='light'] .rq-bad { color: #b42318; }
+.rq-rejected { padding: var(--space-2) var(--space-3); border: 1px dashed var(--text-2); }
+
+.rq-record { display: grid; gap: var(--space-4); }
+.rq-meta { color: var(--text-2); font-size: 0.875rem; }
+.rq-title { font-family: var(--serif); font-size: 1.625rem; font-weight: 600; line-height: 1.25; }
+.rq-title:focus { outline: none; }
+.rq-summary { font-family: var(--serif); font-size: 1.125rem; line-height: 1.6; }
+.rq-verb { background: var(--selected-bg); color: var(--selected-text); padding: 0 0.2em; border-radius: 2px; }
+.rq-fields { margin: 0; display: grid; gap: var(--space-4); }
+.rq-field { display: grid; grid-template-columns: 9rem 1fr; gap: var(--space-3); }
+.rq-field dt { color: var(--text-3); font-size: 0.875rem; }
+.rq-field dd { margin: 0; }
+.rq-note { color: var(--text-2); margin-top: var(--space-1); }
+.rq-dim { color: var(--text-3); font-size: 0.875rem; }
+.rq-list, .rq-sources { margin: 0; padding-left: 1.25rem; display: grid; gap: var(--space-2); }
+.rq-sources a { overflow-wrap: anywhere; }
+@media (max-width: 40rem) { .rq-field { grid-template-columns: 1fr; } }

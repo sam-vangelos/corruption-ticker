@@ -181,6 +181,16 @@ none of it reaches `dist/`. Its API:
   `{id, reason, at}` to `dataset/rejections.json`.
 - `POST /__review/edit {id, patch}`: apply editable fields and clear approval.
 
+The page shows one record at a time, keyboard-driven: `a` approve, `r` reject
+(asks for a reason), `n`/`p` next and previous, `/` jump to an id, `Esc`
+cancel. It shows any validation errors and lint findings in red first (and
+disables approval until an edit fixes them), then the title, the summary
+with its grade verb marked, the grade and evidence note, the rubric prong and
+its evidence, actors with roles, every source (outlet, kind, headline, link,
+archive link), amounts with type and basis, and the three statuses. A
+progress line counts approved, rejected and remaining records; filters narrow
+by month, category, grade, and "has validation errors".
+
 Every write re-reads the file, writes atomically (temp file, then rename),
 re-validates and returns the record's new state; writes are serialised. The
 queue and the raw `/data/*.json` routes answer loopback clients only, refuse a
