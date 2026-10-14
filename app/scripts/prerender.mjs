@@ -98,6 +98,7 @@ try {
     entries: await readJson(path.join(datasetDir, 'entries.json')),
     corrections: await readJson(path.join(datasetDir, 'corrections.json'), true),
     siteUrl,
+    nowMs: Date.now(),
   });
 } catch (err) {
   fail(err instanceof Error ? err.message : String(err));

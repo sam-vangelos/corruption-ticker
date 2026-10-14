@@ -22,8 +22,8 @@ interface Activity {
 
 /** A record's latest activity no later than now: its addition, its last change, or both. */
 function activity(it: Item, nowMs: number): Activity {
-  const added = it.publishedMs <= nowMs ? it.publishedMs : null;
-  const changed = it.modifiedMs !== null && it.modifiedMs <= nowMs && it.modifiedMs > it.publishedMs ? it.modifiedMs : null;
+  const added = it.publishedMs !== null && it.publishedMs <= nowMs ? it.publishedMs : null;
+  const changed = added !== null && it.modifiedMs !== null && it.modifiedMs <= nowMs && it.modifiedMs > added ? it.modifiedMs : null;
   if (changed !== null && added !== null && nowMs - added < 24 * HOUR) return { item: it, at: changed, what: 'Added, then changed' };
   if (changed !== null) return { item: it, at: changed, what: 'Changed' };
   return { item: it, at: added ?? -Infinity, what: 'Added' };
@@ -59,7 +59,8 @@ export function RecentPage({ state, nowMs }: RecentPageProps) {
   if (state.kind !== 'ready') {
     return <Page title="Recent changes"><p aria-live="polite">{state.kind === 'loading' ? 'Loading the dataset.' : 'The dataset could not be loaded, so there is nothing to list.'}</p></Page>;
   }
-  const all = state.items.map((it) => activity(it, nowMs)).sort((a, b) => b.at - a.at || a.item.id.localeCompare(b.item.id));
+  // Unpublished and future-dated records have not been added yet, so they are not listed.
+  const all = state.items.filter((it) => it.publishedMs !== null && it.publishedMs <= nowMs).map((it) => activity(it, nowMs)).sort((a, b) => b.at - a.at || a.item.id.localeCompare(b.item.id));
   const day = all.filter((a) => nowMs - a.at < 24 * HOUR);
   const week = all.filter((a) => nowMs - a.at >= 24 * HOUR && nowMs - a.at < 7 * 24 * HOUR);
   return (

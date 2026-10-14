@@ -103,7 +103,7 @@ export interface Rejection {
  * `interpret`. Approval is checked first: a draft is "unapproved" however
  * incomplete it is.
  */
-export function toItem(raw: unknown): Item | Rejection {
+export function toItem(raw: unknown, nowMs: number = Date.now()): Item | Rejection {
   const bad = (reason: string): Rejection => ({ code: 'invalid', reason });
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return bad('not an object');
   const o = raw as Record<string, unknown>;
@@ -111,11 +111,11 @@ export function toItem(raw: unknown): Item | Rejection {
   if (!ID_RE.test(o.id)) return { code: 'id', reason: `id "${o.id}" must match ${String(ID_RE)} (lowercase letters, digits, hyphens)` };
   if (looksLikeV1(o)) return { code: 'v1', reason: V1_REASON };
   if (!nonEmpty(o.approved_by)) return { code: 'unapproved', reason: 'approved_by is null, so the record is not in the public dataset' };
-  const res = validate(o, o.id);
+  const res = validate(o, o.id, nowMs);
   return typeof res === 'string' ? bad(res) : res;
 }
 
-function validate(o: Record<string, unknown>, id: string): Item | Rejection | string {
+function validate(o: Record<string, unknown>, id: string, nowMs: number): Item | Rejection | string {
   if (!nonEmpty(o.title)) return 'missing title';
   if (o.root_id !== null && !nonEmpty(o.root_id)) return 'root_id must be null (a root record) or the id of a root record';
   if (o.root_id === id) return 'root_id names the record itself';
@@ -175,8 +175,11 @@ function validate(o: Record<string, unknown>, id: string): Item | Rejection | st
     sources.push(res);
   }
 
-  const publishedMs = parseTimestamp(o.first_published_at);
-  if (publishedMs === null) return `first_published_at "${String(o.first_published_at)}" is not an ISO 8601 timestamp`;
+  // Null while unpublished; a future time means scheduled. Neither counts yet.
+  const publishedMs = o.first_published_at === null ? null : parseTimestamp(o.first_published_at);
+  if (o.first_published_at !== null && publishedMs === null) {
+    return `first_published_at "${String(o.first_published_at)}" is not an ISO 8601 timestamp or null`;
+  }
   let modifiedMs: number | null = null;
   if (o.last_modified_at !== null) {
     modifiedMs = parseTimestamp(o.last_modified_at);
@@ -206,7 +209,7 @@ function validate(o: Record<string, unknown>, id: string): Item | Rejection | st
     status_note: strOrNull(o.status_note),
     amounts,
     sources,
-    first_published_at: o.first_published_at as string,
+    first_published_at: (o.first_published_at as string | null) ?? null,
     last_modified_at: (o.last_modified_at as string | null) ?? null,
     last_verified_at: o.last_verified_at as string,
     approved_by: o.approved_by as string,
@@ -220,7 +223,8 @@ function validate(o: Record<string, unknown>, id: string): Item | Rejection | st
     day,
     month: monthKey(day),
     isRoot: entry.root_id === null,
-    qualifying: isQualifying(entry),
+    treeId: entry.root_id ?? entry.id,
+    qualifying: isQualifying(entry, publishedMs, nowMs),
     maxUsd: usd.length ? Math.max(...usd) : null,
     publishedMs,
     modifiedMs,
@@ -231,8 +235,12 @@ function validate(o: Record<string, unknown>, id: string): Item | Rejection | st
   };
 }
 
-/** Turn the parsed JSON body into a LoadState. Exported for reuse (the prerender uses it); pure. */
-export function interpret(body: unknown): LoadState {
+/**
+ * Turn the parsed JSON body into a LoadState. Exported for reuse (the
+ * prerender uses it); pure given `nowMs`, the moment against which
+ * "published, not in the future" is judged.
+ */
+export function interpret(body: unknown, nowMs: number = Date.now()): LoadState {
   if (!Array.isArray(body)) {
     return { kind: 'invalid', detail: 'The file parsed as JSON but is not an array of entries.' };
   }
@@ -244,7 +252,7 @@ export function interpret(body: unknown): LoadState {
     ? ((raw as Record<string, unknown>).id as string)
     : null);
   body.forEach((raw, index) => {
-    const res = toItem(raw);
+    const res = toItem(raw, nowMs);
     if ('code' in res) {
       skipped.push({ index, id: idOf(raw), code: res.code, reason: res.reason });
     } else if (seen.has(res.id)) {

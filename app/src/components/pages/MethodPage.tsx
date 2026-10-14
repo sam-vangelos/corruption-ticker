@@ -9,6 +9,18 @@ interface MethodPageProps {
   items: Item[] | null;
 }
 
+/** Render the rule text's `code` spans and *emphasis*; everything else is plain text. */
+function Inline({ text }: { text: string }) {
+  const parts = text.split(/(`[^`]+`|\*[^*]+\*)/g).filter(Boolean);
+  return (
+    <>
+      {parts.map((p, i) => (p.startsWith('`') ? <code key={i}>{p.slice(1, -1)}</code>
+        : p.startsWith('*') ? <em key={i}>{p.slice(1, -1)}</em>
+        : <span key={i}>{p}</span>))}
+    </>
+  );
+}
+
 const LONG_DATE = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
 
 /**
@@ -66,14 +78,9 @@ export function MethodPage({ items }: MethodPageProps) {
 
       <section className="page__section" aria-labelledby="counting">
         <h2 id="counting" tabIndex={-1}>Counting rules</h2>
-        <dl className="rules">
-          {COUNTING_RULES.map((r) => (
-            <div key={r.id} id={`rule-${r.id}`}>
-              <dt>{r.title}</dt>
-              <dd>{r.text}</dd>
-            </div>
-          ))}
-        </dl>
+        <ul className="rules rules--plain">
+          {COUNTING_RULES.map((r) => <li key={r.id} id={`rule-${r.id}`}><Inline text={r.text} /></li>)}
+        </ul>
       </section>
 
       <section className="page__section" aria-labelledby="rubric">

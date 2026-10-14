@@ -6,7 +6,7 @@
 import type { Correction, Item } from '../types';
 import { checkCorrections, interpret } from '../data/load';
 import type { SkipCode } from '../types';
-import { computeHeadline } from '../data/metrics';
+import { computeHeadline, qualifyingOnly, type QualifyingItem } from '../data/metrics';
 import { formatDate, parseDay } from '../data/dates';
 import { formatInt } from '../data/format';
 import { CATEGORY_LABEL } from '../categories';
@@ -16,6 +16,7 @@ import { correctionSentence, correctionsFor } from '../corrections';
 import { SITE_DECK, SITE_NAME, START_LABEL, gradeDef, gradeLabel } from '../method';
 import { recordPath } from '../router';
 import { esc, fillShell, type PageMeta } from './html';
+import { notCountedReason } from '../grades';
 import { atomFeed } from './atom';
 import { MAIN_FEED, feedIndex, feedItems } from '../feeds';
 
@@ -28,6 +29,8 @@ export interface SiteInput {
   corrections: unknown;
   /** Absolute origin for canonical, og:url and feed links, no trailing slash. */
   siteUrl: string;
+  /** The build's "now": records first published after it are not yet counted or fed. */
+  nowMs: number;
 }
 
 export interface SiteFile {
@@ -46,13 +49,10 @@ export interface SiteOutput {
 
 const PLACEHOLDER_NOTE = 'Placeholder record: fake data for layout testing, describing no real event, person, or organization.';
 
-/** "Grade 2: primary records" plus "lead, not counted" / "retracted, not counted". */
+/** "Grade 2: primary records" plus why it is not counted, when it is not. */
 export function gradeLine(it: Item): string {
-  const g = gradeDef(it.evidence_grade);
-  let s = gradeLabel(it.evidence_grade);
-  if (!g.counts) s += '; lead, not counted';
-  else if (it.evidentiary_status === 'retracted') s += '; retracted, not counted';
-  return s;
+  const why = notCountedReason(it);
+  return `${gradeLabel(it.evidence_grade)}${why ? `; ${why.toLowerCase()}` : ''}`;
 }
 
 /** "Evidence: Documented. Procedure: Under investigation. Response: Denied." */
@@ -90,7 +90,7 @@ export function recordDescription(it: Item, corrections: readonly Correction[]):
   return parts.filter(Boolean).join(' ');
 }
 
-function recordBody(it: Item, cs: readonly Correction[], byId: Map<string, Item>): string {
+function recordBody(it: Item, cs: readonly Correction[], byId: Map<string, Item>, nowMs: number): string {
   const li = (s: string) => `<li>${s}</li>`;
   const root = it.root_id ? byId.get(it.root_id) : null;
   const children = [...byId.values()].filter((x) => x.root_id === it.id);
@@ -115,7 +115,7 @@ function recordBody(it: Item, cs: readonly Correction[], byId: Map<string, Item>
     : children.length
       ? `<p>Later developments in this matter:</p><ul>${children.map((c) => li(`<a href="${esc(recordPath(c.id))}">${esc(c.title)}</a>`)).join('')}</ul>`
       : '';
-  const published = new Date(it.publishedMs).toISOString().slice(0, 10);
+  const published = it.publishedMs !== null ? new Date(it.publishedMs).toISOString().slice(0, 10) : null;
   const modified = it.modifiedMs !== null ? new Date(it.modifiedMs).toISOString().slice(0, 10) : null;
   return [
     '<main id="main" class="static-record">',
@@ -131,7 +131,7 @@ function recordBody(it: Item, cs: readonly Correction[], byId: Map<string, Item>
     `<dl class="drawer__facts">${facts.join('')}</dl>`,
     tree,
     `<h2>Sources (${it.sources.length})</h2><ol>${sources}</ol>`,
-    `<p class="drawer__muted">Added to the record ${esc(published)}${modified ? `; last changed ${esc(modified)}` : ''}. Approved by ${esc(it.approved_by ?? '')}. <a href="/method">How we count</a>.</p>`,
+    `<p class="drawer__muted">${published === null ? 'Not yet published' : it.qualifying || (it.publishedMs ?? 0) <= nowMs ? `Added to the record ${esc(published)}` : `Scheduled for publication ${esc(published)}; not counted until then`}${modified ? `; last changed ${esc(modified)}` : ''}. Approved by ${esc(it.approved_by ?? '')}. <a href="/method">How we count</a>.</p>`,
     '</article>',
     '</main>',
   ].filter(Boolean).join('\n');
@@ -160,7 +160,7 @@ export class BuildError extends Error {}
 
 export function buildSite(input: SiteInput): SiteOutput {
   const notes: string[] = [];
-  const state = interpret(input.entries);
+  const state = interpret(input.entries, input.nowMs);
   if (state.kind !== 'ready') {
     throw new Error(`prerender: the dataset did not load (${state.kind}${'detail' in state ? `: ${state.detail}` : ''})`);
   }
@@ -226,14 +226,14 @@ export function buildSite(input: SiteInput): SiteOutput {
       url: `${site}${path}`,
       siteName: SITE_NAME,
       type: 'article',
-      publishedTime: new Date(it.publishedMs).toISOString(),
+      publishedTime: it.publishedMs !== null ? new Date(it.publishedMs).toISOString() : undefined,
       modifiedTime: it.modifiedMs !== null ? new Date(it.modifiedMs).toISOString() : undefined,
     };
-    files.push({ path: `r/${encodeURIComponent(it.id)}/index.html`, content: fillShell(input.indexHtml, meta, recordBody(it, cs, byId), noscriptRecord) });
+    files.push({ path: `r/${encodeURIComponent(it.id)}/index.html`, content: fillShell(input.indexHtml, meta, recordBody(it, cs, byId, input.nowMs), noscriptRecord) });
   }
 
   // The front page: same shell, with a preview that states the headline and its rules link.
-  const headline = headlineSentence(items, Date.now());
+  const headline = headlineSentence(items, input.nowMs);
   const frontDescription = `${placeholder ? 'Placeholder data. ' : ''}${headline} Counting rules: ${site}/method`;
   files.push({
     path: 'index.html',
@@ -268,10 +268,12 @@ export function buildSite(input: SiteInput): SiteOutput {
     }, '', noscriptShell),
   });
 
-  // Feeds: everything, then one per office and per category present.
-  const latest = Math.max(0, ...items.map((it) => Math.max(it.publishedMs, it.modifiedMs ?? 0)));
+  // Feeds: qualifying records only (docs/schema.md). The main feed, then one
+  // per office and per category with at least one qualifying record.
+  const qualifying = qualifyingOnly(items);
+  const latest = Math.max(0, ...qualifying.map((it) => Math.max(it.publishedMs, it.modifiedMs ?? 0)));
   const fake = placeholder ? ' Placeholder data: every entry is fake.' : '';
-  const feed = (path: string, title: string, list: Item[], alternate: string) => files.push({
+  const feed = (path: string, title: string, list: QualifyingItem[], alternate: string) => files.push({
     path: path.replace(/^\//, ''),
     content: atomFeed(feedItems(list), corrections, {
       title,
@@ -282,13 +284,14 @@ export function buildSite(input: SiteInput): SiteOutput {
       fallbackUpdatedMs: latest,
     }),
   });
-  feed(MAIN_FEED, SITE_NAME, items, `${site}/recent`);
-  const index = feedIndex(items);
+  const index = feedIndex(qualifying);
+  if (index.problems.length) throw new BuildError(`feed slugs are not unique:\n  ${index.problems.join('\n  ')}`);
+  feed(MAIN_FEED, SITE_NAME, qualifying, `${site}/recent`);
   for (const o of index.offices) {
-    feed(o.path, `${SITE_NAME}: ${o.label}`, items.filter((it) => it.offices.includes(o.key)), `${site}/subscribe`);
+    feed(o.path, `${SITE_NAME}: ${o.label}`, qualifying.filter((it) => it.offices.includes(o.key)), `${site}/subscribe`);
   }
   for (const c of index.categories) {
-    feed(c.path, `${SITE_NAME}: ${CATEGORY_LABEL[c.key]}`, items.filter((it) => it.category === c.key), `${site}/subscribe`);
+    feed(c.path, `${SITE_NAME}: ${CATEGORY_LABEL[c.key]}`, qualifying.filter((it) => it.category === c.key), `${site}/subscribe`);
   }
 
   notes.push(`${items.length} record pages; ${1 + index.offices.length + index.categories.length} feeds; headline: ${headline}`);

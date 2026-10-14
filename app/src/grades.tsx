@@ -52,9 +52,10 @@ export function gradeVerb(g: EvidenceGrade): string {
 }
 
 /** Why a record is outside the metrics, or null when it counts. */
-export function notCountedReason(it: Pick<Item, 'evidence_grade' | 'evidentiary_status'>): string | null {
+export function notCountedReason(it: Pick<Item, 'evidence_grade' | 'evidentiary_status' | 'qualifying'>): string | null {
   if (!gradeDef(it.evidence_grade).counts) return 'Lead, not counted';
   if (it.evidentiary_status === 'retracted') return 'Retracted, not counted';
+  if (!it.qualifying) return 'Not yet published, not counted';
   return null;
 }
 
@@ -62,7 +63,7 @@ export function notCountedReason(it: Pick<Item, 'evidence_grade' | 'evidentiary_
  * The grade as a card or drawer shows it: mark, the grade's verb and number,
  * and a visible "lead, not counted" / "retracted, not counted" tag.
  */
-export function GradeBadge({ item }: { item: Pick<Item, 'evidence_grade' | 'evidentiary_status'> }) {
+export function GradeBadge({ item }: { item: Pick<Item, 'evidence_grade' | 'evidentiary_status' | 'qualifying'> }) {
   const g = item.evidence_grade;
   const out = notCountedReason(item);
   return (

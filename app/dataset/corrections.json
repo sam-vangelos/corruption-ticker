@@ -16,5 +16,14 @@
     "new_value": 12500000,
     "reason": "[PLACEHOLDER] The sample source revised its figure; the record follows the revision.",
     "placeholder": true
+  },
+  {
+    "date": "2026-10-12",
+    "record_id": "p-2025-03-foreign-03",
+    "field": "sources[1].title",
+    "old_value": "[PLACEHOLDER] Sample headline 03",
+    "new_value": "[PLACEHOLDER] Sample headline 03 (follow-up)",
+    "reason": "[PLACEHOLDER] The second sample source's headline was mis-transcribed.",
+    "placeholder": true
   }
 ]

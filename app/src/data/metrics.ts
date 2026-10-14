@@ -5,15 +5,31 @@ import { localDay } from './dates';
 const MS_PER_HOUR = 3_600_000;
 const MS_PER_DAY = 86_400_000;
 
-/** In the metric set: grade 1 to 4 and not retracted (docs/schema.md, counting rules). */
-export function isQualifying(e: Pick<Entry, 'evidence_grade' | 'evidentiary_status'>): boolean {
-  return COUNTED_GRADES.includes(e.evidence_grade) && !EXCLUDED_STATUSES.includes(e.evidentiary_status);
+/**
+ * Qualifying (docs/schema.md, counting rules): evidence grade 1 to 4,
+ * evidentiary status not retracted, approved_by set, and first_published_at
+ * set and not in the future (relative to `nowMs`).
+ */
+export function isQualifying(
+  e: Pick<Entry, 'evidence_grade' | 'evidentiary_status' | 'approved_by'>,
+  publishedMs: number | null,
+  nowMs: number,
+): boolean {
+  return COUNTED_GRADES.includes(e.evidence_grade)
+    && !EXCLUDED_STATUSES.includes(e.evidentiary_status)
+    && !!e.approved_by
+    && publishedMs !== null && publishedMs <= nowMs;
 }
+
+/** Qualifying records only, narrowed so `publishedMs` is a number. */
+export type QualifyingItem = Item & { qualifying: true; publishedMs: number };
+export const qualifyingOnly = (items: readonly Item[]): QualifyingItem[] =>
+  items.filter((it): it is QualifyingItem => it.qualifying && it.publishedMs !== null);
 
 export interface Headline {
   /** Root and child records in the metric set. */
   records: number;
-  /** Root records in the metric set: one per distinct underlying matter. */
+  /** Trees (a root plus its children) containing at least one qualifying record. */
   events: number;
   /** Hours from the interval start to `nowMs`. */
   hours: number;
@@ -24,12 +40,13 @@ export interface Headline {
 /** The front-page numbers. Always over the whole record, never a filtered slice. */
 export function computeHeadline(items: readonly Item[], nowMs: number): Headline {
   let records = 0;
-  let events = 0;
+  const trees = new Set<string>();
   for (const it of items) {
     if (!it.qualifying) continue;
     records += 1;
-    if (it.isRoot) events += 1;
+    trees.add(it.treeId);
   }
+  const events = trees.size;
   const hours = Math.max(0, (nowMs - INTERVAL_START_MS) / MS_PER_HOUR);
   return { records, events, hours, intervalHours: events > 0 ? hours / events : null };
 }
@@ -51,13 +68,13 @@ export function cadence(items: readonly Item[], nowMs: number, days = 7): Cadenc
   const cols: CadenceDay[] = [];
   for (let d = today - days + 1; d <= today; d++) cols.push({ day: d, items: [] });
   const first = today - days + 1;
-  for (const it of items) {
-    if (!it.qualifying || it.publishedMs > nowMs) continue;
+  for (const it of qualifyingOnly(items)) {
+    if (it.publishedMs > nowMs) continue;
     const d = localDay(it.publishedMs);
     if (d < first || d > today) continue;
     cols[d - first]?.items.push(it);
   }
-  for (const c of cols) c.items.sort((a, b) => a.publishedMs - b.publishedMs || a.id.localeCompare(b.id));
+  for (const c of cols) c.items.sort((a, b) => (a.publishedMs ?? 0) - (b.publishedMs ?? 0) || a.id.localeCompare(b.id));
   return cols;
 }
 
@@ -83,8 +100,7 @@ export function computeStats(items: readonly Item[], opts: { now: number; nowMs:
   let added30 = 0;
   let inProcess = 0;
   const since = opts.nowMs - 30 * MS_PER_DAY;
-  for (const it of items) {
-    if (!it.qualifying) continue;
+  for (const it of qualifyingOnly(items)) {
     total += 1;
     if (it.amounts.length > 0) withAmount += 1;
     if (it.publishedMs > since && it.publishedMs <= opts.nowMs) added30 += 1;

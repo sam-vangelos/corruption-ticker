@@ -137,12 +137,18 @@ export interface Item extends Entry {
   month: string;
   /** True for a root record (`root_id === null`). */
   isRoot: boolean;
-  /** In the metric set: grade 1 to 4 and not retracted. */
+  /** The id of this record's tree: its own id for a root, else `root_id`. */
+  treeId: string;
+  /**
+   * In the metric set (docs/schema.md, counting rules): grade 1 to 4, not
+   * retracted, approved, and first published no later than the moment the
+   * dataset was loaded.
+   */
   qualifying: boolean;
   /** Largest stated figure across `amounts`, or null when there is none. */
   maxUsd: number | null;
-  /** ms since epoch for `first_published_at` (always set on a loaded item). */
-  publishedMs: number;
+  /** ms since epoch for `first_published_at`, or null while unpublished. May lie in the future. */
+  publishedMs: number | null;
   /** ms since epoch for `last_modified_at`, or null. */
   modifiedMs: number | null;
   /** Lower-cased title + summary + actors + entities + offices + outlets, for free-text search. */

@@ -139,9 +139,13 @@ try {
   }
 
   // Independent recount of the headline per docs/schema.md counting rules.
-  const qualifying = entries.filter((e) => Number.isInteger(e.evidence_grade) && e.evidence_grade >= 1 && e.evidence_grade <= 4 && e.evidentiary_status !== 'retracted' && e.approved_by);
+  // Qualifying: grade 1-4, not retracted, approved, published and not in the future.
+  // Events: trees (a root plus its children) holding at least one qualifying record.
+  const nowMs = Date.now();
+  const qualifying = entries.filter((e) => Number.isInteger(e.evidence_grade) && e.evidence_grade >= 1 && e.evidence_grade <= 4
+    && e.evidentiary_status !== 'retracted' && e.approved_by && e.first_published_at && Date.parse(e.first_published_at) <= nowMs);
   const records = qualifying.length;
-  const events = qualifying.filter((e) => e.root_id === null).length;
+  const events = new Set(qualifying.map((e) => (e.root_id === null ? e.id : e.root_id))).size;
   const headline = `${plural(records, 'qualifying record', 'qualifying records')} concerning ${plural(events, 'distinct event', 'distinct events')} since 20 January 2025`;
 
   await check('/', (body) => {

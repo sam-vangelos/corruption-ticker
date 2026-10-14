@@ -105,45 +105,24 @@ const leadGrades = GRADES.filter((g) => !g.counts).map((g) => g.grade).join(', '
 /** A rule as published on /method. `id` is a stable anchor. */
 export interface Rule {
   id: string;
-  title: string;
+  /** Markdown-lite: `code` spans and *emphasis*, rendered by the method page. */
   text: string;
 }
 
 /**
- * Counting rules, docs/schema.md § Counting rules and plans/concept.md § The
- * headline. Interpolated from the constants above, which data/metrics.ts uses.
+ * Counting rules, copied verbatim from docs/schema.md § Counting rules
+ * (clarified 2026-10-13 on main). data/metrics.ts implements them with the
+ * constants above; if the schema text changes, change it here word for word.
  */
 export const COUNTING_RULES: readonly Rule[] = [
-  {
-    id: 'events',
-    title: 'Events',
-    text: `The event count is the number of root records (one per distinct underlying matter, root_id null) with evidence grade ${lowest} to ${highest} and an evidentiary status other than ${EXCLUDED_STATUSES.join(' or ')}. Later developments in a matter are child records: they add to the record count and never to the event count.`,
-  },
-  {
-    id: 'records',
-    title: 'Records',
-    text: 'The record count is every root and child record meeting the same filter.',
-  },
-  {
-    id: 'interval',
-    title: 'Average interval',
-    text: `The average interval is the hours since ${START_LABEL}, 12:00 Eastern (${INTERVAL_START}), divided by the event count. It is an average over the whole period, not a current rate.`,
-  },
-  {
-    id: 'exclusions',
-    title: 'Leads and retractions',
-    text: `Records at evidence grade ${leadGrades} (single-source allegations) are kept as leads, labelled "lead, not counted", and excluded from every metric. Retracted records stay on the record, labelled, and are excluded from every metric.`,
-  },
-  {
-    id: 'dates',
-    title: 'Which date counts',
-    text: 'Event dates are the date field: the date of the underlying conduct or first report, never the date a record was added. The seven-day cadence strip is the one exception and says so: it counts records by first_published_at, the day each was added to the record.',
-  },
-  {
-    id: 'money',
-    title: 'Money',
-    text: 'Financial stakes are reported per amount type (private benefit received, public funds disbursed, contract or asset face value, estimated or potential exposure), each summed over records in the metric set with each overlap group counted once, the largest figure winning. There is no grand total: the types measure different things and do not add up.',
-  },
+  { id: 'qualifying', text: 'A record is *qualifying* when `evidence_grade` is 1 to 4, `evidentiary_status` is not `retracted`, `approved_by` is set, and `first_published_at` is set and not in the future.' },
+  { id: 'events', text: 'Event count = number of trees (a root plus its children) containing at least one qualifying record.' },
+  { id: 'records', text: 'Record count = all qualifying records, root or child.' },
+  { id: 'public-file', text: 'The public dataset file contains only approved records that pass the rubric; leads (grade 5) and retracted records stay in it, labelled, because they are part of the record. Unapproved or rubric-failing records are never written to it.' },
+  { id: 'feeds', text: 'Feeds contain qualifying records only.' },
+  { id: 'interval', text: 'Average interval = hours since 2025-01-20T12:00:00-05:00 divided by event count.' },
+  { id: 'money', text: 'Financial stakes = per `amount_type`, sum of `usd` over records in the metric set, counting each `overlap_group` once (largest figure wins). No grand total.' },
+  { id: 'dates', text: 'Event dates are `date`; the seven-day cadence strip uses `first_published_at`.' },
 ];
 
 export interface RubricPart {
@@ -198,7 +177,7 @@ export const RUBRIC: readonly RubricPart[] = [
  */
 export function datasetVersion(items: readonly Item[]): string {
   let latest = 0;
-  for (const it of items) latest = Math.max(latest, it.publishedMs, it.modifiedMs ?? 0);
+  for (const it of items) latest = Math.max(latest, it.publishedMs ?? 0, it.modifiedMs ?? 0);
   const stamp = latest > 0 ? `${new Date(latest).toISOString().slice(0, 16)}Z` : 'empty';
   const fake = items.some((it) => it.placeholder) ? '-placeholder' : '';
   return `v${SCHEMA_VERSION}-${stamp}${fake}`;

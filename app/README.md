@@ -48,12 +48,16 @@ corrections log.
 - a shell per route (`method.html` and `method/index.html`, and so on) with
   its own title, and `404.html`;
 - Atom feeds, hand-written to RFC 4287 in `src/build/atom.ts` (no feed
-  library): `feed.xml` with the 50 most recent records by
+  library), of qualifying records only: `feed.xml` with the 50 most recent by
   `first_published_at`, and `feeds/office/<slug>.xml` and
-  `feeds/category/<slug>.xml` for every office and category present. Each
-  entry carries the record page URL, the evidence grade, the three statuses,
-  any correction notice and the summary. Slugs come from `src/feeds.ts`,
-  which `/subscribe` also uses.
+  `feeds/category/<slug>.xml` for every office and category with at least one
+  qualifying record. Each entry carries the record page URL, the evidence
+  grade, the three statuses, any correction notice and the summary; its
+  `<updated>` is the latest of `first_published_at`, `last_modified_at` and
+  the date of any correction to the record. Slugs come from `src/feeds.ts`
+  (lowercase, NFKD with diacritics stripped, each run of other characters to
+  one hyphen, ends trimmed), which `/subscribe` also uses; two office names
+  that share a slug fail the build rather than being suffixed.
 
 Absolute URLs (canonical, `og:url`, feeds) use `SITE_URL`, which must be an
 `https://` origin: `SITE_URL=https://example.org npm run build`. Without it the
@@ -99,22 +103,31 @@ root in the file. Schema v1 records (a single `status`, a `dollar_amount_usd`)
 are rejected with a message saying to migrate them; a file that is entirely
 v1 shows only that message.
 
-The metric set follows the schema's counting rules: a record counts when its
-`evidence_grade` is 1 to 4 and its `evidentiary_status` is not `retracted`;
-events are the counted records with `root_id: null`. The constants live in
-`src/method.ts` and the arithmetic in `src/data/metrics.ts`.
+The metric set follows the schema's counting rules (docs/schema.md, clarified
+on main): a record is *qualifying* when its `evidence_grade` is 1 to 4, its
+`evidentiary_status` is not `retracted`, `approved_by` is set, and
+`first_published_at` is set and not in the future. The event count is the
+number of trees (a root plus its children) holding at least one qualifying
+record, so a qualifying child under a grade-5 or retracted root still makes
+one event. The rule text lives verbatim in `src/method.ts` and the arithmetic
+in `src/data/metrics.ts`. A record dated for future publication still gets its
+record page, labelled "Not yet published, not counted", but appears in no
+count, strip, feed or `/recent` list until then.
 
 The files in `dataset/` are a **placeholder fixture**: every title
 starts with `[PLACEHOLDER]`, every source and archive URL points at
 `https://example.com/`, every record has `"placeholder": true`, and every name
-is invented. The fixture holds 20 records: three parent/child trees, two
-grade-5 leads, one retracted record, one record naming only private actors,
-and figures of each `amount_type`. It counts 17 qualifying records concerning
-13 distinct events. Its `first_published_at` times cluster in the week to 13
-October 2026 so the cadence strip and `/recent` have something to show; as
-the calendar moves on they empty out, which is the behaviour real data would
-have on a quiet week. The app shows a notice whenever any loaded record
-carries the placeholder flag.
+is invented. The raw file holds 25 records; 23 reach the public dataset (one
+unapproved draft and one record failing the private-actor rule are left out).
+Among them: three parent/child trees plus a grade-5 lead root with a
+qualifying child, three grade-5 leads in all, one retracted record, one record
+scheduled for publication in 2099, and figures of each `amount_type`. They
+count 18 qualifying records concerning 14 distinct events (a rule that counted
+only qualifying roots would say 13). Its `first_published_at` times cluster in
+the week to 13 October 2026 so the cadence strip and `/recent` have something
+to show; as the calendar moves on they empty out, which is the behaviour real
+data would have on a quiet week. The app shows a notice whenever any loaded
+record carries the placeholder flag.
 
 ## Using it
 

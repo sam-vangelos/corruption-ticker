@@ -1197,3 +1197,7 @@ button, input, select { font: inherit; color: inherit; }
 @media (forced-colors: active) {
   .grade-mark { forced-color-adjust: auto; }
 }
+
+.rules--plain { list-style: disc; padding-left: 1.25rem; gap: var(--space-3); color: var(--text-2); }
+.rules--plain li { scroll-margin-top: var(--space-5); }
+.rules--plain code { color: var(--text); }

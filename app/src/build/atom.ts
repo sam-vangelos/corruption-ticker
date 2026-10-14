@@ -1,4 +1,5 @@
-import type { Correction, Item } from '../types';
+import type { Correction } from '../types';
+import type { QualifyingItem } from '../data/metrics';
 import { CATEGORY_LABEL } from '../categories';
 import { EVIDENTIARY_LABEL, PROCEDURAL_LABEL, RESPONSE_LABEL } from '../status';
 import { gradeLabel } from '../method';
@@ -16,7 +17,18 @@ export function xml(s: string): string {
 }
 
 const iso = (ms: number) => new Date(ms).toISOString();
-const updatedMs = (it: Item) => Math.max(it.publishedMs, it.modifiedMs ?? 0);
+
+/**
+ * An entry's <updated>: the latest of first_published_at, last_modified_at and
+ * the date of any correction logged against the record (read as midnight UTC).
+ */
+export function updatedMs(it: QualifyingItem, corrections: readonly Correction[]): number {
+  let ms = Math.max(it.publishedMs, it.modifiedMs ?? 0);
+  for (const c of corrections) {
+    if (c.record_id === it.id) ms = Math.max(ms, Date.parse(`${c.date}T00:00:00Z`));
+  }
+  return ms;
+}
 
 export interface FeedOptions {
   title: string;
@@ -32,7 +44,7 @@ export interface FeedOptions {
 }
 
 /** One record as an Atom entry: its page URL, grade, three statuses, corrections and summary. */
-function entry(it: Item, site: string, corrections: readonly Correction[]): string {
+function entry(it: QualifyingItem, site: string, corrections: readonly Correction[]): string {
   const url = `${site}${recordPath(it.id)}`;
   const grade = gradeLabel(it.evidence_grade);
   const lead = it.evidence_grade === 5 ? ' Lead, not counted.' : it.evidentiary_status === 'retracted' ? ' Retracted, not counted.' : '';
@@ -51,7 +63,7 @@ function entry(it: Item, site: string, corrections: readonly Correction[]): stri
     `    <title type="text">${xml(it.title)}</title>`,
     `    <link rel="alternate" type="text/html" href="${xml(url)}"/>`,
     `    <published>${iso(it.publishedMs)}</published>`,
-    `    <updated>${iso(updatedMs(it))}</updated>`,
+    `    <updated>${iso(updatedMs(it, corrections))}</updated>`,
     `    <category term="grade-${it.evidence_grade}" label="${xml(grade)}"/>`,
     `    <category term="evidence-${it.evidentiary_status}" label="${xml(`Evidence: ${EVIDENTIARY_LABEL[it.evidentiary_status]}`)}"/>`,
     `    <category term="procedure-${it.procedural_status}" label="${xml(`Procedure: ${PROCEDURAL_LABEL[it.procedural_status]}`)}"/>`,
@@ -62,9 +74,9 @@ function entry(it: Item, site: string, corrections: readonly Correction[]): stri
   ].join('\n');
 }
 
-/** An Atom 1.0 feed (RFC 4287) of `items`, already sorted and capped by the caller. */
-export function atomFeed(items: readonly Item[], corrections: readonly Correction[], o: FeedOptions): string {
-  const updated = items.length ? Math.max(...items.map(updatedMs)) : o.fallbackUpdatedMs;
+/** An Atom 1.0 feed (RFC 4287) of qualifying `items`, already sorted and capped by the caller. */
+export function atomFeed(items: readonly QualifyingItem[], corrections: readonly Correction[], o: FeedOptions): string {
+  const updated = items.length ? Math.max(...items.map((it) => updatedMs(it, corrections))) : o.fallbackUpdatedMs;
   return [
     '<?xml version="1.0" encoding="utf-8"?>',
     '<feed xmlns="http://www.w3.org/2005/Atom">',
