@@ -23,7 +23,8 @@ npm run smoke      # serves dist/ with `vite preview` and checks the pages and f
 `npm run smoke` needs a build first. It asserts HTTP 200 and content for `/`
 (whose link preview must state the headline counts, recomputed in the smoke
 script itself from the raw data), `/data/entries.json`, `/r/<first id>/`
-(whose `og:title` must equal that record's title), the route pages, and the
+(whose `og:title` must equal that record's title), `/feed.xml` and the first
+record's category and office feeds, each route's own page, and the
 corrections log.
 
 ### The prerender
@@ -42,7 +43,14 @@ corrections log.
   type is `summary`.
 - the front page's preview tags, stating the headline sentence;
 - a shell per route (`method.html` and `method/index.html`, and so on) with
-  its own title, and `404.html`.
+  its own title, and `404.html`;
+- Atom feeds, hand-written to RFC 4287 in `src/build/atom.ts` (no feed
+  library): `feed.xml` with the 50 most recent records by
+  `first_published_at`, and `feeds/office/<slug>.xml` and
+  `feeds/category/<slug>.xml` for every office and category present. Each
+  entry carries the record page URL, the evidence grade, the three statuses,
+  any correction notice and the summary. Slugs come from `src/feeds.ts`,
+  which `/subscribe` also uses.
 
 Absolute URLs (canonical, `og:url`) use `SITE_URL`; no domain exists yet, so
 the default is the reserved `https://ethics-record.example`. Set it at build
@@ -118,6 +126,11 @@ carries the placeholder flag.
 - `/r/<id>/` a record's permanent page. In the app, opening a card moves the
   address bar to that record's URL, so copying it gives the shareable link;
   closing the drawer returns to `/`. Old `?item=<id>` links redirect there.
+- `/recent` records added or changed in the last 24 hours, then the rest of
+  the last 7 days, by `first_published_at` and `last_modified_at`, each
+  linking to its record page. An empty window says "Nothing added in the
+  last 24 hours."
+- `/subscribe` the Atom feeds, listed with their addresses.
 - `/corrections` every post-publication change from
   `public/data/corrections.json` (date, record id, field, old value, new
   value, reason), newest first.

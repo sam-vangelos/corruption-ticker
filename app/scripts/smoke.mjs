@@ -6,8 +6,9 @@
 //   /data/entries.json     200, a JSON array
 //   /r/<first id>/         200, and its index.html carries an og:title equal
 //                          to that record's title
-//   /method, /corrections  200, each its own prerendered page
-//   /data/corrections.json 200, a JSON array
+//   /feed.xml              200, an Atom feed with at least one entry
+//   /feeds/category/<c>.xml, /feeds/office/<slug>.xml for the first record
+//   /method, /recent, /corrections, /subscribe, /data/corrections.json
 //
 // The headline recount is deliberately independent of the app's TypeScript:
 // grade 1 to 4, evidentiary_status not "retracted"; events are the roots.
@@ -87,7 +88,7 @@ function metaContent(html, key) {
   return m ? decode(m[1]) : null;
 }
 
-const ROUTES = [['/method', 'How we count'], ['/corrections', 'Corrections']];
+const ROUTES = [['/method', 'How we count'], ['/corrections', 'Corrections'], ['/recent', 'Recent changes'], ['/subscribe', 'Subscribe']];
 
 const plural = (n, one, many) => `${n.toLocaleString('en-US')} ${n === 1 ? one : many}`;
 
@@ -134,6 +135,16 @@ try {
     console.log('smoke: FAIL GET /r/<first id>/ -> no first record id to check');
   }
 
+  await check('/feed.xml', (body) => {
+    if (!/<feed\s+xmlns="http:\/\/www\.w3\.org\/2005\/Atom"/.test(body)) return 'not an Atom <feed>';
+    const n = (body.match(/<entry>/g) ?? []).length;
+    return n > 0 ? true : 'feed has no entries';
+  });
+  // Per-category and per-office feeds for the first record (slug rule mirrors src/feeds.ts).
+  const slug = (n) => n.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'unnamed';
+  const atomWith = (id) => (body) => (/<feed\s+xmlns="http:\/\/www\.w3\.org\/2005\/Atom"/.test(body) && body.includes(`/r/${encodeURIComponent(id)}/</id>`) ? true : 'not an Atom feed carrying the first record');
+  if (first?.category) await check(`/feeds/category/${first.category}.xml`, atomWith(first.id));
+  if (first?.offices?.[0]) await check(`/feeds/office/${slug(first.offices[0])}.xml`, atomWith(first.id));
   await check('/data/corrections.json', (body) => {
     try { return Array.isArray(JSON.parse(body)) ? true : 'body is JSON but not an array'; } catch (e) { return `body is not JSON (${e.message})`; }
   });

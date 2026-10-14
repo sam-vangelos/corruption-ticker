@@ -15,6 +15,8 @@ import { correctionSentence, correctionsFor } from '../corrections';
 import { SITE_DECK, SITE_NAME, START_LABEL, gradeDef, gradeLabel } from '../method';
 import { recordPath } from '../router';
 import { esc, fillShell, type PageMeta } from './html';
+import { atomFeed } from './atom';
+import { MAIN_FEED, feedIndex, feedItems } from '../feeds';
 
 export interface SiteInput {
   /** dist/index.html as Vite wrote it. */
@@ -145,6 +147,8 @@ export function headlineSentence(items: readonly Item[], nowMs: number): string 
 const ROUTES: Array<{ path: string; title: string; description: string }> = [
   { path: 'method', title: 'How we count', description: 'Evidence grades, counting rules, the inclusion rubric and the recommended citation for The Ethics Record.' },
   { path: 'corrections', title: 'Corrections', description: 'Every change made to a record of The Ethics Record after publication, with the old value, the new value, and the reason.' },
+  { path: 'recent', title: 'Recent changes', description: 'Records added to or changed in The Ethics Record in the last 24 hours and the last 7 days.' },
+  { path: 'subscribe', title: 'Subscribe', description: 'Atom feeds of The Ethics Record: every new record, or one office or category.' },
 ];
 
 export function buildSite(input: SiteInput): SiteOutput {
@@ -227,6 +231,29 @@ export function buildSite(input: SiteInput): SiteOutput {
     }, '', noscriptShell),
   });
 
-  notes.push(`${items.length} record pages; headline: ${headline}`);
+  // Feeds: everything, then one per office and per category present.
+  const latest = Math.max(0, ...items.map((it) => Math.max(it.publishedMs, it.modifiedMs ?? 0)));
+  const fake = placeholder ? ' Placeholder data: every entry is fake.' : '';
+  const feed = (path: string, title: string, list: Item[], alternate: string) => files.push({
+    path: path.replace(/^\//, ''),
+    content: atomFeed(feedItems(list), corrections, {
+      title,
+      subtitle: `${SITE_DECK}${fake}`,
+      selfUrl: `${site}${path}`,
+      siteUrl: site,
+      alternateUrl: alternate,
+      fallbackUpdatedMs: latest,
+    }),
+  });
+  feed(MAIN_FEED, SITE_NAME, items, `${site}/recent`);
+  const index = feedIndex(items);
+  for (const o of index.offices) {
+    feed(o.path, `${SITE_NAME}: ${o.label}`, items.filter((it) => it.offices.includes(o.key)), `${site}/subscribe`);
+  }
+  for (const c of index.categories) {
+    feed(c.path, `${SITE_NAME}: ${CATEGORY_LABEL[c.key]}`, items.filter((it) => it.category === c.key), `${site}/subscribe`);
+  }
+
+  notes.push(`${items.length} record pages; ${1 + index.offices.length + index.categories.length} feeds; headline: ${headline}`);
   return { files, notes, headline };
 }

@@ -21,14 +21,18 @@ import { Drawer } from './components/Drawer';
 import { MethodPage } from './components/pages/MethodPage';
 import { CorrectionsPage } from './components/pages/CorrectionsPage';
 import { NotFound } from './components/pages/NotFound';
+import { RecentPage } from './components/pages/RecentPage';
+import { SubscribePage } from './components/pages/SubscribePage';
 import { useShortcuts } from './hooks/useShortcuts';
 import { usePrefs } from './hooks/usePrefs';
 
 /** Site navigation, in reading order. */
 const NAV: Array<{ href: string; label: string; kinds: Route['kind'][] }> = [
   { href: '/', label: 'The record', kinds: ['home', 'record'] },
+  { href: '/recent', label: 'Recent changes', kinds: ['recent'] },
   { href: '/method', label: 'How we count', kinds: ['method'] },
   { href: '/corrections', label: 'Corrections', kinds: ['corrections'] },
+  { href: '/subscribe', label: 'Subscribe', kinds: ['subscribe'] },
 ];
 
 export function App() {
@@ -185,8 +189,12 @@ export function App() {
         <CorrectionsPage corrections={corrections} byId={indexes?.byId ?? null} recordHref={recordPath} />
       </main>
     );
-  } else if (route.kind === 'recent' || route.kind === 'subscribe' || route.kind === 'notfound') {
-    body = <main id="main" className="main main--page" tabIndex={-1}><NotFound path={route.kind === 'notfound' ? route.path : `/${route.kind}`} /></main>;
+  } else if (route.kind === 'recent') {
+    body = <main id="main" className="main main--page" tabIndex={-1}><RecentPage state={state} nowMs={nowMs} /></main>;
+  } else if (route.kind === 'subscribe') {
+    body = <main id="main" className="main main--page" tabIndex={-1}><SubscribePage items={items} /></main>;
+  } else if (route.kind === 'notfound') {
+    body = <main id="main" className="main main--page" tabIndex={-1}><NotFound path={route.path} /></main>;
   } else if (state.kind !== 'ready') {
     body = <main id="main" className="main"><StatePanel state={state} /></main>;
   } else {

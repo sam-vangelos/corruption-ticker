@@ -1126,3 +1126,32 @@ button, input, select { font: inherit; color: inherit; }
 .static-record h2 { font-size: 1.125rem; padding-top: var(--space-3); border-top: 1px solid var(--hairline); }
 .static-record ol, .static-record ul { display: grid; gap: var(--space-2); padding-left: 1.25rem; margin: 0; }
 .static-record__site { font-weight: 650; font-size: 1.25rem; }
+
+/* ---------- wave 2: recent changes and feeds ---------- */
+
+.recent { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
+.recent__row {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-m);
+}
+.recent__meta { font-size: 0.875rem; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.recent__what { font-weight: 650; color: var(--text); }
+.recent__title { font-family: var(--serif); font-size: 1.125rem; }
+.recent__grade { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); font-size: 0.875rem; color: var(--text-2); }
+.lead-tag {
+  padding: 0 var(--space-2);
+  border: 1px dashed var(--text-2);
+  border-radius: 999px;
+  color: var(--text);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.feeds { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
+.feeds li { display: grid; gap: 0.125rem; }
+.feeds__cat { display: inline-flex; align-items: center; gap: var(--space-2); }
+.feed-url { display: block; color: var(--text-3); font-size: 0.8125rem; }
