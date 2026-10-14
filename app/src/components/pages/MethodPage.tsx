@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Item } from '../../types';
 import { COUNTING_RULES, GRADES, RUBRIC, citation, datasetVersion } from '../../method';
 import { Page } from './Page';
+import { GradeMark } from '../../grades';
 
 interface MethodPageProps {
   /** The loaded dataset, or null while it loads or if it failed (the version then says so). */
@@ -37,7 +38,7 @@ export function MethodPage({ items }: MethodPageProps) {
     >
       <section className="page__section" aria-labelledby="grades">
         <h2 id="grades" tabIndex={-1}>Evidence grades</h2>
-        <p>Each record carries one grade for the strength of the evidence behind its central claim. The grade sets the verb the record may use.</p>
+        <p>Each record carries one grade for the strength of the evidence behind its central claim. The grade sets the verb the record may use. Its mark is a four-bar meter: four filled bars for an official finding, one for a corroborated allegation, none, with a dashed outline, for a lead.</p>
         <div className="table-wrap table-wrap--page" tabIndex={0} role="region" aria-label="Evidence grades table">
           <table className="data-table method-grades">
             <caption className="visually-hidden">Evidence grades</caption>
@@ -52,7 +53,7 @@ export function MethodPage({ items }: MethodPageProps) {
             <tbody>
               {GRADES.map((g) => (
                 <tr key={g.grade}>
-                  <th scope="row"><span className="grade-cell">{g.grade}</span></th>
+                  <th scope="row"><span className="grade-cell"><GradeMark grade={g.grade} />{g.grade}</span></th>
                   <td>{g.meaning}</td>
                   <td>{g.verb}</td>
                   <td>{g.countsText}</td>

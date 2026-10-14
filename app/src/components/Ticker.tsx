@@ -2,6 +2,7 @@ import { memo, useCallback, useLayoutEffect, useRef, useState } from 'react';
 import type { Item } from '../types';
 import { CategoryGlyph, CATEGORY_LABEL } from '../categories';
 import { formatDate } from '../data/dates';
+import { notCountedReason } from '../grades';
 import { useReducedMotion } from '../hooks/useMediaQuery';
 
 /** Scroll speed in CSS pixels per second; the loop duration follows track width. */
@@ -111,6 +112,7 @@ export const Ticker = memo(function Ticker({ items, onOpen }: TickerProps) {
             <CategoryGlyph category={it.category} className="ticker__glyph" />
             <span className="visually-hidden">{CATEGORY_LABEL[it.category]}: </span>
             <span className="ticker__title">{it.title}</span>
+            {notCountedReason(it) && <span className="ticker__tag">{notCountedReason(it)}</span>}
           </button>
         </li>
       ))}
@@ -118,7 +120,7 @@ export const Ticker = memo(function Ticker({ items, onOpen }: TickerProps) {
   );
 
   return (
-    <section className="ticker" data-mode={manual ? 'manual' : 'auto'} aria-label="Every item, newest first">
+    <section className="ticker" data-mode={manual ? 'manual' : 'auto'} aria-label="Every record, newest first">
       {!reduced && (
         <button
           type="button"

@@ -3,6 +3,7 @@ import { gradeLabel } from '../../method';
 import { followLink, recordPath } from '../../router';
 import { MAIN_FEED } from '../../feeds';
 import { Page } from './Page';
+import { GradeMark, notCountedReason } from '../../grades';
 
 interface RecentPageProps {
   state: LoadState;
@@ -39,9 +40,9 @@ function Rows({ rows }: { rows: Activity[] }) {
           </p>
           <a className="recent__title" href={recordPath(item.id)} onClick={(e) => followLink(e)}>{item.title}</a>
           <p className="recent__grade">
+            <GradeMark grade={item.evidence_grade} />
             {gradeLabel(item.evidence_grade)}
-            {item.evidence_grade === 5 && <strong className="lead-tag">Lead, not counted</strong>}
-            {item.evidentiary_status === 'retracted' && <strong className="lead-tag">Retracted, not counted</strong>}
+            {notCountedReason(item) && <strong className="lead-tag">{notCountedReason(item)}</strong>}
           </p>
         </li>
       ))}

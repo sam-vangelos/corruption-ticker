@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Corruption Ticker: tokens and base
+   The Ethics Record: tokens and base
    Color carries exactly two meanings in this app: category identity and
    status. Everything else (chrome, text, aggregate chart marks) is neutral ink.
    Dark is the default theme. Text tokens are measured for WCAG AA or better.
@@ -33,12 +33,11 @@
   --cat-5: #d55181;  --cat-6: #ad6c24;  --cat-7: #0e9cb0;  --cat-8: #d95926;
   --cat-9: #199e70;  --cat-10: #b46ac2; --cat-11: #e66767;
 
-  /* Status palette: reserved, never themed, always icon + label. */
-  --status-reported: #9e9c95;
+  /* Status palette: reserved, never themed, always inside an icon beside a
+     field name and a text label. Wave 2 keeps three of v1's six hues, for the
+     states a reader most needs to spot; every other status icon is ink. */
   --status-investigation: #fab219;
   --status-litigation: #ec835a;
-  --status-confirmed: #d03b3b;
-  --status-disputed: #8a93a6;
   --status-retracted: #6b6a65;
 
   --sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -556,12 +555,6 @@ button, input, select { font: inherit; color: inherit; }
 .chip--removable { color: var(--text); background: var(--surface); }
 .chip--removable svg { color: var(--text-2); }
 
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  color: var(--text-2);
-}
 .status-icon { flex: none; width: 0.875rem; height: 0.875rem; color: var(--text); }
 
 /* ---------- stream ---------- */
@@ -822,8 +815,6 @@ button, input, select { font: inherit; color: inherit; }
 .drawer__title:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }
 
 .drawer__status { display: grid; gap: var(--space-1); }
-.drawer__status-line { display: inline-flex; align-items: center; gap: var(--space-2); }
-.drawer__status-line .status-icon { width: 1rem; height: 1rem; }
 .drawer__note { color: var(--text-2); }
 
 .drawer__summary {
@@ -1155,3 +1146,54 @@ button, input, select { font: inherit; color: inherit; }
 .feeds li { display: grid; gap: 0.125rem; }
 .feeds__cat { display: inline-flex; align-items: center; gap: var(--space-2); }
 .feed-url { display: block; color: var(--text-3); font-size: 0.8125rem; }
+
+/* ---------- wave 2: evidence grades and status chips ---------- */
+
+/* Grade marks are ink, never hue: shape (filled bars) carries the grade. */
+.grade-mark { flex: none; width: 1.125rem; height: 0.875rem; color: var(--text); overflow: visible; }
+.grade-mark--l { width: 1.5rem; height: 1.1667rem; }
+.grade-badge { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.375rem; color: var(--text); }
+.grade-badge__verb { font-weight: 600; }
+.grade-badge__n { color: var(--text-3); }
+
+.status-chips { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 1.75rem;
+  padding: 0 var(--space-3) 0 var(--space-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-s);
+  font-size: 0.875rem;
+}
+.status-chips--s .status-chip { min-height: 1.5rem; font-size: 0.8125rem; }
+.status-chip__k { color: var(--text-3); }
+.status-chip__v { color: var(--text); }
+/* Retracted reads at a glance without color: a struck-through value. */
+.status-chip[data-value='retracted'] .status-chip__v,
+.status-chip[data-value='retracted-by-outlet'] .status-chip__v { text-decoration: line-through; text-decoration-thickness: 1px; }
+
+.drawer__grade { display: grid; gap: var(--space-2); }
+.drawer__grade-line { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); font-size: 1.0625rem; }
+.drawer__status { display: grid; gap: var(--space-2); }
+
+.chip__role { margin-left: 0.375rem; color: var(--text-3); font-size: 0.75rem; }
+.source__kind { margin-left: 0.25rem; color: var(--text-3); font-weight: 400; font-size: 0.8125rem; }
+.source__archive { font-size: 0.8125rem; color: var(--text-2); justify-self: start; }
+
+.ticker__tag {
+  padding: 0 var(--space-2);
+  border: 1px dashed var(--text-2);
+  border-radius: 999px;
+  color: var(--text-2);
+  font-size: 0.75rem;
+}
+
+/* A lead or retracted card keeps full contrast (it must stay readable) but
+   gets a dashed border, so "not counted" also shows in the card's outline. */
+.card:not([data-counted]) { border-style: dashed; border-color: var(--rule); }
+
+@media (forced-colors: active) {
+  .grade-mark { forced-color-adjust: auto; }
+}

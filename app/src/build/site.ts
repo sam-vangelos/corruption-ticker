@@ -123,7 +123,7 @@ function recordBody(it: Item, cs: readonly Correction[], byId: Map<string, Item>
     '<article>',
     `<p class="drawer__meta"><time datetime="${esc(it.date)}">${esc(dateLine(it))}</time> <span>${esc(CATEGORY_LABEL[it.category])}</span></p>`,
     `<h1 class="drawer__title">${esc(it.title)}</h1>`,
-    `<p><strong>${esc(gradeLine(it))}.</strong></p>`,
+    `<p><strong>${esc(gradeLine(it))}.</strong> ${esc(gradeDef(it.evidence_grade).meaning)}. At this grade the record says “${esc(gradeDef(it.evidence_grade).verb)}”.</p>`,
     `<p>${esc(statusLine(it))}${it.status_note ? ` ${esc(it.status_note)}` : ''}</p>`,
     cs.length ? `<section aria-label="Corrections">${cs.map((c) => `<p class="record-correction" role="note">${esc(correctionSentence(c))}</p>`).join('')}</section>` : '',
     it.summary ? `<p class="drawer__summary">${esc(it.summary)}</p>` : '',

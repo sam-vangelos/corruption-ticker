@@ -1,7 +1,8 @@
 import { memo } from 'react';
 import type { Item } from '../types';
 import { CATEGORY_LABEL, CategoryGlyph } from '../categories';
-import { StatusBadge } from '../status';
+import { StatusChips } from '../status';
+import { GradeBadge } from '../grades';
 import { formatDate } from '../data/dates';
 import { amountLong, amountShort } from '../amounts';
 
@@ -11,12 +12,18 @@ interface CardProps {
   onActor: (actor: string) => void;
 }
 
-/** One item in the stream. The whole card is focusable; click or Enter opens the drawer. */
+/**
+ * One record in the stream. The whole card is focusable; click or Enter opens
+ * the drawer. The grade badge carries the grade's verb (found, documented,
+ * reported, alleged (corroborated), alleged) and, for leads and retractions, a
+ * visible "not counted" tag; the three status fields follow as labelled chips.
+ */
 export const Card = memo(function Card({ item, onOpen, onActor }: CardProps) {
   const titleId = `card-title-${item.id}`;
   return (
     <article
       className="card"
+      data-counted={item.qualifying || undefined}
       tabIndex={0}
       data-card-id={item.id}
       aria-labelledby={titleId}
@@ -34,10 +41,12 @@ export const Card = memo(function Card({ item, onOpen, onActor }: CardProps) {
           <CategoryGlyph category={item.category} />
           {CATEGORY_LABEL[item.category]}
         </span>
-        <StatusBadge status={item.evidentiary_status} />
+        <GradeBadge item={item} />
       </div>
 
       <h3 className="card__title" id={titleId}>{item.title}</h3>
+
+      <StatusChips item={item} size="s" />
 
       {(item.actors.length > 0 || item.amounts.length > 0) && (
         <div className="card__row">
@@ -48,7 +57,7 @@ export const Card = memo(function Card({ item, onOpen, onActor }: CardProps) {
                   <button
                     type="button"
                     className="chip"
-                    title={`Show only items involving ${a}`}
+                    title={`Show only records involving ${a}`}
                     onClick={(e) => { e.stopPropagation(); onActor(a); }}
                     onKeyDown={(e) => e.stopPropagation()}
                   >

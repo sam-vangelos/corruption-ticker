@@ -4,7 +4,8 @@ import {
   type Category, type EvidenceGrade, type EvidentiaryStatus, type ProceduralStatus,
 } from '../types';
 import { CATEGORY_LABEL, CategoryGlyph } from '../categories';
-import { EVIDENTIARY_LABEL, PROCEDURAL_LABEL } from '../status';
+import { EVIDENTIARY_LABEL, EvidentiaryIcon, PROCEDURAL_LABEL, ProceduralIcon } from '../status';
+import { GradeMark } from '../grades';
 import { gradeLabel } from '../method';
 import { EMPTY_FILTERS, isFiltering, type Filters } from '../state/filters';
 import { MultiSelect, type Option } from './MultiSelect';
@@ -42,15 +43,15 @@ export const FilterBar = forwardRef<HTMLInputElement, FilterBarProps>(function F
   );
   // MultiSelect values are strings; grades round-trip through String/Number.
   const gradeOptions = useMemo<Option<string>[]>(
-    () => EVIDENCE_GRADES.map((g) => ({ value: String(g), label: gradeLabel(g), count: facetCounts.grades.get(g) ?? 0 })),
+    () => EVIDENCE_GRADES.map((g) => ({ value: String(g), label: gradeLabel(g), count: facetCounts.grades.get(g) ?? 0, icon: <GradeMark grade={g} /> })),
     [facetCounts],
   );
   const evidenceOptions = useMemo<Option<EvidentiaryStatus>[]>(
-    () => EVIDENTIARY_STATUSES.map((s) => ({ value: s, label: EVIDENTIARY_LABEL[s], count: facetCounts.evidence.get(s) ?? 0 })),
+    () => EVIDENTIARY_STATUSES.map((s) => ({ value: s, label: EVIDENTIARY_LABEL[s], count: facetCounts.evidence.get(s) ?? 0, icon: <EvidentiaryIcon status={s} /> })),
     [facetCounts],
   );
   const proceduralOptions = useMemo<Option<ProceduralStatus>[]>(
-    () => PROCEDURAL_STATUSES.map((s) => ({ value: s, label: PROCEDURAL_LABEL[s], count: facetCounts.procedural.get(s) ?? 0 })),
+    () => PROCEDURAL_STATUSES.map((s) => ({ value: s, label: PROCEDURAL_LABEL[s], count: facetCounts.procedural.get(s) ?? 0, icon: <ProceduralIcon status={s} /> })),
     [facetCounts],
   );
   const actorOpts = useMemo(() => actorOptions.map((o) => ({ value: o.value, label: o.value, count: o.count })), [actorOptions]);
@@ -61,9 +62,9 @@ export const FilterBar = forwardRef<HTMLInputElement, FilterBarProps>(function F
   for (const c of filters.categories) chips.push({ key: `c:${c}`, text: CATEGORY_LABEL[c], icon: <CategoryGlyph category={c} />, remove: () => set('categories', filters.categories.filter((x) => x !== c)) });
   for (const a of filters.actors) chips.push({ key: `a:${a}`, text: a, remove: () => set('actors', filters.actors.filter((x) => x !== a)) });
   for (const e of filters.entities) chips.push({ key: `e:${e}`, text: e, remove: () => set('entities', filters.entities.filter((x) => x !== e)) });
-  for (const g of filters.grades) chips.push({ key: `g:${g}`, text: gradeLabel(g), remove: () => set('grades', filters.grades.filter((x) => x !== g)) });
-  for (const s of filters.evidence) chips.push({ key: `ev:${s}`, text: `Evidence: ${EVIDENTIARY_LABEL[s]}`, remove: () => set('evidence', filters.evidence.filter((x) => x !== s)) });
-  for (const s of filters.procedural) chips.push({ key: `pr:${s}`, text: `Procedure: ${PROCEDURAL_LABEL[s]}`, remove: () => set('procedural', filters.procedural.filter((x) => x !== s)) });
+  for (const g of filters.grades) chips.push({ key: `g:${g}`, text: gradeLabel(g), icon: <GradeMark grade={g} />, remove: () => set('grades', filters.grades.filter((x) => x !== g)) });
+  for (const s of filters.evidence) chips.push({ key: `ev:${s}`, text: `Evidence: ${EVIDENTIARY_LABEL[s]}`, icon: <EvidentiaryIcon status={s} />, remove: () => set('evidence', filters.evidence.filter((x) => x !== s)) });
+  for (const s of filters.procedural) chips.push({ key: `pr:${s}`, text: `Procedure: ${PROCEDURAL_LABEL[s]}`, icon: <ProceduralIcon status={s} />, remove: () => set('procedural', filters.procedural.filter((x) => x !== s)) });
   if (filters.from) chips.push({ key: 'from', text: `From ${filters.from}`, remove: () => set('from', null) });
   if (filters.to) chips.push({ key: 'to', text: `To ${filters.to}`, remove: () => set('to', null) });
   if (filters.minUsd !== null) chips.push({ key: 'min', text: `At least ${formatUsdCompact(filters.minUsd)}`, remove: () => set('minUsd', null) });

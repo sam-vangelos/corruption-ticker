@@ -1,9 +1,11 @@
-# Corruption Ticker app
+# The Ethics Record app
 
-A static single-page app (Vite + React 18 + TypeScript) that reads
-`public/data/entries.json` at startup and shows it as a ticker, counters,
-filters, charts, a month-grouped stream, and a detail drawer. There is no
-backend; the build output in `dist/` can be served by any static host.
+A static site (Vite + React 18 + TypeScript) for The Ethics Record: a front
+page with the headline count, counters and a seven-day cadence strip, then a
+ticker, filters, charts, a month-grouped list and a detail drawer; a
+permanent, prerendered page per record with a correct link preview; `/recent`,
+`/method`, `/corrections`, `/subscribe`; and Atom feeds. There is no backend;
+the build output in `dist/` can be served by any static host.
 
 ## Run it
 
@@ -140,14 +142,36 @@ Links between pages navigate in place with the History API (`src/router.ts`).
 ## Design notes
 
 Color means exactly two things here: **category** and **status**. Chrome,
-text, and the aggregate chart marks are neutral ink, so a colored mark is
-never mistaken for a category. Neither meaning relies on color alone:
-categories always carry a text label and a distinct glyph shape, and statuses
-always carry an icon shape and a text label.
+text, the aggregate chart marks and the evidence-grade marks are neutral ink,
+so a colored mark is never mistaken for a category. Neither meaning relies on
+color alone: categories always carry a text label and a distinct glyph shape,
+and statuses always carry a field name, a text label and an icon shape.
+
+**Evidence grades** are shown as a four-bar strength meter drawn in ink
+(`src/grades.tsx`): grade 1 fills four bars, grade 2 three, grade 3 two,
+grade 4 one, and grade 5 (a lead) none, with a dashed outline. Five distinct
+shapes and no new hue: eleven category hues already span the wheel, so any
+grade hue would sit beside a same-colored category glyph on the same card. The
+mark always travels with its text (the grade's verb on cards, "Grade N: name"
+elsewhere), and leads and retracted records carry a visible "Lead, not
+counted" or "Retracted, not counted" tag and a dashed card outline.
+
+**Language follows the grade** (docs/schema.md editorial rules): cards and the
+drawer show the grade's verb (found, documented, reported, alleged
+(corroborated), alleged), from `GRADES` in `src/method.ts`.
+
+**Status** is three labelled chips (`src/status.tsx`): Evidence, Procedure,
+Response, each with an icon whose shape is unique within its field. Icons are
+ink; three reserved status hues remain, for the states a reader most needs to
+spot (under investigation `#fab219`, in litigation `#ec835a`, retracted
+`#6b6a65`), always inside an ink-outlined icon beside the label. Retracted
+values are also struck through. v1's single status badge and its other three
+hues are gone.
 
 Dark is the default theme, on a graphite page with off-white text to reduce
 halation. Every text token clears WCAG AA (4.5:1) on every surface in both
-themes, and control borders clear 3:1.
+themes, and control borders clear 3:1. The headline sentence is the only
+display type; counter values were reduced to 1.625rem to keep it so.
 
 Category palette, fixed order (schema order), validated with the dataviz
 skill's `scripts/validate_palette.js` on adjacent pairs:
