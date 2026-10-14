@@ -19,9 +19,10 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { Headline } from '../components/Headline';
 import { esc, fillShell, type PageMeta } from './html';
+import { projectEntry } from './project';
 import { notCountedReason } from '../grades';
 import { atomFeed } from './atom';
-import { MAIN_FEED, feedIndex, feedItems } from '../feeds';
+import { FEED_LIMIT, MAIN_FEED, feedIndex, feedItems, type FeedsManifest } from '../feeds';
 
 export interface SiteInput {
   /** dist/index.html as Vite wrote it. */
@@ -196,13 +197,6 @@ export function buildSite(input: SiteInput): SiteOutput {
       fatal.push(`record (${it.id}) [orphan] its root "${it.root_id}" is not public (unapproved, unpublished or missing)`);
     }
   }
-  const rawById = new Map<string, unknown>();
-  if (Array.isArray(input.entries)) {
-    for (const raw of input.entries) {
-      const id = raw && typeof raw === 'object' ? (raw as Record<string, unknown>).id : null;
-      if (typeof id === 'string' && !rawById.has(id)) rawById.set(id, raw);
-    }
-  }
   const byId = new Map(items.map((it) => [it.id, it]));
 
   // Every correction must be well formed and name a record in the public
@@ -225,14 +219,10 @@ export function buildSite(input: SiteInput): SiteOutput {
   const site = input.siteUrl.replace(/\/+$/, '');
   const files: SiteFile[] = [];
 
-  // The public dataset: only records that loaded, i.e. approved and passing
-  // the rubric. Leads and retracted records stay, labelled by their own fields.
-  // Same order as the raw file.
-  const publicIds = new Set(items.map((it) => it.id));
-  const publicEntries = (Array.isArray(input.entries) ? input.entries : []).filter((raw) => {
-    const id = raw && typeof raw === 'object' ? (raw as Record<string, unknown>).id : null;
-    return typeof id === 'string' && publicIds.has(id) && rawById.get(id) === raw;
-  });
+  // The public dataset: the published records, projected to schema fields
+  // (never the raw objects), related_ids limited to public records. Leads and
+  // retracted records stay, labelled by their own fields. Same order as the app.
+  const publicEntries = items.map((it) => projectEntry(it, publicIdSet));
   files.push({ path: 'data/entries.json', content: `${JSON.stringify(publicEntries, null, 2)}\n` });
   files.push({ path: 'data/corrections.json', content: `${JSON.stringify(corrections, null, 2)}\n` });
   const placeholder = items.some((it) => it.placeholder);
@@ -320,6 +310,15 @@ export function buildSite(input: SiteInput): SiteOutput {
   });
   const index = feedIndex(qualifying);
   if (index.problems.length) throw new BuildError(`feed slugs are not unique:\n  ${index.problems.join('\n  ')}`);
+  // The feed list /subscribe shows, fixed at build time (no browser clock).
+  const manifest: FeedsManifest = {
+    generatedAt: new Date(input.nowMs).toISOString(),
+    limit: FEED_LIMIT,
+    main: { path: MAIN_FEED, count: Math.min(FEED_LIMIT, qualifying.length) },
+    offices: index.offices.map((o) => ({ label: o.label, slug: o.slug, path: o.path, count: o.count })),
+    categories: index.categories.map((c) => ({ category: c.key, slug: c.slug, path: c.path, count: c.count })),
+  };
+  files.push({ path: 'feeds/index.json', content: `${JSON.stringify(manifest, null, 2)}\n` });
   feed(MAIN_FEED, SITE_NAME, qualifying, `${site}/recent`);
   for (const o of index.offices) {
     feed(o.path, `${SITE_NAME}: ${o.label}`, qualifying.filter((it) => it.offices.includes(o.key)), `${site}/subscribe`);

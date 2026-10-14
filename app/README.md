@@ -103,7 +103,9 @@ records whose `first_published_at` is set and not after build time. Leads
 (grade 5) and retracted records stay in it, labelled by their own fields.
 Drafts (`approved_by: null`) and approved records not yet published are held
 back quietly (named only in the build log): no dataset entry, no record page,
-no feed entry. Everything else that fails is a build error, not a silent drop:
+no feed entry. Each public record is a projection of the validated record:
+schema fields only (`src/build/project.ts`; an unknown key in the raw file never
+ships), with `related_ids` limited to public records. Everything else that fails is a build error, not a silent drop:
 a duplicate id anywhere in the raw file (checked before approval, so a draft
 can never stand in for its approved twin), and any approved record that fails
 validation or the rubric, or whose root is not public. In development, Vite serves the raw files
@@ -192,7 +194,9 @@ record carries the placeholder flag.
   the last 7 days, by `first_published_at` and `last_modified_at`, each
   linking to its record page. An empty window says "Nothing added in the
   last 24 hours."
-- `/subscribe` the Atom feeds, listed with their addresses.
+- `/subscribe` the Atom feeds, listed with their addresses from
+  `dist/feeds/index.json`, which the build writes, so the list always matches
+  the feed files and never depends on the reader's clock.
 - `/corrections` every post-publication change from
   `public/data/corrections.json` (date, record id, field, old value, new
   value, reason), newest first.

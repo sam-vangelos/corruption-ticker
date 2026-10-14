@@ -194,7 +194,7 @@ export function App() {
   } else if (route.kind === 'recent') {
     body = <main id="main" className="main main--page" tabIndex={-1}><RecentPage state={state} nowMs={nowMs} /></main>;
   } else if (route.kind === 'subscribe') {
-    body = <main id="main" className="main main--page" tabIndex={-1}><SubscribePage items={items} /></main>;
+    body = <main id="main" className="main main--page" tabIndex={-1}><SubscribePage /></main>;
   } else if (route.kind === 'notfound') {
     body = <main id="main" className="main main--page" tabIndex={-1}><NotFound path={route.path} /></main>;
   } else if (state.kind !== 'ready') {

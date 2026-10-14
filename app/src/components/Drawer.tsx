@@ -86,7 +86,11 @@ export function Drawer({ item, byId, corrections, onClose, onNavigate }: DrawerP
   const root = item.root_id ? byId.get(item.root_id) ?? null : null;
   const children = item.root_id ? [] : [...byId.values()].filter((x) => x.root_id === item.id).sort((a, b) => a.day - b.day);
   const treeIds = new Set([root?.id, ...children.map((c) => c.id)]);
-  const related = item.related_ids.filter((id) => !treeIds.has(id)).map((id) => ({ id, it: byId.get(id) ?? null }));
+  // Only related records that resolve are shown; an unresolved id is never printed.
+  const related = item.related_ids
+    .filter((id) => !treeIds.has(id))
+    .map((id) => ({ id, it: byId.get(id) }))
+    .filter((r): r is { id: string; it: Item } => r.it !== undefined);
   const titleId = `drawer-title-${item.id}`;
 
   return createPortal(
@@ -252,21 +256,17 @@ export function Drawer({ item, byId, corrections, onClose, onNavigate }: DrawerP
               <ul className="related">
                 {related.map(({ id, it }) => (
                   <li key={id}>
-                    {it ? (
-                      <a
-                        href={recordPath(id)}
-                        className="related__link"
-                        onClick={(e) => { e.preventDefault(); onNavigate(id); }}
-                      >
-                        <span className="related__meta">
-                          <CategoryGlyph category={it.category} />
-                          {formatDate(it.day, it.date_precision)}
-                        </span>
-                        <span className="related__title">{it.title}</span>
-                      </a>
-                    ) : (
-                      <span className="drawer__muted">{id} (not in this dataset)</span>
-                    )}
+                    <a
+                      href={recordPath(id)}
+                      className="related__link"
+                      onClick={(e) => { e.preventDefault(); onNavigate(id); }}
+                    >
+                      <span className="related__meta">
+                        <CategoryGlyph category={it.category} />
+                        {formatDate(it.day, it.date_precision)}
+                      </span>
+                      <span className="related__title">{it.title}</span>
+                    </a>
                   </li>
                 ))}
               </ul>

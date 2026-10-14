@@ -154,6 +154,25 @@ try {
   });
   const publicIds = new Set(entries.map((e) => e.id));
 
+  // The public dataset is a projection: schema keys only, at every level.
+  const KEYS = {
+    entry: new Set(['id', 'root_id', 'date', 'date_precision', 'title', 'summary', 'category', 'rubric_prong', 'rubric_evidence',
+      'actors', 'actor_roles', 'entities', 'offices', 'evidence_grade', 'evidence_note', 'evidentiary_status',
+      'procedural_status', 'subject_response', 'status_note', 'amounts', 'sources', 'first_published_at',
+      'last_modified_at', 'last_verified_at', 'approved_by', 'related_ids', 'tags', 'placeholder']),
+    amount: new Set(['usd', 'amount_type', 'actual_or_estimated', 'basis', 'overlap_group']),
+    source: new Set(['outlet', 'title', 'url', 'archive_url', 'date', 'author', 'kind']),
+  };
+  const extra = [];
+  for (const e of entries) {
+    for (const k of Object.keys(e)) if (!KEYS.entry.has(k)) extra.push(`${e.id}.${k}`);
+    for (const a of e.amounts ?? []) for (const k of Object.keys(a)) if (!KEYS.amount.has(k)) extra.push(`${e.id}.amounts.${k}`);
+    for (const x of e.sources ?? []) for (const k of Object.keys(x)) if (!KEYS.source.has(k)) extra.push(`${e.id}.sources.${k}`);
+  }
+  const danglingRelated = entries.flatMap((e) => (e.related_ids ?? []).filter((r) => !publicIds.has(r)).map((r) => `${e.id} -> ${r}`));
+  record('public records carry schema keys only', extra.length === 0, extra.length ? extra.join(', ') : 'ok');
+  record('related_ids point only at public records', danglingRelated.length === 0, danglingRelated.join(', ') || 'ok');
+
   // The leak: unapproved and rubric-failing raw records never reach the public.
   const raw = JSON.parse(readFileSync(path.join(appDir, 'dataset', 'entries.json'), 'utf8'));
   const PRIVATE = new Set(['family', 'private-associate', 'private-entity']);

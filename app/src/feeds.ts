@@ -72,6 +72,17 @@ export function feedIndex(items: readonly QualifyingItem[]): FeedIndex {
   return { offices, categories, problems };
 }
 
+/** dist/feeds/index.json: the feeds the build wrote, for /subscribe. */
+export interface FeedsManifest {
+  generatedAt: string;
+  limit: number;
+  main: { path: string; count: number };
+  offices: Array<{ label: string; slug: string; path: string; count: number }>;
+  categories: Array<{ category: Category; slug: string; path: string; count: number }>;
+}
+
+export const FEEDS_MANIFEST = '/feeds/index.json';
+
 /** Newest first by first_published_at, ties by id; at most `limit`. */
 export function feedItems(items: readonly QualifyingItem[], limit = FEED_LIMIT): QualifyingItem[] {
   return [...items].sort((a, b) => b.publishedMs - a.publishedMs || a.id.localeCompare(b.id)).slice(0, limit);
