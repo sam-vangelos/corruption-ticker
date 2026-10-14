@@ -2,9 +2,11 @@ import { defineConfig, type Plugin } from 'vite';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { resolveDatasetDir } from './scripts/dataset-dir.mjs';
+import { refusal, reviewMiddleware } from './scripts/review-middleware.mjs';
 
 /**
- * Development only: serve the raw dataset files at /data/*.json. In a build
+ * Development only: serve the raw dataset files at /data/*.json, and the
+ * editor's review queue (scripts/review-middleware.mjs). In a build
  * nothing in dataset/ is copied to dist/; scripts/prerender.mjs writes the
  * filtered public dataset (approved, rubric-passing records only) instead.
  */
@@ -16,9 +18,18 @@ function devDataset(): Plugin {
       // Same resolver as the build: DATASET_DIR needs ALLOW_DATASET_DIR=1 here too.
       const dataset = resolveDatasetDir(process.env);
       server.config.logger.info(`dev dataset: ${dataset.label}`);
+      // The editor's review queue (/review, /__review/*): development only.
+      server.middlewares.use(reviewMiddleware(server, { datasetDir: dataset.dir }));
       server.middlewares.use(async (req, res, next) => {
         const m = /^\/data\/(entries|corrections)\.json(?:\?.*)?$/.exec(req.url ?? '');
         if (!m) return next();
+        // The raw dataset holds unapproved drafts: loopback only, like the queue.
+        const no = refusal(req);
+        if (no) {
+          res.statusCode = no.status;
+          res.end(no.error);
+          return;
+        }
         try {
           const body = await readFile(path.join(dataset.dir, `${m[1]}.json`));
           res.setHeader('Content-Type', 'application/json; charset=utf-8');

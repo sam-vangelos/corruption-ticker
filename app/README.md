@@ -164,6 +164,30 @@ at `/data/*.json` (an inline plugin in `vite.config.ts`) and the page lists
 rejected records with their reasons; a production page says nothing about
 them. The build log lists them.
 
+### The review queue (development only)
+
+`npm run dev`, then open `http://localhost:5173/review`. The editor's queue of
+unapproved records is served by Vite's dev server only
+(`scripts/review-middleware.mjs`, installed by `vite.config.ts` with
+`apply: 'serve'`); nothing in the app imports it, and the build verifies that
+none of it reaches `dist/`. Its API:
+
+- `GET /__review/queue`: every unapproved record with its validation and lint
+  results (the build's own validator and lint, via `src/review/core.ts`) and
+  the progress line.
+- `POST /__review/approve {id}`: approve through `src/data/approve-core.ts`,
+  the same function `npm run approve` uses; an invalid record is refused.
+- `POST /__review/reject {id, reason}`: clear approval and append
+  `{id, reason, at}` to `dataset/rejections.json`.
+- `POST /__review/edit {id, patch}`: apply editable fields and clear approval.
+
+Every write re-reads the file, writes atomically (temp file, then rename),
+re-validates and returns the record's new state; writes are serialised. The
+queue and the raw `/data/*.json` routes answer loopback clients only, refuse a
+non-loopback `Host` header (DNS rebinding), and refuse cross-origin or
+non-JSON POSTs. `npm run review-smoke` runs the whole API against a temporary
+copy of the dataset, including a request from the machine's LAN address.
+
 ### Approval
 
 Approval is bound to content (docs/schema.md § Admission controls). A record

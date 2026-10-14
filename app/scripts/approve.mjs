@@ -52,39 +52,10 @@ if (!Array.isArray(entries)) fail(`${entriesPath} is not a JSON array`);
 const site = await loadSiteModule();
 const editor = site.EDITOR_NAME;
 
-/** Put approved_by and approved_digest together, where approved_by sits (or at the end). */
-function withApproval(obj, digest) {
-  const out = {};
-  let placed = false;
-  for (const [k, v] of Object.entries(obj)) {
-    if (k === 'approved_digest') continue;
-    if (k === 'approved_by') {
-      out.approved_by = editor;
-      out.approved_digest = digest;
-      placed = true;
-    } else {
-      out[k] = v;
-    }
-  }
-  if (!placed) { out.approved_by = editor; out.approved_digest = digest; }
-  return out;
-}
-
-/** Digest of a raw record, or the reason it cannot be approved. */
-function digestOf(raw) {
-  const v = site.validateForApproval(raw);
-  return 'code' in v ? { error: `[${v.code}] ${v.reason}` } : { digest: site.recordDigest(v) };
-}
-
-/** Digest of a raw correction, or the reason it cannot be approved. */
-function correctionDigestOf(c) {
-  if (!c || typeof c !== 'object' || Array.isArray(c)) return { error: 'not an object' };
-  if (typeof site.checkCorrectionShape === 'function') {
-    const why = site.checkCorrectionShape(c);
-    if (why) return { error: why };
-  }
-  return { digest: site.correctionDigest(c) };
-}
+// Every digest and every approval goes through src/data/approve-core.ts, the
+// same functions the review queue's middleware calls.
+const digestOf = (raw) => site.recordDigestOf(raw);
+const correctionDigestOf = (c) => site.correctionDigestOf(c);
 
 if (check) {
   const problems = [];
@@ -115,23 +86,18 @@ if (check) {
 
 let changedEntries = false;
 for (const id of ids) {
-  const at = entries.map((r, i) => (r && r.id === id ? i : -1)).filter((i) => i >= 0);
-  if (at.length === 0) fail(`no record has id "${id}"`);
-  if (at.length > 1) fail(`id "${id}" appears at records #${at.join(' and #')}; fix the duplicate first`);
-  const d = digestOf(entries[at[0]]);
-  if (d.error) fail(`record ${id} cannot be approved: ${d.error}`);
-  entries[at[0]] = withApproval(entries[at[0]], d.digest);
+  const r = site.approveRecordById(entries, id);
+  if (!r.ok) fail(r.error);
   changedEntries = true;
-  console.log(`approve: ${id} approved by ${editor}, digest ${d.digest.slice(0, 12)}…`);
+  console.log(`approve: ${id} approved by ${editor}, digest ${r.digest.slice(0, 12)}…`);
 }
 let changedCorrections = false;
 for (const n of correctionIx) {
-  if (!Array.isArray(corrections) || !corrections[n]) fail(`there is no correction #${n}`);
-  const d = correctionDigestOf(corrections[n]);
-  if (d.error) fail(`correction #${n} cannot be approved: ${d.error}`);
-  corrections[n] = withApproval(corrections[n], d.digest);
+  if (!Array.isArray(corrections)) fail('corrections.json is not an array');
+  const r = site.approveCorrectionAt(corrections, n);
+  if (!r.ok) fail(r.error);
   changedCorrections = true;
-  console.log(`approve: correction #${n} (${corrections[n].record_id}) approved by ${editor}, digest ${d.digest.slice(0, 12)}…`);
+  console.log(`approve: correction #${n} (${corrections[n].record_id}) approved by ${editor}, digest ${r.digest.slice(0, 12)}…`);
 }
 if (changedEntries) await writeFile(entriesPath, `${JSON.stringify(entries, null, 2)}\n`);
 if (changedCorrections) await writeFile(correctionsPath, `${JSON.stringify(corrections, null, 2)}\n`);

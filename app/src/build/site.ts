@@ -172,6 +172,7 @@ const QUIET: readonly SkipCode[] = ['unapproved'];
 export { validateForApproval, correctionProblem as checkCorrectionShape } from '../data/load';
 export { EDITOR_NAME, correctionDigest, recordDigest } from '../data/approval';
 export { sha256Hex, canonicalJson } from '../data/sha256';
+export { approveRecordById, approveCorrectionAt, recordDigestOf, correctionDigestOf } from '../data/approve-core';
 
 /** Thrown when the data cannot be published as is; the message lists every problem. */
 export class BuildError extends Error {}
