@@ -68,8 +68,11 @@ Exclude: policy disagreements, pure opinion, unsourced social-media claims, firs
 
 ## Counting rules (published beside the headline)
 
-- Event count = number of root records with `evidence_grade` 1 to 4 and `evidentiary_status` not `retracted`.
-- Record count = all root and child records meeting the same filter.
+- A record is *qualifying* when `evidence_grade` is 1 to 4, `evidentiary_status` is not `retracted`, `approved_by` is set, and `first_published_at` is set and not in the future.
+- Event count = number of trees (a root plus its children) containing at least one qualifying record.
+- Record count = all qualifying records, root or child.
+- The public dataset file contains only approved records that pass the rubric; leads (grade 5) and retracted records stay in it, labelled, because they are part of the record. Unapproved or rubric-failing records are never written to it.
+- Feeds contain qualifying records only.
 - Average interval = hours since 2025-01-20T12:00:00-05:00 divided by event count.
 - Financial stakes = per `amount_type`, sum of `usd` over records in the metric set, counting each `overlap_group` once (largest figure wins). No grand total.
 - Event dates are `date`; the seven-day cadence strip uses `first_published_at`.
