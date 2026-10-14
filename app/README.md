@@ -81,6 +81,20 @@ carries the placeholder flag.
 - **Keyboard**: `/` search, `j`/`k` next and previous item, `Enter` open,
   `Esc` close, `t` light or dark theme, `+` large type (16px to 20px).
 
+## Pages
+
+- `/` the record: headline block, filters, charts, the list, the drawer.
+- `/method` how we count: the evidence grades table, the counting rules, the
+  inclusion rubric and the recommended citation with the dataset version
+  string. All of it renders from `src/method.ts`, the same constants the
+  counting code (`src/data/metrics.ts`) and the loader read, so the published
+  rules cannot drift from the arithmetic.
+- `/corrections` every post-publication change from
+  `public/data/corrections.json` (date, record id, field, old value, new
+  value, reason), newest first.
+
+Links between pages navigate in place with the History API (`src/router.ts`).
+
 ## Design notes
 
 Color means exactly two things here: **category** and **status**. Chrome,

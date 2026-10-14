@@ -6,6 +6,7 @@ import {
 } from '../types';
 import { monthKey, parseDay } from './dates';
 import { isQualifying } from './metrics';
+import { PRIVATE_DISALLOWED_RESPONSES, PRIVATE_MAX_GRADE, PRIVATE_ROLES } from '../method';
 
 export const DATA_URL = `${import.meta.env.BASE_URL}data/entries.json`;
 export const CORRECTIONS_URL = `${import.meta.env.BASE_URL}data/corrections.json`;
@@ -25,9 +26,6 @@ export function parseTimestamp(v: unknown): number | null {
   const ms = Date.parse(v);
   return Number.isFinite(ms) ? ms : null;
 }
-
-/** Roles that are not public officials: records naming only these need grade 3 or better and a response. */
-const PRIVATE_ROLES: readonly ActorRole[] = ['family', 'private-associate', 'private-entity'];
 
 /** A v1 record has `status` / `dollar_amount_usd` and none of the v2 grading fields. */
 function looksLikeV1(o: Record<string, unknown>): boolean {
@@ -120,8 +118,8 @@ export function toItem(raw: unknown): Item | string {
   // Inclusion rubric: records naming only private persons or entities need
   // grade 3 or better and a recorded response (sought and received, or declined).
   if (actors.length > 0 && actors.every((a) => PRIVATE_ROLES.includes(actorRoles[a] as ActorRole))) {
-    if (grade > 3) return 'names only private actors, so it needs evidence grade 3 or better';
-    if (o.subject_response === null || o.subject_response === 'not-sought') {
+    if (grade > PRIVATE_MAX_GRADE) return `names only private actors, so it needs evidence grade ${PRIVATE_MAX_GRADE} or better`;
+    if ((PRIVATE_DISALLOWED_RESPONSES as readonly unknown[]).includes(o.subject_response)) {
       return 'names only private actors, so it needs a subject_response other than "not-sought" or null';
     }
   }

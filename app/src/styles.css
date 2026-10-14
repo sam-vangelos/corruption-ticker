@@ -151,7 +151,9 @@ button, input, select { font: inherit; color: inherit; }
   padding-bottom: var(--space-4);
 }
 
-.masthead h1 { font-size: 1.75rem; letter-spacing: -0.01em; }
+.brand { font-size: 1.75rem; font-weight: 650; line-height: 1.2; letter-spacing: -0.01em; }
+.brand__link { color: var(--text); text-decoration: none; }
+.brand__link:hover { text-decoration: underline; text-decoration-thickness: 2px; }
 .masthead__sub { color: var(--text-2); margin-top: var(--space-1); max-width: var(--measure); }
 
 .placeholder-notice {
@@ -1017,3 +1019,87 @@ button, input, select { font: inherit; color: inherit; }
 @media (forced-colors: active) {
   .cadence__mark { forced-color-adjust: none; background: CanvasText; }
 }
+
+/* ---------- wave 2: site navigation ---------- */
+
+.site-nav { padding-bottom: var(--space-3); }
+.site-nav ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-5);
+  margin: 0;
+  padding: 0 0 var(--space-2);
+  list-style: none;
+  border-bottom: 1px solid var(--rule);
+}
+.site-nav a {
+  display: inline-block;
+  padding-block: var(--space-2);
+  color: var(--text-2);
+  text-decoration: none;
+  font-size: 0.9375rem;
+}
+.site-nav a:hover { color: var(--text); text-decoration: underline; }
+/* Current page: ink, weight and an underline bar; never color alone. */
+.site-nav a[aria-current='page'] {
+  color: var(--text);
+  font-weight: 650;
+  box-shadow: inset 0 -2px 0 var(--text);
+}
+
+/* ---------- wave 2: standalone pages ---------- */
+
+.main--page { padding-top: var(--space-4); }
+.page { max-width: var(--measure); display: grid; gap: var(--space-5); }
+.page__title { font-size: 1.75rem; }
+.page__title:focus { outline: none; }
+.page__title:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }
+.page__lead { font-size: 1.125rem; color: var(--text-2); }
+.page__section { display: grid; gap: var(--space-3); scroll-margin-top: var(--space-5); }
+.page__section h2 { font-size: 1.25rem; padding-top: var(--space-4); border-top: 1px solid var(--hairline); }
+.page__section h2:focus { outline: none; }
+.page__section h2:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }
+.page__section p { max-width: var(--measure); }
+
+.table-wrap--page { max-height: none; }
+.method-grades td, .method-grades th { vertical-align: top; }
+.method-grades tbody th { font-weight: 650; white-space: nowrap; }
+.grade-cell { display: inline-flex; align-items: center; gap: var(--space-2); }
+
+.rules { margin: 0; display: grid; gap: var(--space-4); }
+.rules > div { display: grid; gap: var(--space-1); scroll-margin-top: var(--space-5); }
+.rules dt { font-weight: 650; }
+.rules dd { margin: 0; color: var(--text-2); }
+.rules__list { margin: var(--space-2) 0 0; padding-left: 1.25rem; display: grid; gap: var(--space-1); }
+
+.version { padding: 0.0625rem 0.375rem; border: 1px solid var(--rule); border-radius: var(--radius-s); }
+.citation {
+  margin: 0;
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-left: 3px solid var(--text-2);
+  border-radius: var(--radius-s);
+  font-family: var(--serif);
+  font-size: 1.0625rem;
+  line-height: 1.55;
+  user-select: all;
+}
+.citation__actions { display: flex; align-items: center; gap: var(--space-3); }
+.citation__status { color: var(--text-2); font-size: 0.875rem; }
+
+.corrections { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-4); }
+.correction {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-m);
+}
+.correction__meta { color: var(--text-2); font-size: 0.875rem; font-variant-numeric: tabular-nums; }
+.correction__title { font-family: var(--serif); font-size: 1.1875rem; font-weight: 600; line-height: 1.3; }
+.correction__facts { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: var(--space-1) var(--space-4); }
+.correction__facts > div { display: contents; }
+.correction__facts dt { color: var(--text-3); font-size: 0.875rem; }
+.correction__facts dd { margin: 0; overflow-wrap: anywhere; }
