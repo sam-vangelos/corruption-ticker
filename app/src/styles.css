@@ -924,3 +924,8 @@ button, input, select { font: inherit; color: inherit; }
   .glyph, .status-icon { forced-color-adjust: none; }
   .pref[aria-pressed='true'], .ms__count { forced-color-adjust: none; outline: 2px solid CanvasText; }
 }
+
+/* ---------- wave 2: amounts ---------- */
+
+.card__amounts { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.125rem; justify-items: end; }
+.amounts { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }

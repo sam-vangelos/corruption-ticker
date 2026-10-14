@@ -41,6 +41,12 @@ export function today(): number {
   return Math.round(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / MS_PER_DAY);
 }
 
+/** The calendar day (viewer's zone) containing the instant `ms`, as a UTC day number. */
+export function localDay(ms: number): number {
+  const d = new Date(ms);
+  return Math.round(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / MS_PER_DAY);
+}
+
 export function inaugurationDay(): number {
   return parseDay(INAUGURATION) as number;
 }

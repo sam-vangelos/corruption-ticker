@@ -1,10 +1,21 @@
 import { forwardRef, useMemo } from 'react';
-import { CATEGORIES, STATUSES, type Category, type Status } from '../types';
+import {
+  CATEGORIES, EVIDENCE_GRADES, EVIDENTIARY_STATUSES, PROCEDURAL_STATUSES,
+  type Category, type EvidenceGrade, type EvidentiaryStatus, type ProceduralStatus,
+} from '../types';
 import { CATEGORY_LABEL, CategoryGlyph } from '../categories';
-import { STATUS_LABEL, StatusIcon } from '../status';
+import { EVIDENTIARY_LABEL, PROCEDURAL_LABEL } from '../status';
+import { gradeLabel } from '../method';
 import { EMPTY_FILTERS, isFiltering, type Filters } from '../state/filters';
 import { MultiSelect, type Option } from './MultiSelect';
 import { formatInt, formatUsdCompact } from '../data/format';
+
+/** Record counts per value of each status-like facet, over the whole dataset. */
+export interface FacetCounts {
+  grades: Map<EvidenceGrade, number>;
+  evidence: Map<EvidentiaryStatus, number>;
+  procedural: Map<ProceduralStatus, number>;
+}
 
 interface FilterBarProps {
   filters: Filters;
@@ -12,14 +23,14 @@ interface FilterBarProps {
   actorOptions: Array<{ value: string; count: number }>;
   entityOptions: Array<{ value: string; count: number }>;
   categoryCounts: Map<Category, number>;
-  statusCounts: Map<Status, number>;
+  facetCounts: FacetCounts;
   shown: number;
   total: number;
 }
 
 /** One row of filter controls, plus a line that lists what is active. Mirrors to the URL via the filters hook. */
 export const FilterBar = forwardRef<HTMLInputElement, FilterBarProps>(function FilterBar(
-  { filters, onChange, actorOptions, entityOptions, categoryCounts, statusCounts, shown, total },
+  { filters, onChange, actorOptions, entityOptions, categoryCounts, facetCounts, shown, total },
   searchRef,
 ) {
   const set = <K extends keyof Filters>(k: K, v: Filters[K]) => onChange({ ...filters, [k]: v });
@@ -29,9 +40,18 @@ export const FilterBar = forwardRef<HTMLInputElement, FilterBarProps>(function F
     () => CATEGORIES.map((c) => ({ value: c, label: CATEGORY_LABEL[c], count: categoryCounts.get(c) ?? 0, icon: <CategoryGlyph category={c} /> })),
     [categoryCounts],
   );
-  const statusOptions = useMemo<Option<Status>[]>(
-    () => STATUSES.map((s) => ({ value: s, label: STATUS_LABEL[s], count: statusCounts.get(s) ?? 0, icon: <StatusIcon status={s} /> })),
-    [statusCounts],
+  // MultiSelect values are strings; grades round-trip through String/Number.
+  const gradeOptions = useMemo<Option<string>[]>(
+    () => EVIDENCE_GRADES.map((g) => ({ value: String(g), label: gradeLabel(g), count: facetCounts.grades.get(g) ?? 0 })),
+    [facetCounts],
+  );
+  const evidenceOptions = useMemo<Option<EvidentiaryStatus>[]>(
+    () => EVIDENTIARY_STATUSES.map((s) => ({ value: s, label: EVIDENTIARY_LABEL[s], count: facetCounts.evidence.get(s) ?? 0 })),
+    [facetCounts],
+  );
+  const proceduralOptions = useMemo<Option<ProceduralStatus>[]>(
+    () => PROCEDURAL_STATUSES.map((s) => ({ value: s, label: PROCEDURAL_LABEL[s], count: facetCounts.procedural.get(s) ?? 0 })),
+    [facetCounts],
   );
   const actorOpts = useMemo(() => actorOptions.map((o) => ({ value: o.value, label: o.value, count: o.count })), [actorOptions]);
   const entityOpts = useMemo(() => entityOptions.map((o) => ({ value: o.value, label: o.value, count: o.count })), [entityOptions]);
@@ -41,7 +61,9 @@ export const FilterBar = forwardRef<HTMLInputElement, FilterBarProps>(function F
   for (const c of filters.categories) chips.push({ key: `c:${c}`, text: CATEGORY_LABEL[c], icon: <CategoryGlyph category={c} />, remove: () => set('categories', filters.categories.filter((x) => x !== c)) });
   for (const a of filters.actors) chips.push({ key: `a:${a}`, text: a, remove: () => set('actors', filters.actors.filter((x) => x !== a)) });
   for (const e of filters.entities) chips.push({ key: `e:${e}`, text: e, remove: () => set('entities', filters.entities.filter((x) => x !== e)) });
-  for (const s of filters.statuses) chips.push({ key: `s:${s}`, text: STATUS_LABEL[s], icon: <StatusIcon status={s} />, remove: () => set('statuses', filters.statuses.filter((x) => x !== s)) });
+  for (const g of filters.grades) chips.push({ key: `g:${g}`, text: gradeLabel(g), remove: () => set('grades', filters.grades.filter((x) => x !== g)) });
+  for (const s of filters.evidence) chips.push({ key: `ev:${s}`, text: `Evidence: ${EVIDENTIARY_LABEL[s]}`, remove: () => set('evidence', filters.evidence.filter((x) => x !== s)) });
+  for (const s of filters.procedural) chips.push({ key: `pr:${s}`, text: `Procedure: ${PROCEDURAL_LABEL[s]}`, remove: () => set('procedural', filters.procedural.filter((x) => x !== s)) });
   if (filters.from) chips.push({ key: 'from', text: `From ${filters.from}`, remove: () => set('from', null) });
   if (filters.to) chips.push({ key: 'to', text: `To ${filters.to}`, remove: () => set('to', null) });
   if (filters.minUsd !== null) chips.push({ key: 'min', text: `At least ${formatUsdCompact(filters.minUsd)}`, remove: () => set('minUsd', null) });
@@ -68,7 +90,14 @@ export const FilterBar = forwardRef<HTMLInputElement, FilterBarProps>(function F
             <MultiSelect label="Category" options={categoryOptions} selected={filters.categories} onChange={(v) => set('categories', v)} chips />
             <MultiSelect label="Actor" options={actorOpts} selected={filters.actors} onChange={(v) => set('actors', v)} searchable searchPlaceholder="Search people" />
             <MultiSelect label="Entity" options={entityOpts} selected={filters.entities} onChange={(v) => set('entities', v)} searchable searchPlaceholder="Search organizations" />
-            <MultiSelect label="Status" options={statusOptions} selected={filters.statuses} onChange={(v) => set('statuses', v)} />
+            <MultiSelect
+              label="Grade"
+              options={gradeOptions}
+              selected={filters.grades.map(String)}
+              onChange={(v) => set('grades', v.map(Number).filter((g): g is EvidenceGrade => (EVIDENCE_GRADES as readonly number[]).includes(g)))}
+            />
+            <MultiSelect label="Evidence" options={evidenceOptions} selected={filters.evidence} onChange={(v) => set('evidence', v)} />
+            <MultiSelect label="Procedure" options={proceduralOptions} selected={filters.procedural} onChange={(v) => set('procedural', v)} />
           </div>
         </div>
 
@@ -101,8 +130,8 @@ export const FilterBar = forwardRef<HTMLInputElement, FilterBarProps>(function F
       <div className="filters__summary" aria-live="polite">
         <p className="filters__count">
           {active
-            ? <>Showing <strong>{formatInt(shown)}</strong> of {formatInt(total)} items</>
-            : <>Showing all <strong>{formatInt(total)}</strong> items</>}
+            ? <>Showing <strong>{formatInt(shown)}</strong> of {formatInt(total)} records</>
+            : <>Showing all <strong>{formatInt(total)}</strong> records</>}
         </p>
         {active && (
           <button type="button" className="link-button" onClick={() => onChange(EMPTY_FILTERS)}>

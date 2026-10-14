@@ -24,16 +24,35 @@ npm run smoke      # serves dist/ with `vite preview`, asserts / and /data/entri
 
 ## Data
 
-The app loads `/data/entries.json`, a JSON array of entries following
-`docs/schema.md` (mirrored in `src/types.ts`). Records that fail validation are
-skipped and listed in a notice at the top of the page. If the file is missing,
-empty, or unreadable, the page says so and shows nothing else.
+The app loads `/data/entries.json`, a JSON array of records following dataset
+schema v2 (`docs/schema.md`, mirrored field for field in `src/types.ts`), and
+`/data/corrections.json`, the corrections log. The loader
+(`src/data/load.ts`) validates every record and skips, with a stated reason,
+any record that fails: unknown enum values, an evidence grade outside 1 to 5,
+a figure without `amount_type`, `actual_or_estimated` or `basis`, a source
+without `archive_url`, `approved_by: null` (not in the public dataset), a
+missing `first_published_at`, a record naming only private actors below grade
+3 or without a recorded response, or a child whose `root_id` does not name a
+root in the file. Schema v1 records (a single `status`, a `dollar_amount_usd`)
+are rejected with a message saying to migrate them; a file that is entirely
+v1 shows only that message.
 
-The file shipped in `public/data/entries.json` is a **placeholder fixture**:
-every title starts with `[PLACEHOLDER]`, every source points at
-`https://example.com/`, and every record has `"placeholder": true`. The app
-shows a notice whenever any loaded record carries that flag. Replace the file
-with the real dataset to remove it.
+The metric set follows the schema's counting rules: a record counts when its
+`evidence_grade` is 1 to 4 and its `evidentiary_status` is not `retracted`;
+events are the counted records with `root_id: null`. The constants live in
+`src/method.ts` and the arithmetic in `src/data/metrics.ts`.
+
+The files shipped in `public/data/` are a **placeholder fixture**: every title
+starts with `[PLACEHOLDER]`, every source and archive URL points at
+`https://example.com/`, every record has `"placeholder": true`, and every name
+is invented. The fixture holds 20 records: three parent/child trees, two
+grade-5 leads, one retracted record, one record naming only private actors,
+and figures of each `amount_type`. It counts 17 qualifying records concerning
+13 distinct events. Its `first_published_at` times cluster in the week to 13
+October 2026 so the cadence strip and `/recent` have something to show; as
+the calendar moves on they empty out, which is the behaviour real data would
+have on a quiet week. The app shows a notice whenever any loaded record
+carries the placeholder flag.
 
 ## Using it
 

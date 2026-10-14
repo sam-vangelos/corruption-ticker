@@ -3,7 +3,7 @@ import type { Item } from '../types';
 import { CATEGORY_LABEL, CategoryGlyph } from '../categories';
 import { StatusBadge } from '../status';
 import { formatDate } from '../data/dates';
-import { formatUsd, formatUsdCompact } from '../data/format';
+import { amountLong, amountShort } from '../amounts';
 
 interface CardProps {
   item: Item;
@@ -34,12 +34,12 @@ export const Card = memo(function Card({ item, onOpen, onActor }: CardProps) {
           <CategoryGlyph category={item.category} />
           {CATEGORY_LABEL[item.category]}
         </span>
-        <StatusBadge status={item.status} />
+        <StatusBadge status={item.evidentiary_status} />
       </div>
 
       <h3 className="card__title" id={titleId}>{item.title}</h3>
 
-      {(item.actors.length > 0 || item.hasDollar) && (
+      {(item.actors.length > 0 || item.amounts.length > 0) && (
         <div className="card__row">
           {item.actors.length > 0 && (
             <ul className="chips" aria-label="Actors">
@@ -58,12 +58,12 @@ export const Card = memo(function Card({ item, onOpen, onActor }: CardProps) {
               ))}
             </ul>
           )}
-          {item.hasDollar && item.dollar_amount_usd !== null && (
-            <p className="card__usd" title={`${formatUsd(item.dollar_amount_usd)} as reported`}>
-              <span className="visually-hidden">Reported figure: </span>
-              {formatUsdCompact(item.dollar_amount_usd)}
-              <span className="card__usd-note"> reported</span>
-            </p>
+          {item.amounts.length > 0 && (
+            <ul className="card__amounts" aria-label="Stated amounts">
+              {item.amounts.map((a, i) => (
+                <li key={i} className="card__usd" title={amountLong(a)}>{amountShort(a)}</li>
+              ))}
+            </ul>
           )}
         </div>
       )}

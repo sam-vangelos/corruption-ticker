@@ -4,7 +4,7 @@ import { CATEGORIES } from '../../types';
 import { CATEGORY_LABEL, CategoryGlyph } from '../../categories';
 import { categorySeries, monthlySeries } from '../../data/derive';
 import { monthKey, monthLabel, monthRange, monthShort } from '../../data/dates';
-import { formatInt, formatUsd, formatUsdCompact, plural } from '../../data/format';
+import { formatInt, plural } from '../../data/format';
 import { ChartCard } from './ChartCard';
 import { MonthChart } from './MonthChart';
 import { CategoryBars } from './CategoryBars';
@@ -28,7 +28,6 @@ export function ChartsPanel({ items, fromDay, toDay }: ChartsPanelProps) {
   const months = useMemo(() => monthRange(fromDay, toDay), [fromDay, toDay]);
   const series = useMemo(() => monthlySeries(items, months), [items, months]);
   const cats = useMemo(() => categorySeries(items, CATEGORIES), [items]);
-  const withDollar = useMemo(() => items.filter((it) => it.hasDollar).length, [items]);
 
   const span = months.length ? `${monthShort(months[0] ?? '')} to ${monthShort(months[months.length - 1] ?? '')}` : '';
   const startsAt = monthKey(fromDay);
@@ -115,27 +114,6 @@ export function ChartsPanel({ items, fromDay, toDay }: ChartsPanelProps) {
                 }
               />
 
-              <ChartCard
-                title="Cumulative reported dollars"
-                subtitle={`From ${formatInt(withDollar)} of ${plural(items.length, 'item')} that carry a figure; as reported, not adjudicated`}
-                chart={
-                  <MonthChart
-                    kind="line"
-                    name="Cumulative reported dollars"
-                    months={months}
-                    values={series.map((b) => b.cumDollars)}
-                    format={formatUsdCompact}
-                    describe={(i) => ({ value: formatUsdCompact(series[i]?.cumDollars ?? 0), label: `Through ${monthLabel(months[i] ?? '')}`, extra: `${formatUsdCompact(series[i]?.dollars ?? 0)} added that month` })}
-                  />
-                }
-                table={
-                  <DataTable
-                    caption="Cumulative reported dollars"
-                    head={['Month', 'Added', 'Running total']}
-                    rows={series.map((b) => [monthLabel(b.month), formatUsd(b.dollars), formatUsd(b.cumDollars)])}
-                  />
-                }
-              />
             </>
           )}
         </div>

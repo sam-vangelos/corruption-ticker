@@ -1,179 +1,343 @@
 [
   {
     "id": "p-2025-01-self-01",
+    "root_id": null,
     "date": "2025-01-24",
     "date_precision": "day",
-    "title": "[PLACEHOLDER] Sample self enrichment item 01 for layout testing",
-    "summary": "Placeholder summary for fixture item 01. This text exists only to exercise the layout and describes no real event, person, or organization. Replace it with real, sourced entries from data/entries.json.",
+    "title": "[PLACEHOLDER] Sample record 01: \"self-enrichment\" & layout test",
+    "summary": "Reported: placeholder summary for fixture record 01. Under evidence grade 3 the record says \"reported\". This text exists only to exercise the layout and describes no real event, person, or organization.",
     "category": "self-enrichment",
+    "rubric_prong": "private-gain",
+    "rubric_evidence": "Placeholder: the sample fact that satisfies the private gain prong for record 01.",
     "actors": [
       "Placeholder Official A"
     ],
+    "actor_roles": {
+      "Placeholder Official A": "public-official"
+    },
     "entities": [
       "Example Holdings LLC"
     ],
-    "dollar_amount_usd": 12000000,
-    "dollar_basis": "Placeholder figure for layout testing; not a real amount.",
-    "status": "reported",
+    "offices": [
+      "Placeholder Office of Samples"
+    ],
+    "evidence_grade": 3,
+    "evidence_note": "Placeholder document-based investigation by Example Outlet; fixture only.",
+    "evidentiary_status": "documented",
+    "procedural_status": "none",
+    "subject_response": "no-comment",
     "status_note": null,
+    "amounts": [
+      {
+        "usd": 2400000,
+        "amount_type": "private-benefit",
+        "actual_or_estimated": "actual",
+        "basis": "Placeholder figure for layout testing (private benefit); not a real amount. Reported by Example Outlet in sample headline 01.",
+        "overlap_group": null
+      }
+    ],
     "sources": [
       {
         "outlet": "Example Outlet",
         "title": "[PLACEHOLDER] Sample headline 01",
         "url": "https://example.com/placeholder/01",
+        "archive_url": "https://example.com/archive/placeholder/01",
         "date": "2025-01-24",
-        "author": "Placeholder Reporter"
+        "author": "Placeholder Reporter",
+        "kind": "investigation"
       },
       {
         "outlet": "Placeholder Wire",
-        "title": "[PLACEHOLDER] Sample follow-up 01",
+        "title": "[PLACEHOLDER] Sample headline 01 (follow-up)",
         "url": "https://example.com/placeholder/01-followup",
+        "archive_url": "https://example.com/archive/placeholder/01-followup",
         "date": "2025-01-24",
-        "author": "Sample Byline"
+        "author": "Placeholder Reporter",
+        "kind": "news"
       }
     ],
-    "related_ids": [
-      "p-2026-07-self-13"
-    ],
+    "first_published_at": "2026-08-03T16:00:00Z",
+    "last_modified_at": null,
+    "last_verified_at": "2026-08-03T16:00:00Z",
+    "approved_by": "[PLACEHOLDER] Editor",
+    "related_ids": [],
     "tags": [
       "placeholder"
     ],
     "placeholder": true
   },
   {
-    "id": "p-2025-02-foreign-02",
-    "date": "2025-02-11",
+    "id": "p-2025-02-crypto-02",
+    "root_id": null,
+    "date": "2025-02-03",
     "date_precision": "day",
-    "title": "[PLACEHOLDER] Sample foreign emoluments item 02 for layout testing",
-    "summary": "Placeholder summary for fixture item 02. This text exists only to exercise the layout and describes no real event, person, or organization. Replace it with real, sourced entries from data/entries.json.",
-    "category": "foreign-emoluments",
+    "title": "[PLACEHOLDER] Sample crypto matter 02, root of a three-record tree",
+    "summary": "Documented: placeholder summary for fixture record 02. Under evidence grade 2 the record says \"documented\". This text exists only to exercise the layout and describes no real event, person, or organization.",
+    "category": "crypto",
+    "rubric_prong": "private-gain",
+    "rubric_evidence": "Placeholder: the sample fact that satisfies the private gain prong for record 02.",
     "actors": [
-      "Placeholder Official B"
+      "Placeholder Official A",
+      "Sample Ventures Inc."
     ],
+    "actor_roles": {
+      "Placeholder Official A": "public-official",
+      "Sample Ventures Inc.": "private-entity"
+    },
     "entities": [
-      "Sample Hotel Group"
+      "Example Holdings LLC"
     ],
-    "dollar_amount_usd": 450000,
-    "dollar_basis": "Placeholder figure for layout testing; not a real amount.",
-    "status": "under-investigation",
-    "status_note": "Placeholder status note for item 02; no real development is described.",
+    "offices": [
+      "Placeholder Office of Samples"
+    ],
+    "evidence_grade": 2,
+    "evidence_note": "Placeholder primary record (a sample filing) reported on by Example Outlet; fixture only.",
+    "evidentiary_status": "documented",
+    "procedural_status": "under-investigation",
+    "subject_response": "denied",
+    "status_note": "Placeholder: a sample inquiry was opened.",
+    "amounts": [
+      {
+        "usd": 12500000,
+        "amount_type": "private-benefit",
+        "actual_or_estimated": "estimated",
+        "basis": "Placeholder figure for layout testing (private benefit); not a real amount. Reported by Example Outlet in sample headline 02.",
+        "overlap_group": "p-token-revenue"
+      }
+    ],
     "sources": [
       {
         "outlet": "Example Outlet",
         "title": "[PLACEHOLDER] Sample headline 02",
         "url": "https://example.com/placeholder/02",
-        "date": "2025-02-11",
-        "author": "Placeholder Reporter"
+        "archive_url": "https://example.com/archive/placeholder/02",
+        "date": "2025-02-03",
+        "author": "Placeholder Reporter",
+        "kind": "disclosure"
+      },
+      {
+        "outlet": "Placeholder Wire",
+        "title": "[PLACEHOLDER] Sample headline 02 (follow-up)",
+        "url": "https://example.com/placeholder/02-followup",
+        "archive_url": "https://example.com/archive/placeholder/02-followup",
+        "date": "2025-02-03",
+        "author": "Placeholder Reporter",
+        "kind": "news"
       }
     ],
-    "related_ids": [],
+    "first_published_at": "2026-08-04T15:00:00Z",
+    "last_modified_at": "2026-10-13T12:00:00Z",
+    "last_verified_at": "2026-10-13T12:00:00Z",
+    "approved_by": "[PLACEHOLDER] Editor",
+    "related_ids": [
+      "p-2025-06-crypto-06",
+      "p-2026-10-crypto-18"
+    ],
     "tags": [
       "placeholder"
     ],
     "placeholder": true
   },
   {
-    "id": "p-2025-03-crypto-03",
-    "date": "2025-03",
-    "date_precision": "month",
-    "title": "[PLACEHOLDER] Sample crypto item 03 for layout testing",
-    "summary": "Placeholder summary for fixture item 03. This text exists only to exercise the layout and describes no real event, person, or organization. Replace it with real, sourced entries from data/entries.json.",
-    "category": "crypto",
+    "id": "p-2025-03-foreign-03",
+    "root_id": null,
+    "date": "2025-03-18",
+    "date_precision": "day",
+    "title": "[PLACEHOLDER] Sample foreign emoluments record 03",
+    "summary": "Documented: placeholder summary for fixture record 03. Under evidence grade 2 the record says \"documented\". This text exists only to exercise the layout and describes no real event, person, or organization.",
+    "category": "foreign-emoluments",
+    "rubric_prong": "private-gain",
+    "rubric_evidence": "Placeholder: the sample fact that satisfies the private gain prong for record 03.",
     "actors": [
-      "Placeholder Official A",
-      "Placeholder Associate C"
+      "Placeholder Official B"
     ],
+    "actor_roles": {
+      "Placeholder Official B": "public-official"
+    },
     "entities": [
-      "Demo Token Project"
+      "Example Holdings LLC"
     ],
-    "dollar_amount_usd": null,
-    "dollar_basis": null,
-    "status": "disputed",
-    "status_note": "Placeholder status note for item 03; no real development is described.",
+    "offices": [
+      "Example Agency for Testing"
+    ],
+    "evidence_grade": 2,
+    "evidence_note": "Placeholder primary record (a sample filing) reported on by Example Outlet; fixture only.",
+    "evidentiary_status": "documented",
+    "procedural_status": "none",
+    "subject_response": "denied",
+    "status_note": null,
+    "amounts": [
+      {
+        "usd": 4100000,
+        "amount_type": "private-benefit",
+        "actual_or_estimated": "actual",
+        "basis": "Placeholder figure for layout testing (private benefit); not a real amount. Reported by Example Outlet in sample headline 03.",
+        "overlap_group": null
+      }
+    ],
     "sources": [
       {
         "outlet": "Example Outlet",
         "title": "[PLACEHOLDER] Sample headline 03",
         "url": "https://example.com/placeholder/03",
-        "date": "2025-03-15",
-        "author": "Placeholder Reporter"
+        "archive_url": "https://example.com/archive/placeholder/03",
+        "date": "2025-03-18",
+        "author": "Placeholder Reporter",
+        "kind": "disclosure"
+      },
+      {
+        "outlet": "Placeholder Wire",
+        "title": "[PLACEHOLDER] Sample headline 03 (follow-up)",
+        "url": "https://example.com/placeholder/03-followup",
+        "archive_url": "https://example.com/archive/placeholder/03-followup",
+        "date": "2025-03-18",
+        "author": "Placeholder Reporter",
+        "kind": "news"
       }
     ],
-    "related_ids": [
-      "p-2026-09-crypto-14"
-    ],
+    "first_published_at": "2026-08-05T15:00:00Z",
+    "last_modified_at": null,
+    "last_verified_at": "2026-08-05T15:00:00Z",
+    "approved_by": "[PLACEHOLDER] Editor",
+    "related_ids": [],
     "tags": [
       "placeholder"
     ],
     "placeholder": true
   },
   {
-    "id": "p-2025-04-pardons-04",
-    "date": "2025-04-17",
+    "id": "p-2025-04-contracts-04",
+    "root_id": null,
+    "date": "2025-04-15",
     "date_precision": "day",
-    "title": "[PLACEHOLDER] Sample pardons clemency item 04 for layout testing",
-    "summary": "Placeholder summary for fixture item 04. This text exists only to exercise the layout and describes no real event, person, or organization. Replace it with real, sourced entries from data/entries.json.",
-    "category": "pardons-clemency",
+    "title": "[PLACEHOLDER] Sample contract award 04, root of a two-record tree",
+    "summary": "Documented: placeholder summary for fixture record 04. Under evidence grade 2 the record says \"documented\". This text exists only to exercise the layout and describes no real event, person, or organization.",
+    "category": "contracts-procurement",
+    "rubric_prong": "private-gain",
+    "rubric_evidence": "Placeholder: the sample fact that satisfies the private gain prong for record 04.",
     "actors": [
-      "Placeholder Official A"
+      "Placeholder Official C"
     ],
+    "actor_roles": {
+      "Placeholder Official C": "public-official"
+    },
     "entities": [
-      "Placeholder Department of Examples"
+      "Example Holdings LLC"
     ],
-    "dollar_amount_usd": null,
-    "dollar_basis": null,
-    "status": "confirmed",
-    "status_note": "Placeholder status note for item 04; no real development is described.",
+    "offices": [
+      "Sample Bureau of Fixtures",
+      "Example Agency for Testing"
+    ],
+    "evidence_grade": 2,
+    "evidence_note": "Placeholder primary record (a sample filing) reported on by Example Outlet; fixture only.",
+    "evidentiary_status": "documented",
+    "procedural_status": "none",
+    "subject_response": "no-comment",
+    "status_note": null,
+    "amounts": [
+      {
+        "usd": 240000000,
+        "amount_type": "face-value",
+        "actual_or_estimated": "actual",
+        "basis": "Placeholder figure for layout testing (face value); not a real amount. Reported by Example Outlet in sample headline 04.",
+        "overlap_group": "p-contract-award"
+      }
+    ],
     "sources": [
       {
         "outlet": "Example Outlet",
         "title": "[PLACEHOLDER] Sample headline 04",
         "url": "https://example.com/placeholder/04",
-        "date": "2025-04-17",
-        "author": "Placeholder Reporter"
+        "archive_url": "https://example.com/archive/placeholder/04",
+        "date": "2025-04-15",
+        "author": "Placeholder Reporter",
+        "kind": "disclosure"
       },
       {
         "outlet": "Placeholder Wire",
-        "title": "[PLACEHOLDER] Sample follow-up 04",
+        "title": "[PLACEHOLDER] Sample headline 04 (follow-up)",
         "url": "https://example.com/placeholder/04-followup",
-        "date": "2025-04-17",
-        "author": "Sample Byline"
+        "archive_url": "https://example.com/archive/placeholder/04-followup",
+        "date": "2025-04-15",
+        "author": "Placeholder Reporter",
+        "kind": "news"
       }
     ],
-    "related_ids": [],
+    "first_published_at": "2026-08-06T15:00:00Z",
+    "last_modified_at": null,
+    "last_verified_at": "2026-08-06T15:00:00Z",
+    "approved_by": "[PLACEHOLDER] Editor",
+    "related_ids": [
+      "p-2026-03-contracts-12"
+    ],
     "tags": [
       "placeholder"
     ],
     "placeholder": true
   },
   {
-    "id": "p-2025-05-pay-05",
-    "date": "2025-05-30",
-    "date_precision": "day",
-    "title": "[PLACEHOLDER] Sample pay to play item 05 for layout testing",
-    "summary": "Placeholder summary for fixture item 05. This text exists only to exercise the layout and describes no real event, person, or organization. Replace it with real, sourced entries from data/entries.json.",
-    "category": "pay-to-play",
+    "id": "p-2025-05-pardons-05",
+    "root_id": null,
+    "date": "2025-05-01",
+    "date_precision": "month",
+    "title": "[PLACEHOLDER] Sample clemency matter 05 (month precision), tree root",
+    "summary": "Alleged (corroborated): placeholder summary for fixture record 05. Under evidence grade 4 the record says \"alleged (corroborated)\". This text exists only to exercise the layout and describes no real event, person, or organization.",
+    "category": "pardons-clemency",
+    "rubric_prong": "private-gain",
+    "rubric_evidence": "Placeholder: the sample fact that satisfies the private gain prong for record 05.",
     "actors": [
-      "Placeholder Donor D"
+      "Placeholder Official B"
     ],
+    "actor_roles": {
+      "Placeholder Official B": "public-official"
+    },
     "entities": [
-      "Example Fund PAC"
+      "Example Holdings LLC"
     ],
-    "dollar_amount_usd": 2500000,
-    "dollar_basis": "Placeholder figure for layout testing; not a real amount.",
-    "status": "litigation",
-    "status_note": "Placeholder status note for item 05; no real development is described.",
+    "offices": [
+      "Placeholder Commission on Layouts"
+    ],
+    "evidence_grade": 4,
+    "evidence_note": "Example Outlet and Placeholder Wire independently reported with separate sourcing; fixture only.",
+    "evidentiary_status": "corroborated",
+    "procedural_status": "none",
+    "subject_response": "no-comment",
+    "status_note": null,
+    "amounts": [
+      {
+        "usd": 5000000,
+        "amount_type": "exposure",
+        "actual_or_estimated": "estimated",
+        "basis": "Placeholder figure for layout testing (exposure); not a real amount. Reported by Example Outlet in sample headline 05.",
+        "overlap_group": "p-clemency-exposure"
+      }
+    ],
     "sources": [
       {
         "outlet": "Example Outlet",
         "title": "[PLACEHOLDER] Sample headline 05",
         "url": "https://example.com/placeholder/05",
-        "date": "2025-05-30",
-        "author": "Placeholder Reporter"
+        "archive_url": "https://example.com/archive/placeholder/05",
+        "date": "2025-05-01",
+        "author": "Placeholder Reporter",
+        "kind": "news"
+      },
+      {
+        "outlet": "Placeholder Wire",
+        "title": "[PLACEHOLDER] Sample headline 05 (follow-up)",
+        "url": "https://example.com/placeholder/05-followup",
+        "archive_url": "https://example.com/archive/placeholder/05-followup",
+        "date": "2025-05-01",
+        "author": "Placeholder Reporter",
+        "kind": "news"
       }
     ],
+    "first_published_at": "2026-08-10T15:00:00Z",
+    "last_modified_at": null,
+    "last_verified_at": "2026-08-10T15:00:00Z",
+    "approved_by": "[PLACEHOLDER] Editor",
     "related_ids": [
-      "p-2026-10-pay-15"
+      "p-2026-10-pardons-20"
     ],
     "tags": [
       "placeholder"
@@ -181,105 +345,129 @@
     "placeholder": true
   },
   {
-    "id": "p-2025-07-nepotism-06",
-    "date": "2025-07-08",
+    "id": "p-2025-06-crypto-06",
+    "root_id": "p-2025-02-crypto-02",
+    "date": "2025-06-10",
     "date_precision": "day",
-    "title": "[PLACEHOLDER] Sample nepotism cronyism item 06 for layout testing",
-    "summary": "Placeholder summary for fixture item 06. This text exists only to exercise the layout and describes no real event, person, or organization. Replace it with real, sourced entries from data/entries.json.",
-    "category": "nepotism-cronyism",
+    "title": "[PLACEHOLDER] Sample development 06 in the crypto matter",
+    "summary": "Reported: placeholder summary for fixture record 06. Under evidence grade 3 the record says \"reported\". This text exists only to exercise the layout and describes no real event, person, or organization.",
+    "category": "crypto",
+    "rubric_prong": "private-gain",
+    "rubric_evidence": "Placeholder: the sample fact that satisfies the private gain prong for record 06.",
     "actors": [
-      "Placeholder Relative E"
+      "Placeholder Official A",
+      "Sample Ventures Inc."
     ],
+    "actor_roles": {
+      "Placeholder Official A": "public-official",
+      "Sample Ventures Inc.": "private-entity"
+    },
     "entities": [
-      "Sample Advisory Board"
+      "Example Holdings LLC"
     ],
-    "dollar_amount_usd": null,
-    "dollar_basis": null,
-    "status": "reported",
+    "offices": [
+      "Placeholder Office of Samples"
+    ],
+    "evidence_grade": 3,
+    "evidence_note": "Placeholder document-based investigation by Example Outlet; fixture only.",
+    "evidentiary_status": "documented",
+    "procedural_status": "under-investigation",
+    "subject_response": "denied",
     "status_note": null,
+    "amounts": [
+      {
+        "usd": 18000000,
+        "amount_type": "private-benefit",
+        "actual_or_estimated": "estimated",
+        "basis": "Placeholder figure for layout testing (private benefit); not a real amount. Reported by Example Outlet in sample headline 06.",
+        "overlap_group": "p-token-revenue"
+      }
+    ],
     "sources": [
       {
         "outlet": "Example Outlet",
         "title": "[PLACEHOLDER] Sample headline 06",
         "url": "https://example.com/placeholder/06",
-        "date": "2025-07-08",
-        "author": "Placeholder Reporter"
+        "archive_url": "https://example.com/archive/placeholder/06",
+        "date": "2025-06-10",
+        "author": "Placeholder Reporter",
+        "kind": "investigation"
+      },
+      {
+        "outlet": "Placeholder Wire",
+        "title": "[PLACEHOLDER] Sample headline 06 (follow-up)",
+        "url": "https://example.com/placeholder/06-followup",
+        "archive_url": "https://example.com/archive/placeholder/06-followup",
+        "date": "2025-06-10",
+        "author": "Placeholder Reporter",
+        "kind": "news"
       }
     ],
-    "related_ids": [],
+    "first_published_at": "2026-08-12T15:00:00Z",
+    "last_modified_at": null,
+    "last_verified_at": "2026-08-12T15:00:00Z",
+    "approved_by": "[PLACEHOLDER] Editor",
+    "related_ids": [
+      "p-2025-02-crypto-02"
+    ],
     "tags": [
       "placeholder"
     ],
     "placeholder": true
   },
   {
-    "id": "p-2025-08-contracts-07",
-    "date": "2025-08-21",
+    "id": "p-2025-07-nepotism-07",
+    "root_id": null,
+    "date": "2025-07-22",
     "date_precision": "day",
-    "title": "[PLACEHOLDER] Sample contracts procurement item 07 for layout testing",
-    "summary": "Placeholder summary for fixture item 07. This text exists only to exercise the layout and describes no real event, person, or organization. Replace it with real, sourced entries from data/entries.json.",
-    "category": "contracts-procurement",
+    "title": "[PLACEHOLDER] Sample record 07 naming only private actors",
+    "summary": "Reported: placeholder summary for fixture record 07. Under evidence grade 3 the record says \"reported\". This text exists only to exercise the layout and describes no real event, person, or organization.",
+    "category": "nepotism-cronyism",
+    "rubric_prong": "private-gain",
+    "rubric_evidence": "Placeholder: the sample fact that satisfies the private gain prong for record 07.",
     "actors": [
-      "Placeholder Associate C"
+      "Placeholder Relative D",
+      "Example Associate E"
     ],
+    "actor_roles": {
+      "Placeholder Relative D": "family",
+      "Example Associate E": "private-associate"
+    },
     "entities": [
-      "Example Systems Inc.",
-      "Placeholder Agency F"
+      "Example Holdings LLC"
     ],
-    "dollar_amount_usd": 88000000,
-    "dollar_basis": "Placeholder figure for layout testing; not a real amount.",
-    "status": "under-investigation",
-    "status_note": "Placeholder status note for item 07; no real development is described.",
+    "offices": [],
+    "evidence_grade": 3,
+    "evidence_note": "Placeholder document-based investigation by Example Outlet; fixture only.",
+    "evidentiary_status": "documented",
+    "procedural_status": "none",
+    "subject_response": "denied",
+    "status_note": "Placeholder: response sought and received (a denial).",
+    "amounts": [],
     "sources": [
       {
         "outlet": "Example Outlet",
         "title": "[PLACEHOLDER] Sample headline 07",
         "url": "https://example.com/placeholder/07",
-        "date": "2025-08-21",
-        "author": "Placeholder Reporter"
+        "archive_url": "https://example.com/archive/placeholder/07",
+        "date": "2025-07-22",
+        "author": "Placeholder Reporter",
+        "kind": "investigation"
       },
       {
         "outlet": "Placeholder Wire",
-        "title": "[PLACEHOLDER] Sample follow-up 07",
+        "title": "[PLACEHOLDER] Sample headline 07 (follow-up)",
         "url": "https://example.com/placeholder/07-followup",
-        "date": "2025-08-21",
-        "author": "Sample Byline"
+        "archive_url": "https://example.com/archive/placeholder/07-followup",
+        "date": "2025-07-22",
+        "author": "Placeholder Reporter",
+        "kind": "news"
       }
     ],
-    "related_ids": [
-      "p-2025-11-contracts-09"
-    ],
-    "tags": [
-      "placeholder"
-    ],
-    "placeholder": true
-  },
-  {
-    "id": "p-2025-10-oversight-08",
-    "date": "2025-10-02",
-    "date_precision": "day",
-    "title": "[PLACEHOLDER] Sample oversight retaliation item 08 for layout testing",
-    "summary": "Placeholder summary for fixture item 08. This text exists only to exercise the layout and describes no real event, person, or organization. Replace it with real, sourced entries from data/entries.json.",
-    "category": "oversight-retaliation",
-    "actors": [
-      "Placeholder Official B"
-    ],
-    "entities": [
-      "Placeholder Inspector General Office"
-    ],
-    "dollar_amount_usd": null,
-    "dollar_basis": null,
-    "status": "litigation",
-    "status_note": "Placeholder status note for item 08; no real development is described.",
-    "sources": [
-      {
-        "outlet": "Example Outlet",
-        "title": "[PLACEHOLDER] Sample headline 08",
-        "url": "https://example.com/placeholder/08",
-        "date": "2025-10-02",
-        "author": "Placeholder Reporter"
-      }
-    ],
+    "first_published_at": "2026-08-20T15:00:00Z",
+    "last_modified_at": null,
+    "last_verified_at": "2026-08-20T15:00:00Z",
+    "approved_by": "[PLACEHOLDER] Editor",
     "related_ids": [],
     "tags": [
       "placeholder"
@@ -287,34 +475,128 @@
     "placeholder": true
   },
   {
-    "id": "p-2025-11-contracts-09",
-    "date": "2025-11-19",
+    "id": "p-2025-09-pay-08",
+    "root_id": null,
+    "date": "2025-09-05",
     "date_precision": "day",
-    "title": "[PLACEHOLDER] Sample contracts procurement item 09 for layout testing",
-    "summary": "Placeholder summary for fixture item 09. This text exists only to exercise the layout and describes no real event, person, or organization. Replace it with real, sourced entries from data/entries.json.",
-    "category": "contracts-procurement",
+    "title": "[PLACEHOLDER] Sample pay-to-play record 08",
+    "summary": "Alleged (corroborated): placeholder summary for fixture record 08. Under evidence grade 4 the record says \"alleged (corroborated)\". This text exists only to exercise the layout and describes no real event, person, or organization.",
+    "category": "pay-to-play",
+    "rubric_prong": "private-gain",
+    "rubric_evidence": "Placeholder: the sample fact that satisfies the private gain prong for record 08.",
     "actors": [
-      "Placeholder Associate C"
+      "Placeholder Official B",
+      "Sample Ventures Inc."
     ],
+    "actor_roles": {
+      "Placeholder Official B": "public-official",
+      "Sample Ventures Inc.": "private-entity"
+    },
     "entities": [
-      "Example Systems Inc."
+      "Example Holdings LLC"
     ],
-    "dollar_amount_usd": 3100000,
-    "dollar_basis": "Placeholder figure for layout testing; not a real amount.",
-    "status": "confirmed",
-    "status_note": "Placeholder status note for item 09; no real development is described.",
+    "offices": [
+      "Example Agency for Testing"
+    ],
+    "evidence_grade": 4,
+    "evidence_note": "Example Outlet and Placeholder Wire independently reported with separate sourcing; fixture only.",
+    "evidentiary_status": "corroborated",
+    "procedural_status": "none",
+    "subject_response": "denied",
+    "status_note": null,
+    "amounts": [
+      {
+        "usd": 75000000,
+        "amount_type": "face-value",
+        "actual_or_estimated": "estimated",
+        "basis": "Placeholder figure for layout testing (face value); not a real amount. Reported by Example Outlet in sample headline 08.",
+        "overlap_group": null
+      }
+    ],
+    "sources": [
+      {
+        "outlet": "Example Outlet",
+        "title": "[PLACEHOLDER] Sample headline 08",
+        "url": "https://example.com/placeholder/08",
+        "archive_url": "https://example.com/archive/placeholder/08",
+        "date": "2025-09-05",
+        "author": "Placeholder Reporter",
+        "kind": "news"
+      },
+      {
+        "outlet": "Placeholder Wire",
+        "title": "[PLACEHOLDER] Sample headline 08 (follow-up)",
+        "url": "https://example.com/placeholder/08-followup",
+        "archive_url": "https://example.com/archive/placeholder/08-followup",
+        "date": "2025-09-05",
+        "author": "Placeholder Reporter",
+        "kind": "news"
+      }
+    ],
+    "first_published_at": "2026-08-25T15:00:00Z",
+    "last_modified_at": null,
+    "last_verified_at": "2026-08-25T15:00:00Z",
+    "approved_by": "[PLACEHOLDER] Editor",
+    "related_ids": [],
+    "tags": [
+      "placeholder"
+    ],
+    "placeholder": true
+  },
+  {
+    "id": "p-2025-11-oversight-09",
+    "root_id": null,
+    "date": "2025-11-14",
+    "date_precision": "day",
+    "title": "[PLACEHOLDER] Sample oversight record 09 with an official finding",
+    "summary": "Found: placeholder summary for fixture record 09. Under evidence grade 1 the record says \"found\". This text exists only to exercise the layout and describes no real event, person, or organization.",
+    "category": "oversight-retaliation",
+    "rubric_prong": "abuse-of-office",
+    "rubric_evidence": "Placeholder: the sample fact that satisfies the abuse of office prong for record 09.",
+    "actors": [
+      "Placeholder Official C"
+    ],
+    "actor_roles": {
+      "Placeholder Official C": "public-official"
+    },
+    "entities": [
+      "Example Holdings LLC"
+    ],
+    "offices": [
+      "Placeholder Commission on Layouts"
+    ],
+    "evidence_grade": 1,
+    "evidence_note": "Placeholder official finding dated 2025-11-14; fixture only.",
+    "evidentiary_status": "finding",
+    "procedural_status": "resolved",
+    "subject_response": "not-sought",
+    "status_note": "Placeholder: sample finding issued; matter closed.",
+    "amounts": [],
     "sources": [
       {
         "outlet": "Example Outlet",
         "title": "[PLACEHOLDER] Sample headline 09",
         "url": "https://example.com/placeholder/09",
-        "date": "2025-11-19",
-        "author": "Placeholder Reporter"
+        "archive_url": "https://example.com/archive/placeholder/09",
+        "date": "2025-11-14",
+        "author": "Placeholder Reporter",
+        "kind": "official-report"
+      },
+      {
+        "outlet": "Placeholder Wire",
+        "title": "[PLACEHOLDER] Sample headline 09 (follow-up)",
+        "url": "https://example.com/placeholder/09-followup",
+        "archive_url": "https://example.com/archive/placeholder/09-followup",
+        "date": "2025-11-14",
+        "author": "Placeholder Reporter",
+        "kind": "news"
       }
     ],
-    "related_ids": [
-      "p-2025-08-contracts-07"
-    ],
+    "first_published_at": "2026-09-16T15:00:00Z",
+    "last_modified_at": null,
+    "last_verified_at": "2026-09-16T15:00:00Z",
+    "approved_by": "[PLACEHOLDER] Editor",
+    "related_ids": [],
     "tags": [
       "placeholder"
     ],
@@ -322,37 +604,57 @@
   },
   {
     "id": "p-2026-01-abuse-10",
-    "date": "2026-01-06",
+    "root_id": null,
+    "date": "2026-01-08",
     "date_precision": "day",
-    "title": "[PLACEHOLDER] Sample abuse of office item 10 for layout testing",
-    "summary": "Placeholder summary for fixture item 10. This text exists only to exercise the layout and describes no real event, person, or organization. Replace it with real, sourced entries from data/entries.json.",
+    "title": "[PLACEHOLDER] Sample abuse-of-office record 10",
+    "summary": "Documented: placeholder summary for fixture record 10. Under evidence grade 2 the record says \"documented\". This text exists only to exercise the layout and describes no real event, person, or organization.",
     "category": "abuse-of-office",
+    "rubric_prong": "abuse-of-office",
+    "rubric_evidence": "Placeholder: the sample fact that satisfies the abuse of office prong for record 10.",
     "actors": [
-      "Placeholder Official G"
+      "Placeholder Official A"
     ],
+    "actor_roles": {
+      "Placeholder Official A": "public-official"
+    },
     "entities": [
-      "Placeholder Agency F"
+      "Example Holdings LLC"
     ],
-    "dollar_amount_usd": null,
-    "dollar_basis": null,
-    "status": "retracted",
-    "status_note": "Placeholder status note for item 10; no real development is described.",
+    "offices": [
+      "Placeholder Office of Samples"
+    ],
+    "evidence_grade": 2,
+    "evidence_note": "Placeholder primary record (a sample filing) reported on by Example Outlet; fixture only.",
+    "evidentiary_status": "documented",
+    "procedural_status": "dismissed",
+    "subject_response": "denied",
+    "status_note": "Placeholder: a sample suit was dismissed.",
+    "amounts": [],
     "sources": [
       {
         "outlet": "Example Outlet",
         "title": "[PLACEHOLDER] Sample headline 10",
         "url": "https://example.com/placeholder/10",
-        "date": "2026-01-06",
-        "author": "Placeholder Reporter"
+        "archive_url": "https://example.com/archive/placeholder/10",
+        "date": "2026-01-08",
+        "author": "Placeholder Reporter",
+        "kind": "court-filing"
       },
       {
         "outlet": "Placeholder Wire",
-        "title": "[PLACEHOLDER] Sample follow-up 10",
+        "title": "[PLACEHOLDER] Sample headline 10 (follow-up)",
         "url": "https://example.com/placeholder/10-followup",
-        "date": "2026-01-06",
-        "author": "Sample Byline"
+        "archive_url": "https://example.com/archive/placeholder/10-followup",
+        "date": "2026-01-08",
+        "author": "Placeholder Reporter",
+        "kind": "news"
       }
     ],
+    "first_published_at": "2026-09-02T15:00:00Z",
+    "last_modified_at": null,
+    "last_verified_at": "2026-09-02T15:00:00Z",
+    "approved_by": "[PLACEHOLDER] Editor",
     "related_ids": [],
     "tags": [
       "placeholder"
@@ -360,32 +662,66 @@
     "placeholder": true
   },
   {
-    "id": "p-2026-03-conflicts-11",
-    "date": "2026-03",
-    "date_precision": "month",
-    "title": "[PLACEHOLDER] Sample conflicts of interest item 11 for layout testing",
-    "summary": "Placeholder summary for fixture item 11. This text exists only to exercise the layout and describes no real event, person, or organization. Replace it with real, sourced entries from data/entries.json.",
+    "id": "p-2026-02-conflicts-11",
+    "root_id": null,
+    "date": "2026-02-19",
+    "date_precision": "day",
+    "title": "[PLACEHOLDER] Sample conflicts record 11",
+    "summary": "Reported: placeholder summary for fixture record 11. Under evidence grade 3 the record says \"reported\". This text exists only to exercise the layout and describes no real event, person, or organization.",
     "category": "conflicts-of-interest",
+    "rubric_prong": "private-gain",
+    "rubric_evidence": "Placeholder: the sample fact that satisfies the private gain prong for record 11.",
     "actors": [
-      "Placeholder Official G",
-      "Placeholder Relative E"
+      "Placeholder Official B"
     ],
+    "actor_roles": {
+      "Placeholder Official B": "public-official"
+    },
     "entities": [
-      "Sample Media Co."
+      "Example Holdings LLC"
     ],
-    "dollar_amount_usd": 640000,
-    "dollar_basis": "Placeholder figure for layout testing; not a real amount.",
-    "status": "reported",
+    "offices": [
+      "Example Agency for Testing"
+    ],
+    "evidence_grade": 3,
+    "evidence_note": "Placeholder document-based investigation by Example Outlet; fixture only.",
+    "evidentiary_status": "documented",
+    "procedural_status": "none",
+    "subject_response": null,
     "status_note": null,
+    "amounts": [
+      {
+        "usd": 900000,
+        "amount_type": "exposure",
+        "actual_or_estimated": "estimated",
+        "basis": "Placeholder figure for layout testing (exposure); not a real amount. Reported by Example Outlet in sample headline 11.",
+        "overlap_group": null
+      }
+    ],
     "sources": [
       {
         "outlet": "Example Outlet",
         "title": "[PLACEHOLDER] Sample headline 11",
         "url": "https://example.com/placeholder/11",
-        "date": "2026-03-15",
-        "author": "Placeholder Reporter"
+        "archive_url": "https://example.com/archive/placeholder/11",
+        "date": "2026-02-19",
+        "author": "Placeholder Reporter",
+        "kind": "investigation"
+      },
+      {
+        "outlet": "Placeholder Wire",
+        "title": "[PLACEHOLDER] Sample headline 11 (follow-up)",
+        "url": "https://example.com/placeholder/11-followup",
+        "archive_url": "https://example.com/archive/placeholder/11-followup",
+        "date": "2026-02-19",
+        "author": "Placeholder Reporter",
+        "kind": "disclosure"
       }
     ],
+    "first_published_at": "2026-09-20T15:00:00Z",
+    "last_modified_at": null,
+    "last_verified_at": "2026-09-20T15:00:00Z",
+    "approved_by": "[PLACEHOLDER] Editor",
     "related_ids": [],
     "tags": [
       "placeholder"
@@ -393,31 +729,135 @@
     "placeholder": true
   },
   {
-    "id": "p-2026-05-misuse-12",
-    "date": "2026-05-14",
+    "id": "p-2026-03-contracts-12",
+    "root_id": "p-2025-04-contracts-04",
+    "date": "2026-03-02",
     "date_precision": "day",
-    "title": "[PLACEHOLDER] Sample misuse of funds item 12 for layout testing",
-    "summary": "Placeholder summary for fixture item 12. This text exists only to exercise the layout and describes no real event, person, or organization. Replace it with real, sourced entries from data/entries.json.",
-    "category": "misuse-of-funds",
+    "title": "[PLACEHOLDER] Sample development 12: funds disbursed",
+    "summary": "Documented: placeholder summary for fixture record 12. Under evidence grade 2 the record says \"documented\". This text exists only to exercise the layout and describes no real event, person, or organization.",
+    "category": "contracts-procurement",
+    "rubric_prong": "private-gain",
+    "rubric_evidence": "Placeholder: the sample fact that satisfies the private gain prong for record 12.",
     "actors": [
-      "Placeholder Official B"
+      "Placeholder Official C"
     ],
+    "actor_roles": {
+      "Placeholder Official C": "public-official"
+    },
     "entities": [
-      "Placeholder Department of Examples"
+      "Example Holdings LLC"
     ],
-    "dollar_amount_usd": 1750000,
-    "dollar_basis": "Placeholder figure for layout testing; not a real amount.",
-    "status": "under-investigation",
-    "status_note": "Placeholder status note for item 12; no real development is described.",
+    "offices": [
+      "Sample Bureau of Fixtures"
+    ],
+    "evidence_grade": 2,
+    "evidence_note": "Placeholder primary record (a sample filing) reported on by Example Outlet; fixture only.",
+    "evidentiary_status": "documented",
+    "procedural_status": "under-investigation",
+    "subject_response": "no-comment",
+    "status_note": null,
+    "amounts": [
+      {
+        "usd": 31000000,
+        "amount_type": "public-funds",
+        "actual_or_estimated": "actual",
+        "basis": "Placeholder figure for layout testing (public funds); not a real amount. Reported by Example Outlet in sample headline 12.",
+        "overlap_group": "p-contract-award-disbursed"
+      }
+    ],
     "sources": [
       {
         "outlet": "Example Outlet",
         "title": "[PLACEHOLDER] Sample headline 12",
         "url": "https://example.com/placeholder/12",
-        "date": "2026-05-14",
-        "author": "Placeholder Reporter"
+        "archive_url": "https://example.com/archive/placeholder/12",
+        "date": "2026-03-02",
+        "author": "Placeholder Reporter",
+        "kind": "disclosure"
+      },
+      {
+        "outlet": "Placeholder Wire",
+        "title": "[PLACEHOLDER] Sample headline 12 (follow-up)",
+        "url": "https://example.com/placeholder/12-followup",
+        "archive_url": "https://example.com/archive/placeholder/12-followup",
+        "date": "2026-03-02",
+        "author": "Placeholder Reporter",
+        "kind": "congressional"
       }
     ],
+    "first_published_at": "2026-10-09T22:15:00Z",
+    "last_modified_at": null,
+    "last_verified_at": "2026-10-09T22:15:00Z",
+    "approved_by": "[PLACEHOLDER] Editor",
+    "related_ids": [
+      "p-2025-04-contracts-04"
+    ],
+    "tags": [
+      "placeholder"
+    ],
+    "placeholder": true
+  },
+  {
+    "id": "p-2026-05-misuse-13",
+    "root_id": null,
+    "date": "2026-05-27",
+    "date_precision": "day",
+    "title": "[PLACEHOLDER] Sample misuse-of-funds record 13",
+    "summary": "Documented: placeholder summary for fixture record 13. Under evidence grade 2 the record says \"documented\". This text exists only to exercise the layout and describes no real event, person, or organization.",
+    "category": "misuse-of-funds",
+    "rubric_prong": "private-gain",
+    "rubric_evidence": "Placeholder: the sample fact that satisfies the private gain prong for record 13.",
+    "actors": [
+      "Placeholder Official C"
+    ],
+    "actor_roles": {
+      "Placeholder Official C": "public-official"
+    },
+    "entities": [
+      "Example Holdings LLC"
+    ],
+    "offices": [
+      "Sample Bureau of Fixtures"
+    ],
+    "evidence_grade": 2,
+    "evidence_note": "Placeholder primary record (a sample filing) reported on by Example Outlet; fixture only.",
+    "evidentiary_status": "documented",
+    "procedural_status": "under-investigation",
+    "subject_response": "no-comment",
+    "status_note": null,
+    "amounts": [
+      {
+        "usd": 3200000,
+        "amount_type": "public-funds",
+        "actual_or_estimated": "actual",
+        "basis": "Placeholder figure for layout testing (public funds); not a real amount. Reported by Example Outlet in sample headline 13.",
+        "overlap_group": null
+      }
+    ],
+    "sources": [
+      {
+        "outlet": "Example Outlet",
+        "title": "[PLACEHOLDER] Sample headline 13",
+        "url": "https://example.com/placeholder/13",
+        "archive_url": "https://example.com/archive/placeholder/13",
+        "date": "2026-05-27",
+        "author": "Placeholder Reporter",
+        "kind": "official-report"
+      },
+      {
+        "outlet": "Placeholder Wire",
+        "title": "[PLACEHOLDER] Sample headline 13 (follow-up)",
+        "url": "https://example.com/placeholder/13-followup",
+        "archive_url": "https://example.com/archive/placeholder/13-followup",
+        "date": "2026-05-27",
+        "author": "Placeholder Reporter",
+        "kind": "news"
+      }
+    ],
+    "first_published_at": "2026-10-10T18:00:00Z",
+    "last_modified_at": null,
+    "last_verified_at": "2026-10-10T18:00:00Z",
+    "approved_by": "[PLACEHOLDER] Editor",
     "related_ids": [],
     "tags": [
       "placeholder"
@@ -425,75 +865,280 @@
     "placeholder": true
   },
   {
-    "id": "p-2026-07-self-13",
-    "date": "2026-07-27",
+    "id": "p-2026-06-self-14",
+    "root_id": null,
+    "date": "2026-06-11",
     "date_precision": "day",
-    "title": "[PLACEHOLDER] Sample self enrichment item 13 for layout testing",
-    "summary": "Placeholder summary for fixture item 13. This text exists only to exercise the layout and describes no real event, person, or organization. Replace it with real, sourced entries from data/entries.json.",
+    "title": "[PLACEHOLDER] Sample record 14, since retracted",
+    "summary": "Alleged (corroborated): placeholder summary for fixture record 14. Under evidence grade 4 the record says \"alleged (corroborated)\". This text exists only to exercise the layout and describes no real event, person, or organization.",
     "category": "self-enrichment",
+    "rubric_prong": "private-gain",
+    "rubric_evidence": "Placeholder: the sample fact that satisfies the private gain prong for record 14.",
     "actors": [
       "Placeholder Official A"
     ],
+    "actor_roles": {
+      "Placeholder Official A": "public-official"
+    },
     "entities": [
-      "Example Holdings LLC",
-      "Demo Token Project"
+      "Example Holdings LLC"
     ],
-    "dollar_amount_usd": null,
-    "dollar_basis": null,
-    "status": "disputed",
-    "status_note": "Placeholder status note for item 13; no real development is described.",
-    "sources": [
-      {
-        "outlet": "Example Outlet",
-        "title": "[PLACEHOLDER] Sample headline 13",
-        "url": "https://example.com/placeholder/13",
-        "date": "2026-07-27",
-        "author": "Placeholder Reporter"
-      },
-      {
-        "outlet": "Placeholder Wire",
-        "title": "[PLACEHOLDER] Sample follow-up 13",
-        "url": "https://example.com/placeholder/13-followup",
-        "date": "2026-07-27",
-        "author": "Sample Byline"
-      }
+    "offices": [
+      "Placeholder Office of Samples"
     ],
-    "related_ids": [
-      "p-2025-01-self-01"
-    ],
-    "tags": [
-      "placeholder"
-    ],
-    "placeholder": true
-  },
-  {
-    "id": "p-2026-09-crypto-14",
-    "date": "2026-09-15",
-    "date_precision": "day",
-    "title": "[PLACEHOLDER] Sample crypto item 14 for layout testing",
-    "summary": "Placeholder summary for fixture item 14. This text exists only to exercise the layout and describes no real event, person, or organization. Replace it with real, sourced entries from data/entries.json.",
-    "category": "crypto",
-    "actors": [
-      "Placeholder Associate C"
-    ],
-    "entities": [
-      "Demo Token Project"
-    ],
-    "dollar_amount_usd": 27000000,
-    "dollar_basis": "Placeholder figure for layout testing; not a real amount.",
-    "status": "reported",
-    "status_note": null,
+    "evidence_grade": 4,
+    "evidence_note": "Example Outlet and Placeholder Wire independently reported with separate sourcing; fixture only.",
+    "evidentiary_status": "retracted",
+    "procedural_status": "none",
+    "subject_response": "retracted-by-outlet",
+    "status_note": "Placeholder: both sample outlets retracted their reports; kept on the record, counted nowhere.",
+    "amounts": [],
     "sources": [
       {
         "outlet": "Example Outlet",
         "title": "[PLACEHOLDER] Sample headline 14",
         "url": "https://example.com/placeholder/14",
-        "date": "2026-09-15",
-        "author": "Placeholder Reporter"
+        "archive_url": "https://example.com/archive/placeholder/14",
+        "date": "2026-06-11",
+        "author": "Placeholder Reporter",
+        "kind": "news"
+      },
+      {
+        "outlet": "Placeholder Wire",
+        "title": "[PLACEHOLDER] Sample headline 14 (follow-up)",
+        "url": "https://example.com/placeholder/14-followup",
+        "archive_url": "https://example.com/archive/placeholder/14-followup",
+        "date": "2026-06-11",
+        "author": "Placeholder Reporter",
+        "kind": "news"
       }
     ],
+    "first_published_at": "2026-08-28T15:00:00Z",
+    "last_modified_at": "2026-10-14T01:00:00Z",
+    "last_verified_at": "2026-10-14T01:00:00Z",
+    "approved_by": "[PLACEHOLDER] Editor",
+    "related_ids": [],
+    "tags": [
+      "placeholder"
+    ],
+    "placeholder": true
+  },
+  {
+    "id": "p-2026-08-abuse-15",
+    "root_id": null,
+    "date": "2026-08-19",
+    "date_precision": "day",
+    "title": "[PLACEHOLDER] Sample abuse-of-office record 15",
+    "summary": "Alleged (corroborated): placeholder summary for fixture record 15. Under evidence grade 4 the record says \"alleged (corroborated)\". This text exists only to exercise the layout and describes no real event, person, or organization.",
+    "category": "abuse-of-office",
+    "rubric_prong": "abuse-of-office",
+    "rubric_evidence": "Placeholder: the sample fact that satisfies the abuse of office prong for record 15.",
+    "actors": [
+      "Placeholder Official B"
+    ],
+    "actor_roles": {
+      "Placeholder Official B": "public-official"
+    },
+    "entities": [
+      "Example Holdings LLC"
+    ],
+    "offices": [
+      "Placeholder Commission on Layouts"
+    ],
+    "evidence_grade": 4,
+    "evidence_note": "Example Outlet and Placeholder Wire independently reported with separate sourcing; fixture only.",
+    "evidentiary_status": "corroborated",
+    "procedural_status": "none",
+    "subject_response": "denied",
+    "status_note": null,
+    "amounts": [],
+    "sources": [
+      {
+        "outlet": "Example Outlet",
+        "title": "[PLACEHOLDER] Sample headline 15",
+        "url": "https://example.com/placeholder/15",
+        "archive_url": "https://example.com/archive/placeholder/15",
+        "date": "2026-08-19",
+        "author": "Placeholder Reporter",
+        "kind": "news"
+      },
+      {
+        "outlet": "Placeholder Wire",
+        "title": "[PLACEHOLDER] Sample headline 15 (follow-up)",
+        "url": "https://example.com/placeholder/15-followup",
+        "archive_url": "https://example.com/archive/placeholder/15-followup",
+        "date": "2026-08-19",
+        "author": "Placeholder Reporter",
+        "kind": "news"
+      }
+    ],
+    "first_published_at": "2026-10-07T17:00:00Z",
+    "last_modified_at": null,
+    "last_verified_at": "2026-10-07T17:00:00Z",
+    "approved_by": "[PLACEHOLDER] Editor",
+    "related_ids": [],
+    "tags": [
+      "placeholder"
+    ],
+    "placeholder": true
+  },
+  {
+    "id": "p-2026-09-pay-16",
+    "root_id": null,
+    "date": "2026-09-30",
+    "date_precision": "day",
+    "title": "[PLACEHOLDER] Sample lead 16: a single-source allegation",
+    "summary": "Alleged: placeholder summary for fixture record 16. Under evidence grade 5 the record says \"alleged\". This text exists only to exercise the layout and describes no real event, person, or organization.",
+    "category": "pay-to-play",
+    "rubric_prong": "private-gain",
+    "rubric_evidence": "Placeholder: the sample fact that satisfies the private gain prong for record 16.",
+    "actors": [
+      "Placeholder Official A"
+    ],
+    "actor_roles": {
+      "Placeholder Official A": "public-official"
+    },
+    "entities": [
+      "Example Holdings LLC"
+    ],
+    "offices": [
+      "Example Agency for Testing"
+    ],
+    "evidence_grade": 5,
+    "evidence_note": "One placeholder outlet, one unnamed source; kept as a lead; fixture only.",
+    "evidentiary_status": "alleged",
+    "procedural_status": "none",
+    "subject_response": "no-comment",
+    "status_note": null,
+    "amounts": [],
+    "sources": [
+      {
+        "outlet": "Example Outlet",
+        "title": "[PLACEHOLDER] Sample headline 16",
+        "url": "https://example.com/placeholder/16",
+        "archive_url": "https://example.com/archive/placeholder/16",
+        "date": "2026-09-30",
+        "author": "Placeholder Reporter",
+        "kind": "news"
+      }
+    ],
+    "first_published_at": "2026-10-10T20:30:00Z",
+    "last_modified_at": null,
+    "last_verified_at": "2026-10-10T20:30:00Z",
+    "approved_by": "[PLACEHOLDER] Editor",
+    "related_ids": [],
+    "tags": [
+      "placeholder"
+    ],
+    "placeholder": true
+  },
+  {
+    "id": "p-2026-10-contracts-17",
+    "root_id": null,
+    "date": "2026-10-05",
+    "date_precision": "day",
+    "title": "[PLACEHOLDER] Sample lead 17: a second single-source allegation",
+    "summary": "Alleged: placeholder summary for fixture record 17. Under evidence grade 5 the record says \"alleged\". This text exists only to exercise the layout and describes no real event, person, or organization.",
+    "category": "contracts-procurement",
+    "rubric_prong": "private-gain",
+    "rubric_evidence": "Placeholder: the sample fact that satisfies the private gain prong for record 17.",
+    "actors": [
+      "Placeholder Official C"
+    ],
+    "actor_roles": {
+      "Placeholder Official C": "public-official"
+    },
+    "entities": [
+      "Example Holdings LLC"
+    ],
+    "offices": [
+      "Sample Bureau of Fixtures"
+    ],
+    "evidence_grade": 5,
+    "evidence_note": "One placeholder outlet, one unnamed source; kept as a lead; fixture only.",
+    "evidentiary_status": "alleged",
+    "procedural_status": "none",
+    "subject_response": "not-sought",
+    "status_note": null,
+    "amounts": [],
+    "sources": [
+      {
+        "outlet": "Example Outlet",
+        "title": "[PLACEHOLDER] Sample headline 17",
+        "url": "https://example.com/placeholder/17",
+        "archive_url": "https://example.com/archive/placeholder/17",
+        "date": "2026-10-05",
+        "author": "Placeholder Reporter",
+        "kind": "news"
+      }
+    ],
+    "first_published_at": "2026-10-13T20:00:00Z",
+    "last_modified_at": null,
+    "last_verified_at": "2026-10-13T20:00:00Z",
+    "approved_by": "[PLACEHOLDER] Editor",
+    "related_ids": [],
+    "tags": [
+      "placeholder"
+    ],
+    "placeholder": true
+  },
+  {
+    "id": "p-2026-10-crypto-18",
+    "root_id": "p-2025-02-crypto-02",
+    "date": "2026-10-09",
+    "date_precision": "day",
+    "title": "[PLACEHOLDER] Sample development 18: an official finding in the crypto matter",
+    "summary": "Found: placeholder summary for fixture record 18. Under evidence grade 1 the record says \"found\". This text exists only to exercise the layout and describes no real event, person, or organization.",
+    "category": "crypto",
+    "rubric_prong": "private-gain",
+    "rubric_evidence": "Placeholder: the sample fact that satisfies the private gain prong for record 18.",
+    "actors": [
+      "Placeholder Official A",
+      "Sample Ventures Inc."
+    ],
+    "actor_roles": {
+      "Placeholder Official A": "public-official",
+      "Sample Ventures Inc.": "private-entity"
+    },
+    "entities": [
+      "Example Holdings LLC"
+    ],
+    "offices": [
+      "Placeholder Office of Samples"
+    ],
+    "evidence_grade": 1,
+    "evidence_note": "Placeholder official finding dated 2026-10-09; fixture only.",
+    "evidentiary_status": "finding",
+    "procedural_status": "litigation",
+    "subject_response": "denied",
+    "status_note": "Placeholder: sample litigation followed the finding.",
+    "amounts": [],
+    "sources": [
+      {
+        "outlet": "Example Outlet",
+        "title": "[PLACEHOLDER] Sample headline 18",
+        "url": "https://example.com/placeholder/18",
+        "archive_url": "https://example.com/archive/placeholder/18",
+        "date": "2026-10-09",
+        "author": "Placeholder Reporter",
+        "kind": "official-report"
+      },
+      {
+        "outlet": "Placeholder Wire",
+        "title": "[PLACEHOLDER] Sample headline 18 (follow-up)",
+        "url": "https://example.com/placeholder/18-followup",
+        "archive_url": "https://example.com/archive/placeholder/18-followup",
+        "date": "2026-10-09",
+        "author": "Placeholder Reporter",
+        "kind": "court-filing"
+      }
+    ],
+    "first_published_at": "2026-10-09T16:30:00Z",
+    "last_modified_at": null,
+    "last_verified_at": "2026-10-09T16:30:00Z",
+    "approved_by": "[PLACEHOLDER] Editor",
     "related_ids": [
-      "p-2025-03-crypto-03"
+      "p-2025-02-crypto-02"
     ],
     "tags": [
       "placeholder"
@@ -501,34 +1146,119 @@
     "placeholder": true
   },
   {
-    "id": "p-2026-10-pay-15",
-    "date": "2026-10-01",
+    "id": "p-2026-10-conflicts-19",
+    "root_id": null,
+    "date": "2026-10-10",
     "date_precision": "day",
-    "title": "[PLACEHOLDER] Sample pay to play item 15 for layout testing",
-    "summary": "Placeholder summary for fixture item 15. This text exists only to exercise the layout and describes no real event, person, or organization. Replace it with real, sourced entries from data/entries.json.",
-    "category": "pay-to-play",
+    "title": "[PLACEHOLDER] Sample conflicts record 19",
+    "summary": "Reported: placeholder summary for fixture record 19. Under evidence grade 3 the record says \"reported\". This text exists only to exercise the layout and describes no real event, person, or organization.",
+    "category": "conflicts-of-interest",
+    "rubric_prong": "private-gain",
+    "rubric_evidence": "Placeholder: the sample fact that satisfies the private gain prong for record 19.",
     "actors": [
-      "Placeholder Donor D",
-      "Placeholder Official A"
+      "Placeholder Official B"
     ],
+    "actor_roles": {
+      "Placeholder Official B": "public-official"
+    },
     "entities": [
-      "Example Fund PAC"
+      "Example Holdings LLC"
     ],
-    "dollar_amount_usd": null,
-    "dollar_basis": null,
-    "status": "under-investigation",
-    "status_note": "Placeholder status note for item 15; no real development is described.",
+    "offices": [
+      "Example Agency for Testing"
+    ],
+    "evidence_grade": 3,
+    "evidence_note": "Placeholder document-based investigation by Example Outlet; fixture only.",
+    "evidentiary_status": "documented",
+    "procedural_status": "none",
+    "subject_response": "no-comment",
+    "status_note": null,
+    "amounts": [],
     "sources": [
       {
         "outlet": "Example Outlet",
-        "title": "[PLACEHOLDER] Sample headline 15",
-        "url": "https://example.com/placeholder/15",
-        "date": "2026-10-01",
-        "author": "Placeholder Reporter"
+        "title": "[PLACEHOLDER] Sample headline 19",
+        "url": "https://example.com/placeholder/19",
+        "archive_url": "https://example.com/archive/placeholder/19",
+        "date": "2026-10-10",
+        "author": "Placeholder Reporter",
+        "kind": "investigation"
+      },
+      {
+        "outlet": "Placeholder Wire",
+        "title": "[PLACEHOLDER] Sample headline 19 (follow-up)",
+        "url": "https://example.com/placeholder/19-followup",
+        "archive_url": "https://example.com/archive/placeholder/19-followup",
+        "date": "2026-10-10",
+        "author": "Placeholder Reporter",
+        "kind": "news"
       }
     ],
+    "first_published_at": "2026-10-14T03:00:00Z",
+    "last_modified_at": null,
+    "last_verified_at": "2026-10-14T03:00:00Z",
+    "approved_by": "[PLACEHOLDER] Editor",
+    "related_ids": [],
+    "tags": [
+      "placeholder"
+    ],
+    "placeholder": true
+  },
+  {
+    "id": "p-2026-10-pardons-20",
+    "root_id": "p-2025-05-pardons-05",
+    "date": "2026-10-12",
+    "date_precision": "day",
+    "title": "[PLACEHOLDER] Sample development 20 in the clemency matter",
+    "summary": "Reported: placeholder summary for fixture record 20. Under evidence grade 3 the record says \"reported\". This text exists only to exercise the layout and describes no real event, person, or organization.",
+    "category": "pardons-clemency",
+    "rubric_prong": "private-gain",
+    "rubric_evidence": "Placeholder: the sample fact that satisfies the private gain prong for record 20.",
+    "actors": [
+      "Placeholder Official B"
+    ],
+    "actor_roles": {
+      "Placeholder Official B": "public-official"
+    },
+    "entities": [
+      "Example Holdings LLC"
+    ],
+    "offices": [
+      "Placeholder Commission on Layouts"
+    ],
+    "evidence_grade": 3,
+    "evidence_note": "Placeholder document-based investigation by Example Outlet; fixture only.",
+    "evidentiary_status": "documented",
+    "procedural_status": "litigation",
+    "subject_response": "no-comment",
+    "status_note": null,
+    "amounts": [],
+    "sources": [
+      {
+        "outlet": "Example Outlet",
+        "title": "[PLACEHOLDER] Sample headline 20",
+        "url": "https://example.com/placeholder/20",
+        "archive_url": "https://example.com/archive/placeholder/20",
+        "date": "2026-10-12",
+        "author": "Placeholder Reporter",
+        "kind": "court-filing"
+      },
+      {
+        "outlet": "Placeholder Wire",
+        "title": "[PLACEHOLDER] Sample headline 20 (follow-up)",
+        "url": "https://example.com/placeholder/20-followup",
+        "archive_url": "https://example.com/archive/placeholder/20-followup",
+        "date": "2026-10-12",
+        "author": "Placeholder Reporter",
+        "kind": "news"
+      }
+    ],
+    "first_published_at": "2026-10-12T15:00:00Z",
+    "last_modified_at": null,
+    "last_verified_at": "2026-10-12T15:00:00Z",
+    "approved_by": "[PLACEHOLDER] Editor",
     "related_ids": [
-      "p-2025-05-pay-05"
+      "p-2025-05-pardons-05"
     ],
     "tags": [
       "placeholder"

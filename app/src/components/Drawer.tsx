@@ -2,9 +2,9 @@ import { useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import type { Item } from '../types';
 import { CATEGORY_LABEL, CategoryGlyph } from '../categories';
-import { STATUS_LABEL, StatusIcon } from '../status';
+import { EVIDENTIARY_LABEL } from '../status';
+import { amountLong } from '../amounts';
 import { formatDate, parseDay } from '../data/dates';
-import { formatUsd, formatUsdCompact } from '../data/format';
 
 interface DrawerProps {
   item: Item;
@@ -98,8 +98,7 @@ export function Drawer({ item, byId, onClose, onNavigate }: DrawerProps) {
 
           <section className="drawer__section drawer__status" aria-label="Status">
             <p className="drawer__status-line">
-              <StatusIcon status={item.status} />
-              <strong>{STATUS_LABEL[item.status]}</strong>
+              <strong>{EVIDENTIARY_LABEL[item.evidentiary_status]}</strong>
             </p>
             {item.status_note && <p className="drawer__note">{item.status_note}</p>}
           </section>
@@ -119,17 +118,18 @@ export function Drawer({ item, byId, onClose, onNavigate }: DrawerProps) {
                 <dd><ul className="chips chips--static">{item.entities.map((e) => <li key={e} className="chip chip--static">{e}</li>)}</ul></dd>
               </div>
             )}
-            {item.hasDollar && item.dollar_amount_usd !== null && (
+            {item.amounts.length > 0 && (
               <div>
-                <dt>Reported figure</dt>
+                <dt>Stated amounts</dt>
                 <dd>
-                  <p className="drawer__usd">
-                    {formatUsd(item.dollar_amount_usd)}
-                    <span className="drawer__usd-compact"> ({formatUsdCompact(item.dollar_amount_usd)})</span>
-                  </p>
-                  <p className="drawer__basis">
-                    {item.dollar_basis ?? 'No basis given for this figure; the schema requires one, so treat it with caution.'}
-                  </p>
+                  <ul className="amounts">
+                    {item.amounts.map((a, i) => (
+                      <li key={i}>
+                        <p className="drawer__usd">{amountLong(a)}</p>
+                        <p className="drawer__basis">{a.basis}</p>
+                      </li>
+                    ))}
+                  </ul>
                 </dd>
               </div>
             )}

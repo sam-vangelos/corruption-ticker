@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { Category, LoadState, Status } from './types';
+import type { Category, EvidenceGrade, EvidentiaryStatus, LoadState, ProceduralStatus } from './types';
 import { loadEntries } from './data/load';
-import { buildIndexes, computeStats, optionsFrom } from './data/derive';
+import { buildIndexes, optionsFrom } from './data/derive';
+import { computeStats } from './data/metrics';
 import { inaugurationDay, parseDay, today } from './data/dates';
 import { plural } from './data/format';
 import { applyFilters, EMPTY_FILTERS, isFiltering, useUrlFilters } from './state/filters';
 import { StatePanel } from './components/StatePanel';
 import { Ticker } from './components/Ticker';
 import { Counters } from './components/Counters';
-import { FilterBar } from './components/FilterBar';
+import { FilterBar, type FacetCounts } from './components/FilterBar';
 import { Stream } from './components/Stream';
 import { ChartsPanel } from './components/charts/ChartsPanel';
 import { Drawer } from './components/Drawer';
@@ -39,25 +40,25 @@ export function App() {
     indexes?.byCategory.forEach((list, k) => m.set(k, list.length));
     return m;
   }, [indexes]);
-  const statusCounts = useMemo(() => {
-    const m = new Map<Status, number>();
-    items?.forEach((it) => m.set(it.status, (m.get(it.status) ?? 0) + 1));
-    return m;
+  const facetCounts = useMemo<FacetCounts>(() => {
+    const grades = new Map<EvidenceGrade, number>();
+    const evidence = new Map<EvidentiaryStatus, number>();
+    const procedural = new Map<ProceduralStatus, number>();
+    items?.forEach((it) => {
+      grades.set(it.evidence_grade, (grades.get(it.evidence_grade) ?? 0) + 1);
+      evidence.set(it.evidentiary_status, (evidence.get(it.evidentiary_status) ?? 0) + 1);
+      procedural.set(it.procedural_status, (procedural.get(it.procedural_status) ?? 0) + 1);
+    });
+    return { grades, evidence, procedural };
   }, [items]);
 
   // The active slice: counters, charts and the stream follow it; the ticker does not.
   const filtering = isFiltering(filters);
   const filtered = useMemo(() => (items ? applyFilters(items, filters) : []), [items, filters]);
+  const nowMs = useMemo(() => Date.now(), []);
   const stats = useMemo(
-    () => (items
-      ? computeStats(filtered, {
-          now,
-          inauguration: inaugurationDay(),
-          from: filters.from ? parseDay(filters.from) : null,
-          to: filters.to ? parseDay(filters.to) : null,
-        })
-      : null),
-    [items, filtered, filters.from, filters.to, now],
+    () => (items ? computeStats(filtered, { now, nowMs, inauguration: inaugurationDay() }) : null),
+    [items, filtered, now, nowMs],
   );
 
   const isPlaceholder = !!items && items.some((it) => it.placeholder);
@@ -193,11 +194,11 @@ export function App() {
               actorOptions={actorOptions}
               entityOptions={entityOptions}
               categoryCounts={categoryCounts}
-              statusCounts={statusCounts}
+              facetCounts={facetCounts}
               shown={filtered.length}
               total={state.items.length}
             />
-            {stats && <Counters stats={stats} overall={state.items.length} filtered={filtering} />}
+            {stats && <Counters stats={stats} filtered={filtering} />}
           </div>
           <div className="frame">
             <ChartsPanel items={filtered} fromDay={chartWindow.from} toDay={chartWindow.to} />
