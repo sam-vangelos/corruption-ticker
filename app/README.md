@@ -178,7 +178,20 @@ a figure without `amount_type`, `actual_or_estimated` or `basis`, a source
 without `archive_url`, `approved_by: null` (not in the public dataset), a
 missing `first_published_at`, a record naming only private actors below grade
 3 or without a recorded response, or a child whose `root_id` does not name a
-root in the file. Schema v1 records (a single `status`, a `dollar_amount_usd`)
+root in the file. Validation also enforces the schema's admission controls: `actors` is a
+non-empty array of distinct, non-blank names with a role for each, and
+`entities` and `offices` are arrays of non-blank names (malformed values fail;
+nothing is coerced); every record has at least one source, and grade 1 needs a
+court filing or official report (or an admission), grade 2 a disclosure, court
+filing, official report or congressional record, grade 3 an investigation, and
+grade 4 two sources from distinct outlets; `date` is on or after 2025-01-20;
+and the summary passes the language lint (`src/data/lint.ts`): it opens with
+its grade's verb ("Documented:", "Alleged (corroborated):") or uses it within
+its first eight words, and below grade 1 it contains no guilt phrase
+("committed", "is guilty", "is a criminal", "bribed", "stole", "defrauded",
+"embezzled", "laundered") unless "reported", "alleged", "documented" or
+"according" appears within the six words before it. For an approved record,
+any of these failures stops the build. Schema v1 records (a single `status`, a `dollar_amount_usd`)
 are rejected with a message saying to migrate them; a file that is entirely
 v1 shows only that message.
 

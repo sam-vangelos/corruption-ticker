@@ -6,6 +6,7 @@ import {
 } from '../types';
 import { monthKey, parseDay } from './dates';
 import { isQualifying } from './metrics';
+import { summaryProblem } from './lint';
 import { EDITOR_NAME, correctionDigest, recordDigest } from './approval';
 import { PRIVATE_DISALLOWED_RESPONSES, PRIVATE_MAX_GRADE, PRIVATE_ROLES } from '../method';
 
@@ -19,6 +20,56 @@ const strList = (v: unknown): string[] => (Array.isArray(v) ? v.filter(isStr) : 
 const oneOf = <T extends string | number>(list: readonly T[], v: unknown): v is T => (list as readonly unknown[]).includes(v);
 
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** The date floor (docs/schema.md § Admission controls). */
+export const DATE_FLOOR = '2025-01-20';
+const DATE_FLOOR_DAY = parseDay(DATE_FLOOR) as number;
+
+/**
+ * A list of names (actors, entities, offices): an array of non-blank strings,
+ * optionally non-empty and distinct. Anything else fails; nothing is coerced
+ * or silently dropped.
+ */
+function nameList(v: unknown, field: string, opts: { nonEmpty?: boolean; distinct?: boolean }): { names: string[] } | string {
+  if (!Array.isArray(v)) return `${field} must be an array of names`;
+  if (opts.nonEmpty && v.length === 0) return `${field} must name at least one`;
+  const names: string[] = [];
+  for (const [i, x] of v.entries()) {
+    if (typeof x !== 'string') return `${field}[${i}] is not a string (${JSON.stringify(x)})`;
+    if (x.trim() === '') return `${field}[${i}] is blank`;
+    if (opts.distinct && names.includes(x)) return `${field} lists "${x}" twice`;
+    names.push(x);
+  }
+  return { names };
+}
+
+/**
+ * Sources by grade (docs/schema.md § Admission controls): at least one
+ * source; grade 1 needs a court filing or official report, or an admission;
+ * grade 2 a disclosure, court filing, official report or congressional
+ * record; grade 3 an investigation; grade 4 two sources from distinct outlets.
+ */
+function sourceRuleProblem(grade: EvidenceGrade, sources: Source[], response: unknown): string | null {
+  if (sources.length === 0) return 'has no sources; every public record needs at least one, with an archive_url';
+  const kinds = new Set(sources.map((s) => s.kind));
+  const has = (...k: string[]) => k.some((x) => kinds.has(x as Source['kind']));
+  switch (grade) {
+    case 1:
+      return has('court-filing', 'official-report') || response === 'admitted'
+        ? null : 'grade 1 needs a source of kind court-filing or official-report, or subject_response "admitted"';
+    case 2:
+      return has('disclosure', 'court-filing', 'official-report', 'congressional')
+        ? null : 'grade 2 needs a source of kind disclosure, court-filing, official-report or congressional';
+    case 3:
+      return has('investigation') ? null : 'grade 3 needs a source of kind investigation';
+    case 4: {
+      const outlets = new Set(sources.map((s) => s.outlet.trim().toLowerCase()));
+      return outlets.size >= 2 ? null : 'grade 4 needs at least two sources from distinct outlets';
+    }
+    default:
+      return null;
+  }
+}
 
 /**
  * Record ids become URL path segments (/r/<id>/) and directory names in
@@ -169,6 +220,8 @@ function validate(o: Record<string, unknown>, id: string, nowMs: number): Item |
   if (!isStr(o.date) || !DAY_RE.test(o.date)) return `date "${String(o.date)}" is not YYYY-MM-DD`;
   const day = parseDay(o.date);
   if (day === null) return `unparseable date "${o.date}"`;
+  // Date floor: first-term conduct is represented only by its 2025+ development.
+  if (day < DATE_FLOOR_DAY) return `date ${o.date} is before ${DATE_FLOOR}; first-term conduct is represented only by its 2025+ development`;
   if (o.date_precision !== 'day' && o.date_precision !== 'month') return `unknown date_precision "${String(o.date_precision)}"`;
   if (o.date_precision === 'month' && !o.date.endsWith('-01')) return 'month-precision dates must use the 1st of the month';
 
@@ -183,7 +236,14 @@ function validate(o: Record<string, unknown>, id: string, nowMs: number): Item |
     return `unknown subject_response "${String(o.subject_response)}"`;
   }
 
-  const actors = strList(o.actors);
+  // Actors: a non-empty array of distinct, non-blank names. Never coerced.
+  const actorsRes = nameList(o.actors, 'actors', { nonEmpty: true, distinct: true });
+  if (typeof actorsRes === 'string') return actorsRes;
+  const actors = actorsRes.names;
+  const entitiesRes = nameList(o.entities, 'entities', {});
+  if (typeof entitiesRes === 'string') return entitiesRes;
+  const officesRes = nameList(o.offices, 'offices', {});
+  if (typeof officesRes === 'string') return officesRes;
   const rolesRaw = o.actor_roles && typeof o.actor_roles === 'object' && !Array.isArray(o.actor_roles)
     ? (o.actor_roles as Record<string, unknown>)
     : null;
@@ -220,6 +280,10 @@ function validate(o: Record<string, unknown>, id: string, nowMs: number): Item |
     if (typeof res === 'string' || 'code' in res) return res;
     sources.push(res);
   }
+  const sourcesProblem = sourceRuleProblem(grade, sources, o.subject_response);
+  if (sourcesProblem) return sourcesProblem;
+  const lint = summaryProblem(isStr(o.summary) ? o.summary : '', grade);
+  if (lint) return lint;
 
   // Null while unpublished; a future time means scheduled. Neither counts yet.
   const publishedMs = o.first_published_at === null ? null : parseTimestamp(o.first_published_at);
@@ -245,8 +309,8 @@ function validate(o: Record<string, unknown>, id: string, nowMs: number): Item |
     rubric_evidence: o.rubric_evidence,
     actors,
     actor_roles: actorRoles,
-    entities: strList(o.entities),
-    offices: strList(o.offices),
+    entities: entitiesRes.names,
+    offices: officesRes.names,
     evidence_grade: grade,
     evidence_note: o.evidence_note,
     evidentiary_status: o.evidentiary_status,

@@ -1260,7 +1260,7 @@
         "archive_url": "https://example.com/archive/placeholder/20",
         "date": "2026-10-12",
         "author": "Placeholder Reporter",
-        "kind": "court-filing"
+        "kind": "investigation"
       },
       {
         "outlet": "Placeholder Wire",
@@ -1269,14 +1269,14 @@
         "archive_url": "https://example.com/archive/placeholder/20-followup",
         "date": "2026-10-12",
         "author": "Placeholder Reporter",
-        "kind": "news"
+        "kind": "court-filing"
       }
     ],
     "first_published_at": "2026-10-12T15:00:00Z",
     "last_modified_at": null,
     "last_verified_at": "2026-10-12T15:00:00Z",
     "approved_by": "Sam Vangelos",
-    "approved_digest": "70fb1201223575fd2f249bef6294be6c77691af46443b6644a2c063467a82e22",
+    "approved_digest": "c7138ed5f77166347826015c0a8d13b24e8493cf92f2bb1318e77cd90fbccef5",
     "related_ids": [
       "p-2025-05-pardons-05"
     ],
