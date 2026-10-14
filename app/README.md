@@ -23,14 +23,23 @@ ALLOW_PLACEHOLDER_SITE_URL=1 npm run build   # same, with the placeholder origin
 npm run smoke                                # builds, serves on a free port, checks (below)
 ```
 
-`npm run smoke` builds the site itself (with `ALLOW_PLACEHOLDER_SITE_URL=1`
-unless `SITE_URL` is set; `SMOKE_SKIP_BUILD=1` tests the `dist/` on disk),
-serves it with `vite preview` on a free port (it listens on port 0 and uses the
-port it gets), and requires every page to carry this build's id from
+`npm run smoke` reads the dataset through the same resolver as the build
+(`DATASET_DIR` and `ALLOW_DATASET_DIR` behave identically) and builds the site
+itself (with `ALLOW_PLACEHOLDER_SITE_URL=1` unless `SITE_URL` is set;
+`SMOKE_SKIP_BUILD=1` tests the `dist/` on disk). Before serving, it requires
+four variants of that dataset to fail the build: a draft followed by its
+approved twin with the same id, an approved record failing validation, an
+approved record whose root is not public, and an approved record failing the
+private-actor rubric. It builds once more with planted secrets (an unknown
+top-level key, an unknown nested key, and `related_ids` pointing at every
+draft and unpublished record) and searches every file in `dist/` for them.
+It then plants `dist/r/stale-zz/` and requires the final prerender to remove
+it. It serves the result with `vite preview` on a free port (it listens on
+port 0 and uses the port it gets) and requires every page to carry this build's id from
 `dist/build.json`, so a stale server can never answer for it. Against counts
 recomputed in the script, independently of the app's code, it checks:
 
-- no unapproved or rubric-failing record from `dataset/entries.json` appears
+- no unapproved, unpublished or rubric-failing record from the dataset appears
   in `/data/entries.json`, in the front-page HTML, or as a page under
   `dist/r/`, and every approved, rubric-passing record does;
 - every id is URL-safe;
@@ -44,6 +53,8 @@ recomputed in the script, independently of the app's code, it checks:
 - `/feed.xml` and every office and category feed hold exactly the newest
   qualifying records they should, each with the right `<updated>`, and feeds
   exist exactly for the offices and categories with a qualifying record;
+- `/feeds/index.json` lists exactly the feed files the build wrote, with the
+  right counts;
 - corrections name only public records, and each route is its own page.
 
 ### The prerender

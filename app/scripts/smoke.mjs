@@ -19,34 +19,142 @@
 //      qualifying records they should, with <updated> per the correction rule;
 //    - corrections name public records; each route is its own page.
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { resolveDatasetDir } from './dataset-dir.mjs';
 import { createServer } from 'node:net';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 const appDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const encode = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const dist = path.join(appDir, 'dist');
 const viteBin = path.join(appDir, 'node_modules', 'vite', 'bin', 'vite.js');
 
+// ---------- helpers for builds ----------
+const checks = [];
+const record = (name, ok, note) => {
+  checks.push({ name, ok, note });
+  console.log(`smoke: ${ok ? 'PASS' : 'FAIL'} ${name}${note ? ` -> ${note}` : ''}`);
+};
+
+// The dataset, resolved exactly as the prerender resolves it (one module).
+let dataset;
+try { dataset = resolveDatasetDir(process.env); } catch (err) { console.error(`smoke: ${err.message}`); process.exit(1); }
+const raw = JSON.parse(readFileSync(path.join(dataset.dir, 'entries.json'), 'utf8'));
+const rawCorrections = existsSync(path.join(dataset.dir, 'corrections.json'))
+  ? JSON.parse(readFileSync(path.join(dataset.dir, 'corrections.json'), 'utf8'))
+  : [];
+console.log(`smoke: dataset ${dataset.label}`);
+
+const buildEnv = (extra = {}) => {
+  const env = { ...process.env, ...extra };
+  if (!env.SITE_URL) env.ALLOW_PLACEHOLDER_SITE_URL = '1';
+  return env;
+};
+const run = (args, env) => spawnSync(process.execPath, args, { cwd: appDir, env, encoding: 'utf8' });
+const prerender = (env) => run([path.join(appDir, 'scripts', 'prerender.mjs')], env);
+
+/** Write a variant of the dataset to a fresh temp directory; returns its path. */
+function variant(name, entries, corrections = rawCorrections) {
+  const dir = mkdtempSync(path.join(tmpdir(), `ethics-smoke-${name}-`));
+  writeFileSync(path.join(dir, 'entries.json'), JSON.stringify(entries));
+  writeFileSync(path.join(dir, 'corrections.json'), JSON.stringify(corrections));
+  return dir;
+}
+const clone = (v) => JSON.parse(JSON.stringify(v));
+
+/** Every file under dir, recursively. */
+const walk = (dir) => readdirSync(dir, { withFileTypes: true })
+  .flatMap((d) => (d.isDirectory() ? walk(path.join(dir, d.name)) : [path.join(dir, d.name)]));
+
 // ---------- 1. build ----------
 if (process.env.SMOKE_SKIP_BUILD !== '1') {
-  const env = { ...process.env };
-  if (!env.SITE_URL) env.ALLOW_PLACEHOLDER_SITE_URL = '1';
   const npm = process.env.npm_execpath;
+  const env = buildEnv();
   const r = npm
-    ? spawnSync(process.execPath, [npm, 'run', 'build'], { cwd: appDir, env, stdio: ['ignore', 'pipe', 'pipe'] })
-    : spawnSync('npm', ['run', 'build'], { cwd: appDir, env, stdio: ['ignore', 'pipe', 'pipe'] });
+    ? spawnSync(process.execPath, [npm, 'run', 'build'], { cwd: appDir, env, encoding: 'utf8' })
+    : spawnSync('npm', ['run', 'build'], { cwd: appDir, env, encoding: 'utf8' });
   if (r.status !== 0) {
     console.error(`smoke: build failed (exit ${r.status})\n${r.stdout}${r.stderr}`);
     process.exit(1);
   }
   console.log('smoke: build ok');
+
+  // ---------- 1a. builds that must fail ----------
+  // Derived from the dataset in use: its first approved, published record.
+  const isPublished = (e) => !!e.first_published_at && Date.parse(e.first_published_at) <= Date.now();
+  const approvedIx = raw.findIndex((e) => e.approved_by && isPublished(e) && e.root_id === null);
+  const target = raw[approvedIx];
+  if (!target) {
+    record('dataset has an approved, published root record to break', false, 'none found');
+  } else {
+    const mustFail = [];
+    // Item 1's reproduction: a draft, then its approved twin with the same id.
+    {
+      const d = clone(raw);
+      const draft = { ...clone(target), approved_by: null, title: '[PLACEHOLDER] SMOKE DRAFT TWIN TEXT' };
+      d.splice(approvedIx, 0, draft);
+      mustFail.push(['a draft followed by its approved twin (same id)', d, new RegExp(`\\[duplicate\\] duplicate id "${target.id}" at records #\\d+ and #\\d+`)]);
+    }
+    {
+      const d = clone(raw); d[approvedIx].procedural_status = 'pending';
+      mustFail.push(['an approved record that fails validation', d, new RegExp(`\\(${target.id}\\) \\[invalid\\]`)]);
+    }
+    {
+      const d = clone(raw); d[approvedIx].root_id = 'p-smoke-no-such-root';
+      mustFail.push(['an approved record whose root is not public', d, new RegExp(`\\(${target.id}\\) \\[orphan\\]`)]);
+    }
+    {
+      const d = clone(raw); const t = d[approvedIx];
+      t.actors = ['Smoke Relative']; t.actor_roles = { 'Smoke Relative': 'family' }; t.evidence_grade = 4; t.evidentiary_status = 'corroborated';
+      mustFail.push(['an approved record that fails the private-actor rubric', d, new RegExp(`\\(${target.id}\\) \\[rubric\\]`)]);
+    }
+    for (const [name, entries, expect] of mustFail) {
+      const r2 = prerender(buildEnv({ ALLOW_DATASET_DIR: '1', DATASET_DIR: variant('fail', entries) }));
+      const out = `${r2.stdout}${r2.stderr}`;
+      record(`build fails: ${name}`, r2.status !== 0 && expect.test(out), `exit ${r2.status}; ${(out.match(expect) ?? ['expected message not found'])[0]}`);
+    }
+  }
+
+  // ---------- 1b. a build with planted secrets ----------
+  // An unknown top-level key, an unknown nested key, and related_ids pointing
+  // at every draft and unpublished record: none may appear anywhere in dist/.
+  {
+    const hidden = raw.filter((e) => !e.approved_by || !isPublished(e));
+    const d = clone(raw);
+    const host = d.find((e) => e.approved_by && isPublished(e));
+    host.internal_notes = 'SMOKE-PLANT-INTERNAL-NOTE';
+    if (host.sources?.[0]) host.sources[0].internal_source_note = 'SMOKE-PLANT-NESTED-NOTE';
+    host.related_ids = [...(host.related_ids ?? []), ...hidden.map((e) => e.id)];
+    const r3 = prerender(buildEnv({ ALLOW_DATASET_DIR: '1', DATASET_DIR: variant('plant', d) }));
+    record('planted build succeeds', r3.status === 0, `exit ${r3.status}`);
+    const needles = ['SMOKE-PLANT-INTERNAL-NOTE', 'SMOKE-PLANT-NESTED-NOTE', ...hidden.flatMap((e) => [e.id, e.title])];
+    const hits = [];
+    for (const f of walk(dist)) {
+      const text = readFileSync(f, 'utf8');
+      for (const n of needles) if (text.includes(n) || text.includes(encode(n))) hits.push(`${path.relative(dist, f)}: ${n}`);
+    }
+    record('no planted key, draft or unpublished id or title anywhere in dist/', hits.length === 0 && needles.length > 2,
+      hits.length ? hits.slice(0, 5).join('; ') : `${needles.length} needles, none found`);
+  }
+
+  // ---------- 1c. the real prerender, over a planted stale page ----------
+  mkdirSync(path.join(dist, 'r', 'stale-zz'), { recursive: true });
+  writeFileSync(path.join(dist, 'r', 'stale-zz', 'index.html'), 'stale');
+  const r4 = prerender(buildEnv());
+  if (r4.status !== 0) {
+    console.error(`smoke: prerender failed (exit ${r4.status})\n${r4.stdout}${r4.stderr}`);
+    process.exit(1);
+  }
+  record('npm run prerender removes a stale dist/r/stale-zz', !existsSync(path.join(dist, 'r', 'stale-zz')), 'gone');
 }
 if (!existsSync(path.join(dist, 'build.json'))) {
   console.error('smoke: dist/build.json is missing; the build did not finish.');
   process.exit(1);
 }
 const stamp = JSON.parse(readFileSync(path.join(dist, 'build.json'), 'utf8'));
+record('dist/build.json names the dataset this smoke test read', stamp.dataset?.label === dataset.label, `${stamp.dataset?.label} vs ${dataset.label}`);
 const builtAtMs = Date.parse(stamp.builtAt);
 
 // ---------- 2. serve on a free port ----------
@@ -79,12 +187,6 @@ async function waitForServer(timeoutMs = 15000) {
 }
 
 // ---------- helpers ----------
-const checks = [];
-const record = (name, ok, note) => {
-  checks.push({ name, ok, note });
-  console.log(`smoke: ${ok ? 'PASS' : 'FAIL'} ${name}${note ? ` -> ${note}` : ''}`);
-};
-
 /** GET a path; require 200 (and, for HTML, this build's stamp); then validate(body) returns true or a failure note. */
 async function check(urlPath, validate, { html = false } = {}) {
   let body = '';
@@ -110,8 +212,6 @@ const decode = (s) => s.replace(/&(#[xX][0-9a-fA-F]+|#\d+|[a-zA-Z]+);/g, (m, e) 
   if (e[0] === '#') return String.fromCodePoint(e[1] === 'x' || e[1] === 'X' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10));
   return NAMED[e.toLowerCase()] ?? m;
 });
-const encode = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-
 /** Every <meta> keyed by its property or name attribute, content decoded; attribute order does not matter. */
 function metas(html) {
   const out = new Map();
@@ -174,7 +274,7 @@ try {
   record('related_ids point only at public records', danglingRelated.length === 0, danglingRelated.join(', ') || 'ok');
 
   // The leak: unapproved and rubric-failing raw records never reach the public.
-  const raw = JSON.parse(readFileSync(path.join(appDir, 'dataset', 'entries.json'), 'utf8'));
+  // Derived from the dataset actually used (the shared resolver above).
   const PRIVATE = new Set(['family', 'private-associate', 'private-entity']);
   const failsRubric = (e) => {
     const roles = (e.actors ?? []).map((a) => e.actor_roles?.[a]);
@@ -259,6 +359,19 @@ try {
   record('office feeds exist exactly for offices with a qualifying record', files('office').join() === wantOffices.join(), files('office').join(', '));
   for (const c of cats) await check(`/feeds/category/${c}.xml`, feedMatches(qualifying.filter((e) => e.category === c)));
   for (const o of offices) await check(`/feeds/office/${slug(o)}.xml`, feedMatches(qualifying.filter((e) => e.offices.includes(o))));
+
+  // /subscribe's list comes from the build's manifest; it must match the feed files exactly.
+  await check('/feeds/index.json', (body) => {
+    const m = JSON.parse(body);
+    const listed = [m.main?.path, ...(m.offices ?? []).map((o) => o.path), ...(m.categories ?? []).map((c) => c.path)].sort();
+    const onDisk = ['/feed.xml', ...files('office').map((f) => `/feeds/office/${f}`), ...files('category').map((f) => `/feeds/category/${f}`)].sort();
+    if (listed.join() !== onDisk.join()) return `manifest lists [${listed.join(', ')}], dist has [${onDisk.join(', ')}]`;
+    const counts = [[m.main.path, Math.min(50, qualifying.length), m.main.count],
+      ...m.categories.map((c) => [c.path, qualifying.filter((e) => e.category === c.category).length, c.count]),
+      ...m.offices.map((o) => [o.path, qualifying.filter((e) => e.offices.includes(o.label)).length, o.count])];
+    const wrong = counts.find(([, want, got]) => want !== got);
+    return wrong ? `${wrong[0]} count ${wrong[2]}, expected ${wrong[1]}` : true;
+  });
 
   // Each route is a real file with its own <title>, not the SPA fallback.
   for (const [p, title] of [['/method', 'How we count'], ['/corrections', 'Corrections'], ['/recent', 'Recent changes'], ['/subscribe', 'Subscribe']]) {
