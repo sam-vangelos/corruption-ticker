@@ -1103,3 +1103,26 @@ button, input, select { font: inherit; color: inherit; }
 .correction__facts > div { display: contents; }
 .correction__facts dt { color: var(--text-3); font-size: 0.875rem; }
 .correction__facts dd { margin: 0; overflow-wrap: anywhere; }
+
+/* ---------- wave 2: record pages and corrections notices ---------- */
+
+.record-correction {
+  padding: var(--space-2) var(--space-3);
+  border-left: 3px solid var(--text);
+  background: var(--raised);
+  font-size: 0.9375rem;
+}
+.drawer__permalink { font-size: 0.875rem; overflow-wrap: anywhere; }
+
+/* The prerendered record body, shown before (or without) JavaScript. */
+.static-record {
+  max-width: var(--measure);
+  margin-inline: auto;
+  padding: var(--space-5);
+  display: grid;
+  gap: var(--space-4);
+}
+.static-record article { display: grid; gap: var(--space-4); }
+.static-record h2 { font-size: 1.125rem; padding-top: var(--space-3); border-top: 1px solid var(--hairline); }
+.static-record ol, .static-record ul { display: grid; gap: var(--space-2); padding-left: 1.25rem; margin: 0; }
+.static-record__site { font-weight: 650; font-size: 1.25rem; }

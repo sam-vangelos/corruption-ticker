@@ -1,6 +1,8 @@
 import { useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import type { Item } from '../types';
+import type { Correction, Item } from '../types';
+import { correctionSentence } from '../corrections';
+import { recordPath } from '../router';
 import { CATEGORY_LABEL, CategoryGlyph } from '../categories';
 import { EVIDENTIARY_LABEL } from '../status';
 import { amountLong } from '../amounts';
@@ -9,6 +11,8 @@ import { formatDate, parseDay } from '../data/dates';
 interface DrawerProps {
   item: Item;
   byId: Map<string, Item>;
+  /** Corrections logged against this record, newest first. */
+  corrections: Correction[];
   onClose: () => void;
   onNavigate: (id: string) => void;
 }
@@ -20,7 +24,7 @@ const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), selec
  * page is made inert while it is open; Tab wraps inside it; Escape closes it.
  * Related entries swap the content in place and move focus to the new title.
  */
-export function Drawer({ item, byId, onClose, onNavigate }: DrawerProps) {
+export function Drawer({ item, byId, corrections, onClose, onNavigate }: DrawerProps) {
   const panelRef = useRef<HTMLElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -95,6 +99,12 @@ export function Drawer({ item, byId, onClose, onNavigate }: DrawerProps) {
           </div>
 
           <h2 className="drawer__title" id={titleId} ref={titleRef} tabIndex={-1}>{item.title}</h2>
+
+          {corrections.length > 0 && (
+            <section className="drawer__section" aria-label="Corrections">
+              {corrections.map((c, i) => <p key={i} className="record-correction" role="note">{correctionSentence(c)}</p>)}
+            </section>
+          )}
 
           <section className="drawer__section drawer__status" aria-label="Status">
             <p className="drawer__status-line">
@@ -172,7 +182,7 @@ export function Drawer({ item, byId, onClose, onNavigate }: DrawerProps) {
                   <li key={id}>
                     {it ? (
                       <a
-                        href={`?item=${encodeURIComponent(id)}`}
+                        href={recordPath(id)}
                         className="related__link"
                         onClick={(e) => { e.preventDefault(); onNavigate(id); }}
                       >
@@ -190,6 +200,11 @@ export function Drawer({ item, byId, onClose, onNavigate }: DrawerProps) {
               </ul>
             </section>
           )}
+
+          <p className="drawer__permalink">
+            <span className="drawer__muted">Permanent link </span>
+            <a href={recordPath(item.id)}>{`${window.location.origin}${recordPath(item.id)}`}</a>
+          </p>
 
           {item.tags.length > 0 && (
             <p className="drawer__tags"><span className="drawer__muted">Tags </span>{item.tags.join(', ')}</p>

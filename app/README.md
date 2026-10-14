@@ -16,11 +16,37 @@ npm run dev        # http://localhost:5173
 ## Build and check
 
 ```sh
-npm run build      # type-checks (tsc --noEmit) then bundles to dist/
-npm run smoke      # serves dist/ with `vite preview`, asserts / and /data/entries.json return 200
+npm run build      # tsc --noEmit, then vite build, then scripts/prerender.mjs
+npm run smoke      # serves dist/ with `vite preview` and checks the pages and files below
 ```
 
-`npm run smoke` needs a build first.
+`npm run smoke` needs a build first. It asserts HTTP 200 and content for `/`
+(whose link preview must state the headline counts, recomputed in the smoke
+script itself from the raw data), `/data/entries.json`, `/r/<first id>/`
+(whose `og:title` must equal that record's title), the route pages, and the
+corrections log.
+
+### The prerender
+
+`scripts/prerender.mjs` compiles `src/build/site.ts` with Vite's SSR build
+(so it uses the app's own loader, counting rules and labels) and writes into
+`dist/`:
+
+- `r/<id>/index.html` for every record: a full `<title>`, `<meta
+  name="description">`, Open Graph and Twitter card tags built from the
+  record's current title, date, evidence grade, outlet and document kind,
+  three statuses, any figures with their type, and a correction notice when
+  the record appears in the corrections log. The body holds the same
+  information as plain HTML, readable without JavaScript; the app script then
+  mounts and opens that record's drawer. No `og:image` is generated; the card
+  type is `summary`.
+- the front page's preview tags, stating the headline sentence;
+- a shell per route (`method.html` and `method/index.html`, and so on) with
+  its own title, and `404.html`.
+
+Absolute URLs (canonical, `og:url`) use `SITE_URL`; no domain exists yet, so
+the default is the reserved `https://ethics-record.example`. Set it at build
+time: `SITE_URL=https://example.org npm run build`.
 
 ## Data
 
@@ -89,6 +115,9 @@ carries the placeholder flag.
   string. All of it renders from `src/method.ts`, the same constants the
   counting code (`src/data/metrics.ts`) and the loader read, so the published
   rules cannot drift from the arithmetic.
+- `/r/<id>/` a record's permanent page. In the app, opening a card moves the
+  address bar to that record's URL, so copying it gives the shareable link;
+  closing the drawer returns to `/`. Old `?item=<id>` links redirect there.
 - `/corrections` every post-publication change from
   `public/data/corrections.json` (date, record id, field, old value, new
   value, reason), newest first.

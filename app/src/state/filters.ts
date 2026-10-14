@@ -95,7 +95,10 @@ export function useUrlFilters(): [Filters, (next: Filters | ((prev: Filters) => 
   const [filters, setFiltersState] = useState<Filters>(() => parseFilters(window.location.search));
 
   useEffect(() => {
-    const onPop = () => setFiltersState(parseFilters(window.location.search));
+    const onPop = () => {
+      const next = parseFilters(window.location.search);
+      setFiltersState((prev) => (serializeFilters(prev, '') === serializeFilters(next, '') ? prev : next));
+    };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
   }, []);

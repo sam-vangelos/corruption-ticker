@@ -6,8 +6,9 @@ import { cadence, computeHeadline, computeStats } from './data/metrics';
 import { inaugurationDay, parseDay, today } from './data/dates';
 import { plural } from './data/format';
 import { applyFilters, EMPTY_FILTERS, isFiltering, useUrlFilters } from './state/filters';
-import { followLink, useRoute, type Route } from './router';
+import { followLink, navigate, recordPath, useRoute, type Route } from './router';
 import { SITE_DECK, SITE_NAME } from './method';
+import { correctionsFor } from './corrections';
 import { StatePanel } from './components/StatePanel';
 import { Ticker } from './components/Ticker';
 import { Counters } from './components/Counters';
@@ -46,9 +47,6 @@ export function App() {
     return () => { live = false; };
   }, []);
 
-  useEffect(() => {
-    if (isHome) document.title = SITE_NAME;
-  }, [isHome]);
 
   const items = state.kind === 'ready' ? state.items : null;
   const now = useMemo(() => today(), []);
@@ -101,33 +99,28 @@ export function App() {
     return { from, to: Math.max(from, to) };
   }, [items, filters.from, filters.to, now]);
 
-  // Drawer: which item is open, and where focus goes back to on close.
-  const [openId, setOpenId] = useState<string | null>(null);
+  // Drawer: the open record is the route. /r/<id>/ is the record's permanent
+  // page; opening a card swaps the URL to it (replace, as v1 did with ?item=),
+  // so the address bar always holds the shareable link.
+  const openId = route.kind === 'record' ? route.id : null;
   const openerRef = useRef<HTMLElement | null>(null);
-  const restoredItem = useRef(false);
+  const [missingId, setMissingId] = useState<string | null>(null);
 
-  const writeItemParam = (id: string | null) => {
-    const p = new URLSearchParams(window.location.search);
-    if (id) p.set('item', id); else p.delete('item');
-    const qs = p.toString();
-    window.history.replaceState(window.history.state, '', `${window.location.pathname}${qs ? `?${qs}` : ''}${window.location.hash}`);
-  };
+  /** The current filters' query string, carried across record URLs. */
+  const search = () => window.location.search;
 
   const openItem = useCallback((id: string, opener: HTMLElement) => {
     openerRef.current = opener;
-    setOpenId(id);
-    writeItemParam(id);
+    navigate(`${recordPath(id)}${search()}`, { replace: true });
   }, []);
 
   const navigateItem = useCallback((id: string) => {
-    setOpenId(id);
-    writeItemParam(id);
+    navigate(`${recordPath(id)}${search()}`, { replace: true });
   }, []);
 
   const closeItem = useCallback(() => {
     const closingId = openId;
-    setOpenId(null);
-    writeItemParam(null);
+    navigate(`/${search()}`, { replace: true });
     // Return focus to the opener; if it is gone, to that item's card; else to the list.
     requestAnimationFrame(() => {
       const opener = openerRef.current;
@@ -137,20 +130,29 @@ export function App() {
     });
   }, [openId]);
 
-  // Deep link: ?item=<id> opens that item once the data is ready.
+  // v1 deep links (?item=<id>) move to the record's permanent URL.
   useEffect(() => {
-    if (!indexes || restoredItem.current) return;
-    restoredItem.current = true;
-    const id = new URLSearchParams(window.location.search).get('item');
-    if (id && indexes.byId.has(id)) {
-      openerRef.current = null;
-      setOpenId(id);
-    } else if (id) {
-      writeItemParam(null);
-    }
-  }, [indexes]);
+    const p = new URLSearchParams(window.location.search);
+    const id = p.get('item');
+    if (!id) return;
+    p.delete('item');
+    const qs = p.toString();
+    navigate(`${recordPath(id)}${qs ? `?${qs}` : ''}`, { replace: true });
+  }, []);
+
+  // A record URL for an id the dataset does not hold: say so and show the front page.
+  useEffect(() => {
+    if (!indexes || !openId || indexes.byId.has(openId)) return;
+    setMissingId(openId);
+    navigate(`/${search()}`, { replace: true });
+  }, [indexes, openId]);
 
   const openEntry = openId && indexes ? indexes.byId.get(openId) ?? null : null;
+
+  useEffect(() => {
+    if (openEntry) document.title = `${openEntry.title} | ${SITE_NAME}`;
+    else if (isHome) document.title = SITE_NAME;
+  }, [openEntry, isHome]);
 
   useShortcuts({
     focusSearch: () => { searchRef.current?.focus(); searchRef.current?.select(); },
@@ -180,7 +182,7 @@ export function App() {
   } else if (route.kind === 'corrections') {
     body = (
       <main id="main" className="main main--page" tabIndex={-1}>
-        <CorrectionsPage corrections={corrections} byId={indexes?.byId ?? null} recordHref={(id) => `/?item=${encodeURIComponent(id)}`} />
+        <CorrectionsPage corrections={corrections} byId={indexes?.byId ?? null} recordHref={recordPath} />
       </main>
     );
   } else if (route.kind === 'recent' || route.kind === 'subscribe' || route.kind === 'notfound') {
@@ -199,6 +201,9 @@ export function App() {
             </section>
           )}
           {skippedNotice}
+          {missingId && (
+            <p className="skip-notice" role="status">No record has the id “{missingId}”, so the front page is shown instead.</p>
+          )}
           <FilterBar
             ref={searchRef}
             filters={filters}
@@ -289,7 +294,13 @@ export function App() {
         </div>
       </footer>
       {isHome && openEntry && indexes && (
-        <Drawer item={openEntry} byId={indexes.byId} onClose={closeItem} onNavigate={navigateItem} />
+        <Drawer
+          item={openEntry}
+          byId={indexes.byId}
+          corrections={corrections.kind === 'ready' ? correctionsFor(corrections.corrections, openEntry.id) : []}
+          onClose={closeItem}
+          onNavigate={navigateItem}
+        />
       )}
     </div>
   );
