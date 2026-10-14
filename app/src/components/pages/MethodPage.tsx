@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Item } from '../../types';
-import { COUNTING_RULES, GRADES, RUBRIC, citation, datasetVersion } from '../../method';
+import { ADMISSION_CONTROLS, COUNTING_RULES, GRADES, RUBRIC, citation, datasetVersion } from '../../method';
 import { Page } from './Page';
 import { GradeMark } from '../../grades';
 
@@ -11,10 +11,11 @@ interface MethodPageProps {
 
 /** Render the rule text's `code` spans and *emphasis*; everything else is plain text. */
 function Inline({ text }: { text: string }) {
-  const parts = text.split(/(`[^`]+`|\*[^*]+\*)/g).filter(Boolean);
+  const parts = text.split(/(`[^`]+`|\*\*[^*]+\*\*|\*[^*]+\*)/g).filter(Boolean);
   return (
     <>
       {parts.map((p, i) => (p.startsWith('`') ? <code key={i}>{p.slice(1, -1)}</code>
+        : p.startsWith('**') ? <strong key={i}>{p.slice(2, -2)}</strong>
         : p.startsWith('*') ? <em key={i}>{p.slice(1, -1)}</em>
         : <span key={i}>{p}</span>))}
     </>
@@ -80,6 +81,14 @@ export function MethodPage({ items }: MethodPageProps) {
         <h2 id="counting" tabIndex={-1}>Counting rules</h2>
         <ul className="rules rules--plain">
           {COUNTING_RULES.map((r) => <li key={r.id} id={`rule-${r.id}`}><Inline text={r.text} /></li>)}
+        </ul>
+      </section>
+
+      <section className="page__section" aria-labelledby="admission">
+        <h2 id="admission" tabIndex={-1}>Admission controls</h2>
+        <p>What the build checks before any record is published. A record that fails any of these stops the build.</p>
+        <ul className="rules rules--plain">
+          {ADMISSION_CONTROLS.map((r) => <li key={r.id} id={`control-${r.id}`}><Inline text={r.text} /></li>)}
         </ul>
       </section>
 

@@ -59,7 +59,8 @@
     "first_published_at": "2026-08-03T16:00:00Z",
     "last_modified_at": null,
     "last_verified_at": "2026-08-03T16:00:00Z",
-    "approved_by": "[PLACEHOLDER] Editor",
+    "approved_by": "Sam Vangelos",
+    "approved_digest": "b1d2895e179e43d8bf2f14a350f58eb4cd70d2f748b7a77cee806b872f9f5bd4",
     "related_ids": [],
     "tags": [
       "placeholder"
@@ -128,7 +129,8 @@
     "first_published_at": "2026-08-04T15:00:00Z",
     "last_modified_at": "2026-10-13T12:00:00Z",
     "last_verified_at": "2026-10-13T12:00:00Z",
-    "approved_by": "[PLACEHOLDER] Editor",
+    "approved_by": "Sam Vangelos",
+    "approved_digest": "535f9bc3fad51f6559b715a0df190139e725af5abfdfb9f04819a9b0bc22dfc6",
     "related_ids": [
       "p-2025-06-crypto-06",
       "p-2026-10-crypto-18"
@@ -198,7 +200,8 @@
     "first_published_at": "2026-08-05T15:00:00Z",
     "last_modified_at": null,
     "last_verified_at": "2026-08-05T15:00:00Z",
-    "approved_by": "[PLACEHOLDER] Editor",
+    "approved_by": "Sam Vangelos",
+    "approved_digest": "0536af031c883403433cba547edc4c5a1ad31ac3b2402d7c996a569d55883b96",
     "related_ids": [],
     "tags": [
       "placeholder"
@@ -266,7 +269,8 @@
     "first_published_at": "2026-08-06T15:00:00Z",
     "last_modified_at": null,
     "last_verified_at": "2026-08-06T15:00:00Z",
-    "approved_by": "[PLACEHOLDER] Editor",
+    "approved_by": "Sam Vangelos",
+    "approved_digest": "3e98333ea0edc37602b1da019ee62154f0125904f5183edbfff31081860bd24a",
     "related_ids": [
       "p-2026-03-contracts-12"
     ],
@@ -335,7 +339,8 @@
     "first_published_at": "2026-08-10T15:00:00Z",
     "last_modified_at": null,
     "last_verified_at": "2026-08-10T15:00:00Z",
-    "approved_by": "[PLACEHOLDER] Editor",
+    "approved_by": "Sam Vangelos",
+    "approved_digest": "23205c2b0604f721c02bd6c472540735e6ae2a9b97453f14799f96415fc6e0dc",
     "related_ids": [
       "p-2026-10-pardons-20"
     ],
@@ -406,7 +411,8 @@
     "first_published_at": "2026-08-12T15:00:00Z",
     "last_modified_at": null,
     "last_verified_at": "2026-08-12T15:00:00Z",
-    "approved_by": "[PLACEHOLDER] Editor",
+    "approved_by": "Sam Vangelos",
+    "approved_digest": "345bb167749c734fc9c55afb3fb04c557a9a00ef0f163507444eb72ae71d1c2f",
     "related_ids": [
       "p-2025-02-crypto-02"
     ],
@@ -467,7 +473,8 @@
     "first_published_at": "2026-08-20T15:00:00Z",
     "last_modified_at": null,
     "last_verified_at": "2026-08-20T15:00:00Z",
-    "approved_by": "[PLACEHOLDER] Editor",
+    "approved_by": "Sam Vangelos",
+    "approved_digest": "5263543497a446f49a118c694a684d707d27f0ec066407cab5ea15bbfdc2506e",
     "related_ids": [],
     "tags": [
       "placeholder"
@@ -536,7 +543,8 @@
     "first_published_at": "2026-08-25T15:00:00Z",
     "last_modified_at": null,
     "last_verified_at": "2026-08-25T15:00:00Z",
-    "approved_by": "[PLACEHOLDER] Editor",
+    "approved_by": "Sam Vangelos",
+    "approved_digest": "89b120dcd9b93018472924fc9ce34c1655d1b2b0855bc8a00be78704cf8e3c75",
     "related_ids": [],
     "tags": [
       "placeholder"
@@ -595,7 +603,8 @@
     "first_published_at": "2026-09-16T15:00:00Z",
     "last_modified_at": null,
     "last_verified_at": "2026-09-16T15:00:00Z",
-    "approved_by": "[PLACEHOLDER] Editor",
+    "approved_by": "Sam Vangelos",
+    "approved_digest": "9d435ad22dcf22bb8d04d7bf0ded81555ae5608a8888e8789c703a8707079424",
     "related_ids": [],
     "tags": [
       "placeholder"
@@ -654,7 +663,8 @@
     "first_published_at": "2026-09-02T15:00:00Z",
     "last_modified_at": null,
     "last_verified_at": "2026-09-02T15:00:00Z",
-    "approved_by": "[PLACEHOLDER] Editor",
+    "approved_by": "Sam Vangelos",
+    "approved_digest": "e8592f5a53f2aa3b56089152ecb635d4c5007f144ca50e8fee15b856abf18dc5",
     "related_ids": [],
     "tags": [
       "placeholder"
@@ -721,7 +731,8 @@
     "first_published_at": "2026-09-20T15:00:00Z",
     "last_modified_at": null,
     "last_verified_at": "2026-09-20T15:00:00Z",
-    "approved_by": "[PLACEHOLDER] Editor",
+    "approved_by": "Sam Vangelos",
+    "approved_digest": "46d724f5425f8f201a97c1a53c4246a50eb091f4be203466b450ab62ce36e796",
     "related_ids": [],
     "tags": [
       "placeholder"
@@ -788,7 +799,8 @@
     "first_published_at": "2026-10-09T22:15:00Z",
     "last_modified_at": null,
     "last_verified_at": "2026-10-09T22:15:00Z",
-    "approved_by": "[PLACEHOLDER] Editor",
+    "approved_by": "Sam Vangelos",
+    "approved_digest": "33207dae63d48b9510bc7cbb62f48d8818d9bcfa607014bea803e8c15fc8f68c",
     "related_ids": [
       "p-2025-04-contracts-04"
     ],
@@ -857,7 +869,8 @@
     "first_published_at": "2026-10-10T18:00:00Z",
     "last_modified_at": null,
     "last_verified_at": "2026-10-10T18:00:00Z",
-    "approved_by": "[PLACEHOLDER] Editor",
+    "approved_by": "Sam Vangelos",
+    "approved_digest": "75d8e08f464ea6f6b700dcea6c311dcde2efb37b8c556dfd97e4f5540d93fe09",
     "related_ids": [],
     "tags": [
       "placeholder"
@@ -916,7 +929,8 @@
     "first_published_at": "2026-08-28T15:00:00Z",
     "last_modified_at": "2026-10-14T01:00:00Z",
     "last_verified_at": "2026-10-14T01:00:00Z",
-    "approved_by": "[PLACEHOLDER] Editor",
+    "approved_by": "Sam Vangelos",
+    "approved_digest": "4504c3bd51f2581a77a49d91921b8bcbd480e5f68971a1f62a5cb747059af1e9",
     "related_ids": [],
     "tags": [
       "placeholder"
@@ -975,7 +989,8 @@
     "first_published_at": "2026-10-07T17:00:00Z",
     "last_modified_at": null,
     "last_verified_at": "2026-10-07T17:00:00Z",
-    "approved_by": "[PLACEHOLDER] Editor",
+    "approved_by": "Sam Vangelos",
+    "approved_digest": "ba5cc93981beac69bd09bb30f3d4876df3cae8a19ef0a7180133feda75402d6a",
     "related_ids": [],
     "tags": [
       "placeholder"
@@ -1025,7 +1040,8 @@
     "first_published_at": "2026-10-10T20:30:00Z",
     "last_modified_at": null,
     "last_verified_at": "2026-10-10T20:30:00Z",
-    "approved_by": "[PLACEHOLDER] Editor",
+    "approved_by": "Sam Vangelos",
+    "approved_digest": "ba5dda2c708a93417f93bfc8b1fa0a786179d83f84ba25a64bb78040de3ce3d7",
     "related_ids": [],
     "tags": [
       "placeholder"
@@ -1075,7 +1091,8 @@
     "first_published_at": "2026-10-13T20:00:00Z",
     "last_modified_at": null,
     "last_verified_at": "2026-10-13T20:00:00Z",
-    "approved_by": "[PLACEHOLDER] Editor",
+    "approved_by": "Sam Vangelos",
+    "approved_digest": "85a50d0244af715894371c7b5223693a887949ca716949d7dde605929622ab92",
     "related_ids": [],
     "tags": [
       "placeholder"
@@ -1136,7 +1153,8 @@
     "first_published_at": "2026-10-09T16:30:00Z",
     "last_modified_at": null,
     "last_verified_at": "2026-10-09T16:30:00Z",
-    "approved_by": "[PLACEHOLDER] Editor",
+    "approved_by": "Sam Vangelos",
+    "approved_digest": "a40811e94fece26af043deabe3a94a28bc185d14edee460dbca4172d08b0a366",
     "related_ids": [
       "p-2025-02-crypto-02"
     ],
@@ -1197,7 +1215,8 @@
     "first_published_at": "2026-10-14T03:00:00Z",
     "last_modified_at": null,
     "last_verified_at": "2026-10-14T03:00:00Z",
-    "approved_by": "[PLACEHOLDER] Editor",
+    "approved_by": "Sam Vangelos",
+    "approved_digest": "67802eacff14c5b799e064a18521e97d25a616c22b6bb51fc76f1ac18fb0ab2e",
     "related_ids": [],
     "tags": [
       "placeholder"
@@ -1256,7 +1275,8 @@
     "first_published_at": "2026-10-12T15:00:00Z",
     "last_modified_at": null,
     "last_verified_at": "2026-10-12T15:00:00Z",
-    "approved_by": "[PLACEHOLDER] Editor",
+    "approved_by": "Sam Vangelos",
+    "approved_digest": "70fb1201223575fd2f249bef6294be6c77691af46443b6644a2c063467a82e22",
     "related_ids": [
       "p-2025-05-pardons-05"
     ],
@@ -1308,7 +1328,8 @@
     "first_published_at": "2026-09-05T15:00:00Z",
     "last_modified_at": null,
     "last_verified_at": "2026-09-05T15:00:00Z",
-    "approved_by": "[PLACEHOLDER] Editor",
+    "approved_by": "Sam Vangelos",
+    "approved_digest": "abba22ee31efb76afd518cc6d55d8a970a77a4841cc340a9f9565d0414108b52",
     "related_ids": [
       "p-2026-07-crypto-22"
     ],
@@ -1369,7 +1390,8 @@
     "first_published_at": "2026-09-06T15:00:00Z",
     "last_modified_at": null,
     "last_verified_at": "2026-09-06T15:00:00Z",
-    "approved_by": "[PLACEHOLDER] Editor",
+    "approved_by": "Sam Vangelos",
+    "approved_digest": "19bcfaf13f28b66f6c4b856ef8bd011980631ba6081f78711ca4f9cf6a427ce8",
     "related_ids": [
       "p-2026-04-crypto-21"
     ],
@@ -1546,7 +1568,8 @@
     "first_published_at": "2099-01-01T15:00:00Z",
     "last_modified_at": null,
     "last_verified_at": "2099-01-01T15:00:00Z",
-    "approved_by": "[PLACEHOLDER] Editor",
+    "approved_by": "Sam Vangelos",
+    "approved_digest": "4350adbaa8c7ed0abdb6e9585c34bb8aa7d090028d1c1ea0a4d5a7e4a07867e6",
     "related_ids": [],
     "tags": [
       "placeholder"

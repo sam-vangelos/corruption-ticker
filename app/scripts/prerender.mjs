@@ -13,17 +13,16 @@
 // SITE_URL sets the absolute origin used in og:url, canonical links and
 // feeds; it is required (see siteOrigin below). Any rejected or duplicate id,
 // non-http(s) source URL, or malformed or unmatched correction fails the build.
-import { build } from 'vite';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { resolveDatasetDir } from './dataset-dir.mjs';
+import { loadSiteModule } from './compile-ssr.mjs';
 import { existsSync } from 'node:fs';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 
 const appDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dist = path.join(appDir, 'dist');
-const cacheDir = path.join(appDir, 'node_modules', '.cache', 'ethics-record-prerender');
 const DEFAULT_SITE_URL = 'https://ethics-record.example';
 
 const fail = (msg) => {
@@ -78,21 +77,8 @@ if (!existsSync(path.join(dist, 'index.html'))) {
   process.exit(1);
 }
 
-await build({
-  root: appDir,
-  configFile: path.join(appDir, 'vite.config.ts'),
-  logLevel: 'warn',
-  build: {
-    ssr: path.join(appDir, 'src', 'build', 'site.ts'),
-    outDir: cacheDir,
-    emptyOutDir: true,
-    copyPublicDir: false,
-    sourcemap: false,
-    rolldownOptions: { output: { entryFileNames: 'site.mjs' } },
-  },
-});
-
-const { buildSite, GENERATED_PATHS } = await import(pathToFileURL(path.join(cacheDir, 'site.mjs')).href);
+// PRERENDER_REUSE_COMPILE=1 (the verify suite) reuses the module it just compiled.
+const { buildSite, GENERATED_PATHS } = await loadSiteModule({ reuse: process.env.PRERENDER_REUSE_COMPILE === '1' });
 
 // Clear everything a previous prerender wrote, so `npm run prerender` on its
 // own can never leave a stale record page, feed or dataset behind.

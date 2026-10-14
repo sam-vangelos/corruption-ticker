@@ -22,6 +22,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolveDatasetDir } from './dataset-dir.mjs';
+import { loadSiteModule } from './compile-ssr.mjs';
 import { createServer } from 'node:net';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -64,6 +65,17 @@ function variant(name, entries, corrections = rawCorrections) {
 }
 const clone = (v) => JSON.parse(JSON.stringify(v));
 
+// Variants that change digest-bound content are re-approved, so the gate
+// under test fires rather than the approval gate.
+const site = await loadSiteModule({ reuse: true });
+function reapprove(r) {
+  const v = site.validateForApproval(r);
+  if ('code' in v) throw new Error(`smoke: cannot re-approve ${r.id}: ${v.reason}`);
+  r.approved_by = site.EDITOR_NAME;
+  r.approved_digest = site.recordDigest(v);
+  return r;
+}
+
 /** Every file under dir, recursively. */
 const walk = (dir) => readdirSync(dir, { withFileTypes: true })
   .flatMap((d) => (d.isDirectory() ? walk(path.join(dir, d.name)) : [path.join(dir, d.name)]));
@@ -102,7 +114,7 @@ if (process.env.SMOKE_SKIP_BUILD !== '1') {
       mustFail.push(['an approved record that fails validation', d, new RegExp(`\\(${target.id}\\) \\[invalid\\]`)]);
     }
     {
-      const d = clone(raw); d[approvedIx].root_id = 'p-smoke-no-such-root';
+      const d = clone(raw); d[approvedIx].root_id = 'p-smoke-no-such-root'; reapprove(d[approvedIx]);
       mustFail.push(['an approved record whose root is not public', d, new RegExp(`\\(${target.id}\\) \\[orphan\\]`)]);
     }
     {
@@ -127,6 +139,7 @@ if (process.env.SMOKE_SKIP_BUILD !== '1') {
     host.internal_notes = 'SMOKE-PLANT-INTERNAL-NOTE';
     if (host.sources?.[0]) host.sources[0].internal_source_note = 'SMOKE-PLANT-NESTED-NOTE';
     host.related_ids = [...(host.related_ids ?? []), ...hidden.map((e) => e.id)];
+    reapprove(host);
     const r3 = prerender(buildEnv({ ALLOW_DATASET_DIR: '1', DATASET_DIR: variant('plant', d) }));
     record('planted build succeeds', r3.status === 0, `exit ${r3.status}`);
     const needles = ['SMOKE-PLANT-INTERNAL-NOTE', 'SMOKE-PLANT-NESTED-NOTE', ...hidden.flatMap((e) => [e.id, e.title])];
@@ -259,7 +272,7 @@ try {
     entry: new Set(['id', 'root_id', 'date', 'date_precision', 'title', 'summary', 'category', 'rubric_prong', 'rubric_evidence',
       'actors', 'actor_roles', 'entities', 'offices', 'evidence_grade', 'evidence_note', 'evidentiary_status',
       'procedural_status', 'subject_response', 'status_note', 'amounts', 'sources', 'first_published_at',
-      'last_modified_at', 'last_verified_at', 'approved_by', 'related_ids', 'tags', 'placeholder']),
+      'last_modified_at', 'last_verified_at', 'approved_by', 'approved_digest', 'related_ids', 'tags', 'placeholder']),
     amount: new Set(['usd', 'amount_type', 'actual_or_estimated', 'basis', 'overlap_group']),
     source: new Set(['outlet', 'title', 'url', 'archive_url', 'date', 'author', 'kind']),
   };

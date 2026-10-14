@@ -123,6 +123,12 @@ export interface Entry {
   last_verified_at: string;
   /** The named editor who approved the record; null means not in the public dataset. */
   approved_by: string | null;
+  /**
+   * SHA-256 hex of the canonical JSON of the record's schema fields, excluding
+   * approved_by and approved_digest, written by `npm run approve`. Binds the
+   * approval to this exact content (docs/schema.md § Admission controls).
+   */
+  approved_digest: string | null;
   related_ids: string[];
   tags: string[];
   /** Fixture-only flag (app brief): true on fake placeholder entries. */
@@ -182,7 +188,7 @@ export type LoadState =
  * private exclusions (drafts, records failing the private-actor rule); the
  * rest are data errors.
  */
-export type SkipCode = 'invalid' | 'v1' | 'id' | 'url' | 'unapproved' | 'rubric' | 'duplicate' | 'orphan';
+export type SkipCode = 'invalid' | 'v1' | 'id' | 'url' | 'unapproved' | 'approval' | 'rubric' | 'duplicate' | 'orphan';
 
 export interface SkippedEntry {
   index: number;

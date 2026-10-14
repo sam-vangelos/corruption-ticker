@@ -139,6 +139,27 @@ at `/data/*.json` (an inline plugin in `vite.config.ts`) and the page lists
 rejected records with their reasons; a production page says nothing about
 them. The build log lists them.
 
+### Approval
+
+Approval is bound to content (docs/schema.md § Admission controls). A record
+is approved only when `approved_by` equals the editor named in `editor.json`
+("Sam Vangelos") **and** `approved_digest` equals the SHA-256 of the canonical
+JSON (sorted keys) of the record's schema fields, the two approval fields
+excluded (`src/data/approval.ts`; the hash is a pure-TypeScript SHA-256 in
+`src/data/sha256.ts`, checked against `node:crypto`). Any edit after approval
+changes the digest, and the build fails, naming the record, until it is
+approved again. A record that names another approver, or the editor without a
+digest, also fails. Records with `approved_by: null` are drafts.
+
+```sh
+npm run approve -- p-2025-01-self-01 p-2025-02-crypto-02   # validate, then write approved_by + approved_digest
+npm run approve -- --correction 0                          # approve corrections.json entry #0
+npm run approve -- --check                                 # list every approval that no longer matches (exit 1 if any)
+```
+
+The tool refuses to approve an invalid record. It uses the same dataset
+resolver as the build. The fixture's approved records were approved with it.
+
 The app loads `/data/entries.json`, a JSON array of records following dataset
 schema v2 (`docs/schema.md`, mirrored field for field in `src/types.ts`), and
 `/data/corrections.json`, the corrections log. The loader

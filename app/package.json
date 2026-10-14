@@ -9,7 +9,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "preview": "vite preview",
     "smoke": "node scripts/smoke.mjs",
-    "prerender": "node scripts/prerender.mjs"
+    "prerender": "node scripts/prerender.mjs",
+    "approve": "node scripts/approve.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",

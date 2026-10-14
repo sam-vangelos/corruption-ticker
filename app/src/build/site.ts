@@ -19,7 +19,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { Headline } from '../components/Headline';
 import { esc, fillShell, type PageMeta } from './html';
-import { projectEntry } from './project';
+import { projectEntry } from '../data/project';
 import { notCountedReason } from '../grades';
 import { atomFeed } from './atom';
 import { FEED_LIMIT, MAIN_FEED, feedIndex, feedItems, type FeedsManifest } from '../feeds';
@@ -166,6 +166,11 @@ export const ROUTES: Array<{ path: string; title: string; description: string }>
  * stops the build with the record and reason printed (docs/schema.md).
  */
 const QUIET: readonly SkipCode[] = ['unapproved'];
+
+// The approve tool and the verify suite use these through this module.
+export { validateForApproval } from '../data/load';
+export { EDITOR_NAME, correctionDigest, recordDigest } from '../data/approval';
+export { sha256Hex, canonicalJson } from '../data/sha256';
 
 /** Thrown when the data cannot be published as is; the message lists every problem. */
 export class BuildError extends Error {}

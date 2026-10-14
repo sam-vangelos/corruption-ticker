@@ -6,6 +6,7 @@ import {
 } from '../types';
 import { monthKey, parseDay } from './dates';
 import { isQualifying } from './metrics';
+import { EDITOR_NAME, recordDigest } from './approval';
 import { PRIVATE_DISALLOWED_RESPONSES, PRIVATE_MAX_GRADE, PRIVATE_ROLES } from '../method';
 
 export const DATA_URL = `${import.meta.env.BASE_URL}data/entries.json`;
@@ -98,21 +99,66 @@ export interface Rejection {
 }
 
 /**
+ * How approval is judged. `verify` (the build, the approve tool, the dev
+ * server): approved only when approved_by is the configured editor and
+ * approved_digest matches the record's content. `trust` (production pages):
+ * the public file holds only records the build verified, and its related_ids
+ * are already filtered, so the browser does not recompute digests.
+ */
+export type ApprovalMode = 'verify' | 'trust';
+
+/**
  * Validate one raw record against schema v2; return an Item or why it was
  * left out. Cross-record checks (root_id resolution, duplicate ids) happen in
- * `interpret`. Approval is checked first: a draft is "unapproved" however
- * incomplete it is.
+ * `interpret`. A record with no approved_by is a draft, "unapproved" however
+ * incomplete it is; a record that claims approval is validated in full, then
+ * its approval is checked against its content.
  */
-export function toItem(raw: unknown, nowMs: number = Date.now()): Item | Rejection {
-  const bad = (reason: string): Rejection => ({ code: 'invalid', reason });
-  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return bad('not an object');
+export function toItem(raw: unknown, nowMs: number = Date.now(), mode: ApprovalMode = 'verify'): Item | Rejection {
+  const pre = preflight(raw);
+  if ('code' in pre) return pre;
+  const o = pre.o;
+  if (o.approved_by === null || o.approved_by === undefined) {
+    return { code: 'unapproved', reason: 'approved_by is null, so the record is not in the public dataset' };
+  }
+  const res = validate(o, o.id as string, nowMs);
+  if (typeof res === 'string') return { code: 'invalid', reason: res };
+  if ('code' in res || mode === 'trust') return res;
+  if (res.approved_by !== EDITOR_NAME) {
+    return { code: 'approval', reason: `approved_by "${String(o.approved_by)}" is not the configured editor (app/editor.json)` };
+  }
+  const digest = recordDigest(res);
+  if (o.approved_digest !== digest) {
+    return {
+      code: 'approval',
+      reason: o.approved_digest
+        ? `approved_digest does not match the record's content (edited after approval); re-approve with npm run approve -- ${res.id}`
+        : `approved_by is set but approved_digest is missing; approve with npm run approve -- ${res.id}`,
+    };
+  }
+  return res;
+}
+
+/** The checks every record gets first, approved or not. */
+function preflight(raw: unknown): { o: Record<string, unknown> } | Rejection {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return { code: 'invalid', reason: 'not an object' };
   const o = raw as Record<string, unknown>;
-  if (!nonEmpty(o.id)) return bad('missing id');
+  if (!nonEmpty(o.id)) return { code: 'invalid', reason: 'missing id' };
   if (!ID_RE.test(o.id)) return { code: 'id', reason: `id "${o.id}" must match ${String(ID_RE)} (lowercase letters, digits, hyphens)` };
   if (looksLikeV1(o)) return { code: 'v1', reason: V1_REASON };
-  if (!nonEmpty(o.approved_by)) return { code: 'unapproved', reason: 'approved_by is null, so the record is not in the public dataset' };
-  const res = validate(o, o.id, nowMs);
-  return typeof res === 'string' ? bad(res) : res;
+  return { o };
+}
+
+/**
+ * For the approve tool: validate a record in full whatever its approval
+ * fields say, so its digest can be computed. An invalid record cannot be
+ * approved.
+ */
+export function validateForApproval(raw: unknown, nowMs: number = Date.now()): Item | Rejection {
+  const pre = preflight(raw);
+  if ('code' in pre) return pre;
+  const res = validate(pre.o, pre.o.id as string, nowMs);
+  return typeof res === 'string' ? { code: 'invalid', reason: res } : res;
 }
 
 function validate(o: Record<string, unknown>, id: string, nowMs: number): Item | Rejection | string {
@@ -212,7 +258,8 @@ function validate(o: Record<string, unknown>, id: string, nowMs: number): Item |
     first_published_at: (o.first_published_at as string | null) ?? null,
     last_modified_at: (o.last_modified_at as string | null) ?? null,
     last_verified_at: o.last_verified_at as string,
-    approved_by: o.approved_by as string,
+    approved_by: strOrNull(o.approved_by),
+    approved_digest: strOrNull(o.approved_digest),
     related_ids: strList(o.related_ids),
     tags: strList(o.tags),
     placeholder: o.placeholder === true ? true : undefined,
@@ -240,7 +287,7 @@ function validate(o: Record<string, unknown>, id: string, nowMs: number): Item |
  * prerender uses it); pure given `nowMs`, the moment against which
  * "published, not in the future" is judged.
  */
-export function interpret(body: unknown, nowMs: number = Date.now()): LoadState {
+export function interpret(body: unknown, nowMs: number = Date.now(), mode: ApprovalMode = 'verify'): LoadState {
   if (!Array.isArray(body)) {
     return { kind: 'invalid', detail: 'The file parsed as JSON but is not an array of entries.' };
   }
@@ -266,7 +313,7 @@ export function interpret(body: unknown, nowMs: number = Date.now()): LoadState 
       skipped.push({ index, id, code: 'duplicate', reason: `duplicate id "${id}" at records #${all.join(' and #')}` });
       return;
     }
-    const res = toItem(raw, nowMs);
+    const res = toItem(raw, nowMs, mode);
     if ('code' in res) skipped.push({ index, id: idOf(raw), code: res.code, reason: res.reason });
     else candidates.push({ index, item: res });
   });
@@ -326,7 +373,9 @@ export async function loadEntries(url = DATA_URL): Promise<LoadState> {
     }
     return { kind: 'invalid', detail: `The file is not valid JSON (${(err as Error).message}).` };
   }
-  return interpret(body);
+  // Development reads the raw dataset and verifies approvals; production reads
+  // the build's public file, every record of which the build verified.
+  return interpret(body, Date.now(), import.meta.env.DEV ? 'verify' : 'trust');
 }
 
 const isJson = (v: unknown): v is JsonValue => v === null || ['string', 'number', 'boolean', 'object'].includes(typeof v);

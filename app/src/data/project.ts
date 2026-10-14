@@ -11,7 +11,7 @@ import type { Entry, Item } from '../types';
  * `related_ids` keeps only ids in the public set, so a link to a draft or an
  * unpublished record is never published.
  */
-export function projectEntry(it: Item, publicIds: ReadonlySet<string>): Entry {
+export function projectEntry(it: Item, publicIds: ReadonlySet<string> | null): Entry {
   const entry: Entry = {
     id: it.id,
     root_id: it.root_id,
@@ -52,7 +52,9 @@ export function projectEntry(it: Item, publicIds: ReadonlySet<string>): Entry {
     last_modified_at: it.last_modified_at,
     last_verified_at: it.last_verified_at,
     approved_by: it.approved_by,
-    related_ids: it.related_ids.filter((id) => id !== it.id && publicIds.has(id)),
+    approved_digest: it.approved_digest,
+    // null = no public set yet (the approval digest): keep every id as written.
+    related_ids: publicIds ? it.related_ids.filter((id) => id !== it.id && publicIds.has(id)) : [...it.related_ids],
     tags: [...it.tags],
   };
   if (it.placeholder) entry.placeholder = true;
@@ -64,7 +66,7 @@ export const PUBLIC_KEYS = {
   entry: ['id', 'root_id', 'date', 'date_precision', 'title', 'summary', 'category', 'rubric_prong', 'rubric_evidence',
     'actors', 'actor_roles', 'entities', 'offices', 'evidence_grade', 'evidence_note', 'evidentiary_status',
     'procedural_status', 'subject_response', 'status_note', 'amounts', 'sources', 'first_published_at',
-    'last_modified_at', 'last_verified_at', 'approved_by', 'related_ids', 'tags', 'placeholder'],
+    'last_modified_at', 'last_verified_at', 'approved_by', 'approved_digest', 'related_ids', 'tags', 'placeholder'],
   amount: ['usd', 'amount_type', 'actual_or_estimated', 'basis', 'overlap_group'],
   source: ['outlet', 'title', 'url', 'archive_url', 'date', 'author', 'kind'],
 } as const;
