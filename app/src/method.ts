@@ -1,4 +1,5 @@
 import type { ActorRole, EvidenceGrade, EvidentiaryStatus, Item } from './types';
+import { EDITOR_NAME } from './data/approval';
 
 /**
  * The methodology's single source of truth. The counting code (data/metrics.ts)
@@ -18,6 +19,23 @@ export const INTERVAL_START_MS = Date.parse(INTERVAL_START);
 /** How the start of the counting window is written in prose. */
 export const START_LABEL = '20 January 2025';
 
+/** "1,168" for long intervals; one decimal below 100 hours so short intervals keep their precision. */
+export function formatHours(h: number): string {
+  if (h >= 100) return Math.round(h).toLocaleString('en-US');
+  return (Math.round(h * 10) / 10).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+}
+
+/**
+ * The sentence beneath the headline: the average interval, stated over
+ * distinct events ("One new distinct qualifying event every N hours on
+ * average."), per the coordinator's fix round 3 (2026-10-14).
+ */
+export function intervalSentence(intervalHours: number | null): string {
+  return intervalHours === null
+    ? 'No qualifying events yet, so there is no average interval.'
+    : `One new distinct qualifying event every ${formatHours(intervalHours)} hours on average.`;
+}
+
 /** Roles that are not public officials (inclusion rubric, private-person rule). */
 export const PRIVATE_ROLES: readonly ActorRole[] = ['family', 'private-associate', 'private-entity'];
 /** A record naming only private actors needs this grade or better (a lower number)... */
@@ -26,7 +44,7 @@ export const PRIVATE_MAX_GRADE: EvidenceGrade = 3;
 export const PRIVATE_DISALLOWED_RESPONSES = ['not-sought', null] as const;
 
 /** The editor whose approval puts a record in the public dataset; named in the citation. */
-export const EDITOR = 'Sam Vangelos';
+export const EDITOR = EDITOR_NAME;
 export const SITE_NAME = 'The Ethics Record';
 export const SITE_DECK = 'Sourced allegations, findings, and oversight changes in the second Trump administration.';
 /** Schema major version of the dataset the app reads. */
@@ -123,6 +141,21 @@ export const COUNTING_RULES: readonly Rule[] = [
   { id: 'interval', text: 'Average interval = hours since 2025-01-20T12:00:00-05:00 divided by event count.' },
   { id: 'money', text: 'Financial stakes = per `amount_type`, sum of `usd` over records in the metric set, counting each `overlap_group` once (largest figure wins). No grand total.' },
   { id: 'dates', text: 'Event dates are `date`; the seven-day cadence strip uses `first_published_at`.' },
+];
+
+/**
+ * Admission controls, copied verbatim from docs/schema.md § Admission
+ * controls (added 2026-10-14 on main). The loader, src/data/approval.ts and
+ * scripts/verify.mjs enforce them.
+ */
+export const ADMISSION_CONTROLS: readonly Rule[] = [
+  { id: 'approval', text: "**Approval is bound to content.** `approved_by` must equal the configured editor name and `approved_digest` must equal the SHA-256 of the record's projected schema fields excluding the approval fields. Any edit after approval changes the digest and the build fails until re-approved. The `approve` tool computes and writes both." },
+  { id: 'corrections', text: '**Corrections are approved the same way** (`approved_by`, `approved_digest`), `field` must be a valid schema path, and no correction text may contain the id of a non-public record.' },
+  { id: 'actors', text: '**Actors** is a non-empty array of distinct non-blank names; `actor_roles` covers every actor; malformed values fail, never coerce.' },
+  { id: 'sources', text: '**Sources.** Every public record has at least one source with an `archive_url`. Grade 1 requires a source of kind `court-filing`, `official-report`, or an admission in `subject_response`. Grade 2 requires a source of kind `disclosure`, `court-filing`, `official-report`, or `congressional`. Grade 3 requires kind `investigation`. Grade 4 requires at least two sources from distinct outlets.' },
+  { id: 'date-floor', text: '**Date floor.** `date` is on or after 2025-01-20. First-term conduct is represented only by its 2025+ development.' },
+  { id: 'lint', text: '**Language lint.** The summary\'s first verb matches the grade (found / documented / reported / alleged (corroborated) / alleged). Below grade 1 the summary may not contain assertions of criminal guilt ("committed", "is guilty", "is a criminal", "bribed", "stole", "defrauded" as unattributed statements). The lint is deterministic and conservative; approval covers the rest.' },
+  { id: 'ci', text: '**The build runs the adversarial fixture suite** (must-fail builds, planted secrets, stale pages) as part of `npm run build`, and continuous integration runs it on every push.' },
 ];
 
 export interface RubricPart {

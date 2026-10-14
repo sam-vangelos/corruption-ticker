@@ -5,6 +5,7 @@
  */
 import type { Correction, Item } from '../types';
 import { checkCorrections, interpret } from '../data/load';
+import { canonicalJson } from '../data/sha256';
 import type { SkipCode } from '../types';
 import { computeHeadline, qualifyingOnly, type QualifyingItem } from '../data/metrics';
 import { formatDate, parseDay } from '../data/dates';
@@ -13,13 +14,13 @@ import { CATEGORY_LABEL } from '../categories';
 import { EVIDENTIARY_LABEL, PROCEDURAL_LABEL, RESPONSE_LABEL } from '../status';
 import { SOURCE_KIND_LABEL, amountLong, amountShort } from '../amounts';
 import { correctionSentence, correctionsFor } from '../corrections';
-import { SITE_DECK, SITE_NAME, START_LABEL, gradeDef, gradeLabel } from '../method';
+import { SITE_DECK, SITE_NAME, START_LABEL, gradeDef, gradeLabel, intervalSentence } from '../method';
 import { recordPath } from '../router';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { Headline } from '../components/Headline';
 import { esc, fillShell, type PageMeta } from './html';
-import { projectEntry } from './project';
+import { projectEntry } from '../data/project';
 import { notCountedReason } from '../grades';
 import { atomFeed } from './atom';
 import { FEED_LIMIT, MAIN_FEED, feedIndex, feedItems, type FeedsManifest } from '../feeds';
@@ -167,6 +168,11 @@ export const ROUTES: Array<{ path: string; title: string; description: string }>
  */
 const QUIET: readonly SkipCode[] = ['unapproved'];
 
+// The approve tool and the verify suite use these through this module.
+export { validateForApproval, correctionProblem as checkCorrectionShape } from '../data/load';
+export { EDITOR_NAME, correctionDigest, recordDigest } from '../data/approval';
+export { sha256Hex, canonicalJson } from '../data/sha256';
+
 /** Thrown when the data cannot be published as is; the message lists every problem. */
 export class BuildError extends Error {}
 
@@ -179,6 +185,14 @@ export const GENERATED_PATHS: readonly string[] = [
   'r', 'feeds', 'data', 'build.json', '404.html', 'feed.xml',
   ...ROUTES.flatMap((r) => [`${r.path}.html`, r.path]),
 ];
+
+/** Every string id in the raw file, approved or not. */
+function rawIds(entries: unknown): string[] {
+  if (!Array.isArray(entries)) return [];
+  return entries
+    .map((r) => (r && typeof r === 'object' ? (r as Record<string, unknown>).id : null))
+    .filter((id): id is string => typeof id === 'string' && id !== '');
+}
 
 export function buildSite(input: SiteInput): SiteOutput {
   const notes: string[] = [];
@@ -211,11 +225,14 @@ export function buildSite(input: SiteInput): SiteOutput {
   }
   const byId = new Map(items.map((it) => [it.id, it]));
 
-  // Every correction must be well formed and name a record in the public
-  // dataset; anything else fails the build with the correction printed.
+  // Corrections (docs/schema.md § Admission controls): every entry well
+  // formed with a schema-path field; drafts (approved_by null) are dropped
+  // quietly; an approved one must carry the editor's name and matching digest
+  // and name a public record. No correction, draft or not, may contain the id
+  // of a record that is not public. Anything else fails the build, printed.
   let corrections: Correction[] = [];
   if (input.corrections !== null) {
-    const cs = checkCorrections(input.corrections);
+    const cs = checkCorrections(input.corrections, 'verify');
     if (!cs) {
       fatal.push('corrections log: the file is not a JSON array');
     } else {
@@ -223,6 +240,13 @@ export function buildSite(input: SiteInput): SiteOutput {
       for (const c of cs.corrections) {
         if (!byId.has(c.record_id)) fatal.push(`correction for "${c.record_id}" names no record in the public dataset: ${JSON.stringify(c)}`);
       }
+      for (const d of cs.drafts) notes.push(`not public: correction #${d.index} [unapproved] approved_by is null`);
+      const hidden = rawIds(input.entries).filter((id) => !publicIdSet.has(id));
+      (Array.isArray(input.corrections) ? input.corrections : []).forEach((raw, index) => {
+        const text = canonicalJson(raw);
+        const named = hidden.filter((id) => new RegExp(`(?<![a-z0-9-])${id.replace(/[-]/g, '\\-')}(?![a-z0-9-])`).test(text));
+        if (named.length) fatal.push(`correction #${index} names non-public record ${named.map((n) => `"${n}"`).join(', ')}: ${JSON.stringify(raw)}`);
+      });
       corrections = cs.corrections;
     }
   }
@@ -236,7 +260,12 @@ export function buildSite(input: SiteInput): SiteOutput {
   // retracted records stay, labelled by their own fields. Same order as the app.
   const publicEntries = items.map((it) => projectEntry(it, publicIdSet));
   files.push({ path: 'data/entries.json', content: `${JSON.stringify(publicEntries, null, 2)}\n` });
-  files.push({ path: 'data/corrections.json', content: `${JSON.stringify(corrections, null, 2)}\n` });
+  // Approved corrections only, projected to their fields (no unknown keys).
+  const publicCorrections = corrections.map((c) => ({
+    date: c.date, record_id: c.record_id, field: c.field, old_value: c.old_value, new_value: c.new_value, reason: c.reason,
+    approved_by: c.approved_by, approved_digest: c.approved_digest, ...(c.placeholder ? { placeholder: true } : {}),
+  }));
+  files.push({ path: 'data/corrections.json', content: `${JSON.stringify(publicCorrections, null, 2)}\n` });
   const placeholder = items.some((it) => it.placeholder);
   const noscriptRecord = 'The record above is complete without JavaScript; the interactive front page needs it.';
   const noscriptShell = 'This page needs JavaScript to load and display the dataset.';
@@ -261,7 +290,8 @@ export function buildSite(input: SiteInput): SiteOutput {
 
   // The front page: same shell, with a preview that states the headline and its rules link.
   const headline = headlineSentence(items, input.nowMs);
-  const frontDescription = `${placeholder ? 'Placeholder data. ' : ''}${headline} Counting rules: ${site}/method`;
+  const interval = intervalSentence(computeHeadline(items, input.nowMs).intervalHours);
+  const frontDescription = `${placeholder ? 'Placeholder data. ' : ''}${headline} ${interval} Counting rules: ${site}/method`;
   // The visible headline is the SPA's own component, rendered here so the
   // count is readable without JavaScript and testable in the built HTML.
   const headlineHtml = renderToStaticMarkup(createElement(Headline, {

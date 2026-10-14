@@ -1,26 +1,25 @@
-// Smoke test for the built site. Run with `npm run smoke`.
+// npm run smoke: checks on the SERVED output of the build in dist/. Run
+// `npm run build` first (it also runs the adversarial suite, npm run verify).
 //
-// 1. Builds the site (`npm run build`) with ALLOW_PLACEHOLDER_SITE_URL=1 unless
-//    SITE_URL is set. SMOKE_SKIP_BUILD=1 tests the dist/ already on disk.
-// 2. Serves dist/ with `vite preview` on a free port (bound by listening on
-//    port 0), so nothing already listening can answer in its place, and
-//    requires every page to carry this build's id from dist/build.json.
-// 3. Checks, all against data recounted here independently of the app's code:
-//    - the leak: no unapproved, rubric-failing or unpublished record from
-//      dataset/ appears in /data/entries.json, the front page, or dist/r/;
-//    - every id is URL-safe;
-//    - the visible front-page headline (the SPA's Headline component, rendered
-//      into the HTML at build time) and its og:description equal the recount;
-//    - the fixture still separates the tree-based event rule from a rule that
-//      counts only qualifying roots;
-//    - every record page answers 200, and its decoded og:title and <h1> equal
-//      the record's title;
-//    - /feed.xml and every per-office and per-category feed hold exactly the
-//      qualifying records they should, with <updated> per the correction rule;
-//    - corrections name public records; each route is its own page.
-import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+// Serves dist/ with `vite preview` on a free port (bound by listening on port
+// 0) and requires every page to carry this build's id from dist/build.json,
+// so nothing already listening can answer in its place. Then, against data
+// recounted here independently of the app's code, it checks:
+//   - the leak: no unapproved, rubric-failing or unpublished record from the
+//     dataset (resolved by scripts/dataset-dir.mjs, as the build resolves it)
+//     appears in /data/entries.json, the front page, or dist/r/;
+//   - public records carry schema keys only, and related_ids resolve;
+//   - the visible front-page headline and interval sentence (the SPA's
+//     Headline component, rendered at build time) and og:description equal
+//     the recount, and the fixture separates the tree event rule from a
+//     roots-only rule;
+//   - every record page's decoded og:title and <h1> equal the record title;
+//   - every feed holds exactly the right qualifying records and <updated>,
+//     feeds exist exactly where a record qualifies, and /feeds/index.json
+//     lists them;
+//   - corrections name public records; each route is its own page.
+import { spawn } from 'node:child_process';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolveDatasetDir } from './dataset-dir.mjs';
 import { createServer } from 'node:net';
 import { fileURLToPath } from 'node:url';
@@ -31,126 +30,22 @@ const encode = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/
 const dist = path.join(appDir, 'dist');
 const viteBin = path.join(appDir, 'node_modules', 'vite', 'bin', 'vite.js');
 
-// ---------- helpers for builds ----------
+// ---------- helpers ----------
 const checks = [];
 const record = (name, ok, note) => {
   checks.push({ name, ok, note });
   console.log(`smoke: ${ok ? 'PASS' : 'FAIL'} ${name}${note ? ` -> ${note}` : ''}`);
 };
 
-// The dataset, resolved exactly as the prerender resolves it (one module).
+// The dataset, resolved exactly as the build resolves it (one module); the
+// leak checks below derive the hidden records from it.
 let dataset;
 try { dataset = resolveDatasetDir(process.env); } catch (err) { console.error(`smoke: ${err.message}`); process.exit(1); }
 const raw = JSON.parse(readFileSync(path.join(dataset.dir, 'entries.json'), 'utf8'));
-const rawCorrections = existsSync(path.join(dataset.dir, 'corrections.json'))
-  ? JSON.parse(readFileSync(path.join(dataset.dir, 'corrections.json'), 'utf8'))
-  : [];
 console.log(`smoke: dataset ${dataset.label}`);
 
-const buildEnv = (extra = {}) => {
-  const env = { ...process.env, ...extra };
-  if (!env.SITE_URL) env.ALLOW_PLACEHOLDER_SITE_URL = '1';
-  return env;
-};
-const run = (args, env) => spawnSync(process.execPath, args, { cwd: appDir, env, encoding: 'utf8' });
-const prerender = (env) => run([path.join(appDir, 'scripts', 'prerender.mjs')], env);
-
-/** Write a variant of the dataset to a fresh temp directory; returns its path. */
-function variant(name, entries, corrections = rawCorrections) {
-  const dir = mkdtempSync(path.join(tmpdir(), `ethics-smoke-${name}-`));
-  writeFileSync(path.join(dir, 'entries.json'), JSON.stringify(entries));
-  writeFileSync(path.join(dir, 'corrections.json'), JSON.stringify(corrections));
-  return dir;
-}
-const clone = (v) => JSON.parse(JSON.stringify(v));
-
-/** Every file under dir, recursively. */
-const walk = (dir) => readdirSync(dir, { withFileTypes: true })
-  .flatMap((d) => (d.isDirectory() ? walk(path.join(dir, d.name)) : [path.join(dir, d.name)]));
-
-// ---------- 1. build ----------
-if (process.env.SMOKE_SKIP_BUILD !== '1') {
-  const npm = process.env.npm_execpath;
-  const env = buildEnv();
-  const r = npm
-    ? spawnSync(process.execPath, [npm, 'run', 'build'], { cwd: appDir, env, encoding: 'utf8' })
-    : spawnSync('npm', ['run', 'build'], { cwd: appDir, env, encoding: 'utf8' });
-  if (r.status !== 0) {
-    console.error(`smoke: build failed (exit ${r.status})\n${r.stdout}${r.stderr}`);
-    process.exit(1);
-  }
-  console.log('smoke: build ok');
-
-  // ---------- 1a. builds that must fail ----------
-  // Derived from the dataset in use: its first approved, published record.
-  const isPublished = (e) => !!e.first_published_at && Date.parse(e.first_published_at) <= Date.now();
-  const approvedIx = raw.findIndex((e) => e.approved_by && isPublished(e) && e.root_id === null);
-  const target = raw[approvedIx];
-  if (!target) {
-    record('dataset has an approved, published root record to break', false, 'none found');
-  } else {
-    const mustFail = [];
-    // Item 1's reproduction: a draft, then its approved twin with the same id.
-    {
-      const d = clone(raw);
-      const draft = { ...clone(target), approved_by: null, title: '[PLACEHOLDER] SMOKE DRAFT TWIN TEXT' };
-      d.splice(approvedIx, 0, draft);
-      mustFail.push(['a draft followed by its approved twin (same id)', d, new RegExp(`\\[duplicate\\] duplicate id "${target.id}" at records #\\d+ and #\\d+`)]);
-    }
-    {
-      const d = clone(raw); d[approvedIx].procedural_status = 'pending';
-      mustFail.push(['an approved record that fails validation', d, new RegExp(`\\(${target.id}\\) \\[invalid\\]`)]);
-    }
-    {
-      const d = clone(raw); d[approvedIx].root_id = 'p-smoke-no-such-root';
-      mustFail.push(['an approved record whose root is not public', d, new RegExp(`\\(${target.id}\\) \\[orphan\\]`)]);
-    }
-    {
-      const d = clone(raw); const t = d[approvedIx];
-      t.actors = ['Smoke Relative']; t.actor_roles = { 'Smoke Relative': 'family' }; t.evidence_grade = 4; t.evidentiary_status = 'corroborated';
-      mustFail.push(['an approved record that fails the private-actor rubric', d, new RegExp(`\\(${target.id}\\) \\[rubric\\]`)]);
-    }
-    for (const [name, entries, expect] of mustFail) {
-      const r2 = prerender(buildEnv({ ALLOW_DATASET_DIR: '1', DATASET_DIR: variant('fail', entries) }));
-      const out = `${r2.stdout}${r2.stderr}`;
-      record(`build fails: ${name}`, r2.status !== 0 && expect.test(out), `exit ${r2.status}; ${(out.match(expect) ?? ['expected message not found'])[0]}`);
-    }
-  }
-
-  // ---------- 1b. a build with planted secrets ----------
-  // An unknown top-level key, an unknown nested key, and related_ids pointing
-  // at every draft and unpublished record: none may appear anywhere in dist/.
-  {
-    const hidden = raw.filter((e) => !e.approved_by || !isPublished(e));
-    const d = clone(raw);
-    const host = d.find((e) => e.approved_by && isPublished(e));
-    host.internal_notes = 'SMOKE-PLANT-INTERNAL-NOTE';
-    if (host.sources?.[0]) host.sources[0].internal_source_note = 'SMOKE-PLANT-NESTED-NOTE';
-    host.related_ids = [...(host.related_ids ?? []), ...hidden.map((e) => e.id)];
-    const r3 = prerender(buildEnv({ ALLOW_DATASET_DIR: '1', DATASET_DIR: variant('plant', d) }));
-    record('planted build succeeds', r3.status === 0, `exit ${r3.status}`);
-    const needles = ['SMOKE-PLANT-INTERNAL-NOTE', 'SMOKE-PLANT-NESTED-NOTE', ...hidden.flatMap((e) => [e.id, e.title])];
-    const hits = [];
-    for (const f of walk(dist)) {
-      const text = readFileSync(f, 'utf8');
-      for (const n of needles) if (text.includes(n) || text.includes(encode(n))) hits.push(`${path.relative(dist, f)}: ${n}`);
-    }
-    record('no planted key, draft or unpublished id or title anywhere in dist/', hits.length === 0 && needles.length > 2,
-      hits.length ? hits.slice(0, 5).join('; ') : `${needles.length} needles, none found`);
-  }
-
-  // ---------- 1c. the real prerender, over a planted stale page ----------
-  mkdirSync(path.join(dist, 'r', 'stale-zz'), { recursive: true });
-  writeFileSync(path.join(dist, 'r', 'stale-zz', 'index.html'), 'stale');
-  const r4 = prerender(buildEnv());
-  if (r4.status !== 0) {
-    console.error(`smoke: prerender failed (exit ${r4.status})\n${r4.stdout}${r4.stderr}`);
-    process.exit(1);
-  }
-  record('npm run prerender removes a stale dist/r/stale-zz', !existsSync(path.join(dist, 'r', 'stale-zz')), 'gone');
-}
 if (!existsSync(path.join(dist, 'build.json'))) {
-  console.error('smoke: dist/build.json is missing; the build did not finish.');
+  console.error('smoke: dist/build.json is missing; run `npm run build` first.');
   process.exit(1);
 }
 const stamp = JSON.parse(readFileSync(path.join(dist, 'build.json'), 'utf8'));
@@ -259,7 +154,7 @@ try {
     entry: new Set(['id', 'root_id', 'date', 'date_precision', 'title', 'summary', 'category', 'rubric_prong', 'rubric_evidence',
       'actors', 'actor_roles', 'entities', 'offices', 'evidence_grade', 'evidence_note', 'evidentiary_status',
       'procedural_status', 'subject_response', 'status_note', 'amounts', 'sources', 'first_published_at',
-      'last_modified_at', 'last_verified_at', 'approved_by', 'related_ids', 'tags', 'placeholder']),
+      'last_modified_at', 'last_verified_at', 'approved_by', 'approved_digest', 'related_ids', 'tags', 'placeholder']),
     amount: new Set(['usd', 'amount_type', 'actual_or_estimated', 'basis', 'overlap_group']),
     source: new Set(['outlet', 'title', 'url', 'archive_url', 'date', 'author', 'kind']),
   };
@@ -309,8 +204,15 @@ try {
     `${events} events by tree, ${rootsOnly} by qualifying roots`);
   const visible = textOf(home, 'p', 'headline__text');
   record('visible front-page headline equals the recount', visible === headline, `"${visible}" vs "${headline}"`);
+  // The interval: hours from 2025-01-20T12:00:00-05:00 to the build, over events.
+  const hours = (builtAtMs - Date.parse('2025-01-20T12:00:00-05:00')) / 3_600_000;
+  const per = events ? hours / events : null;
+  const fmt = (h) => (h >= 100 ? Math.round(h).toLocaleString('en-US') : (Math.round(h * 10) / 10).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }));
+  const interval = per === null ? 'No qualifying events yet, so there is no average interval.' : `One new distinct qualifying event every ${fmt(per)} hours on average.`;
+  const visibleInterval = (textOf(home, 'p', 'headline__interval') ?? '').replace(/\s*How we count$/, '');
+  record('visible interval sentence equals the recount', visibleInterval === interval, `"${visibleInterval}" vs "${interval}"`);
   const og = metas(home).get('og:description') ?? '';
-  record('front-page og:description states the recount', og.includes(headline), og.slice(0, 90));
+  record('front-page og:description states the headline and interval', og.includes(headline) && og.includes(interval), og.slice(0, 120));
 
   // Every record page: 200, this build, og:title and <h1> equal to the title.
   let pagesOk = 0;

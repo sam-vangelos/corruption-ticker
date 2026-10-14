@@ -18,34 +18,54 @@ npm run dev        # http://localhost:5173
 ## Build and check
 
 ```sh
-SITE_URL=https://example.org npm run build   # tsc --noEmit, vite build, scripts/prerender.mjs
+SITE_URL=https://example.org npm run build   # tsc --noEmit, vite build, prerender, then npm run verify
 ALLOW_PLACEHOLDER_SITE_URL=1 npm run build   # same, with the placeholder origin
-npm run smoke                                # builds, serves on a free port, checks (below)
+npm run verify                               # the adversarial suite on its own (needs a built dist/index.html)
+npm run smoke                                # checks the served output of the build in dist/
 ```
 
-`npm run smoke` reads the dataset through the same resolver as the build
-(`DATASET_DIR` and `ALLOW_DATASET_DIR` behave identically) and builds the site
-itself (with `ALLOW_PLACEHOLDER_SITE_URL=1` unless `SITE_URL` is set;
-`SMOKE_SKIP_BUILD=1` tests the `dist/` on disk). Before serving, it requires
-four variants of that dataset to fail the build: a draft followed by its
-approved twin with the same id, an approved record failing validation, an
-approved record whose root is not public, and an approved record failing the
-private-actor rubric. It builds once more with planted secrets (an unknown
-top-level key, an unknown nested key, and `related_ids` pointing at every
-draft and unpublished record) and searches every file in `dist/` for them.
-It then plants `dist/r/stale-zz/` and requires the final prerender to remove
-it. It serves the result with `vite preview` on a free port (it listens on
-port 0 and uses the port it gets) and requires every page to carry this build's id from
+**`npm run verify`** (`scripts/verify.mjs`) is the adversarial fixture suite,
+and `npm run build` runs it after the prerender, so a build in which any gate
+has slipped fails. Every case is a variant of the dataset in use (resolved by
+the shared resolver), prerendered into a throwaway copy of `dist/`, never the
+real one. It requires a failed build, with the right record and reason
+printed, for each admission gate:
+
+- a duplicate id (a draft followed by its approved twin);
+- an approval digest tampered by an edit after approval, an approver other
+  than the editor, and a draft given the editor's name without a digest;
+- an approved record with an invalid value, a root that is not public, or a
+  rubric failure;
+- each actor-coercion case (a number, a blank, a duplicate, a missing role,
+  an empty list) and a non-string entity;
+- no sources, each grade's missing source kind, a single-outlet grade 4, and
+  a non-http(s) URL;
+- a pre-2025 date, a wrong opening verb, and an unattributed guilt phrase;
+- an id of `..`;
+- a correction edited after approval, approved by someone else, with a field
+  that is not a schema path, naming a non-public record (approved or draft),
+  or naming no public record;
+- a loopback `SITE_URL`, and a `DATASET_DIR` without `ALLOW_DATASET_DIR`.
+
+Verify also requires two builds to succeed (an attributed guilt phrase; a
+grade-1 finding saying "committed"). It searches every file of a build with
+planted secrets for them, checks that the prerender removes a stale page and
+feed, and checks the pure-TypeScript SHA-256 against `node:crypto`.
+
+**`npm run smoke`** (`scripts/smoke.mjs`) checks the served output: it serves
+`dist/` with `vite preview` on a free port (it listens on port 0 and uses the
+port it gets) and requires every page to carry this build's id from
 `dist/build.json`, so a stale server can never answer for it. Against counts
 recomputed in the script, independently of the app's code, it checks:
 
 - no unapproved, unpublished or rubric-failing record from the dataset appears
   in `/data/entries.json`, in the front-page HTML, or as a page under
-  `dist/r/`, and every approved, rubric-passing record does;
+  `dist/r/`, and every approved, rubric-passing, published record does;
+- public records carry schema keys only, and their `related_ids` resolve;
 - every id is URL-safe;
-- the visible front-page headline (the SPA's own `Headline` component,
-  rendered into the HTML at build time) and the front page's
-  `og:description` equal the recount, and the fixture still contains a
+- the visible front-page headline and interval sentence (the SPA's own
+  `Headline` component, rendered into the HTML at build time) and the front
+  page's `og:description` equal the recount, and the fixture still contains a
   qualifying child under a non-qualifying root, so a roots-only event rule
   would fail;
 - every record page answers 200 with an `og:title` and `<h1>` that, entities
@@ -56,6 +76,11 @@ recomputed in the script, independently of the app's code, it checks:
 - `/feeds/index.json` lists exactly the feed files the build wrote, with the
   right counts;
 - corrections name only public records, and each route is its own page.
+
+**Continuous integration.** `ci/ci.yml` is a GitHub Actions workflow that runs
+`npm ci`, `npm run build` (with verify) and `npm run smoke` on every push and
+pull request. GitHub reads workflows only from `.github/workflows/` at the
+repository root, which is outside `app/`; move the file there.
 
 ### The prerender
 
@@ -139,6 +164,36 @@ at `/data/*.json` (an inline plugin in `vite.config.ts`) and the page lists
 rejected records with their reasons; a production page says nothing about
 them. The build log lists them.
 
+### Approval
+
+Approval is bound to content (docs/schema.md § Admission controls). A record
+is approved only when `approved_by` equals the editor named in `editor.json`
+("Sam Vangelos") **and** `approved_digest` equals the SHA-256 of the canonical
+JSON (sorted keys) of the record's schema fields, the two approval fields
+excluded (`src/data/approval.ts`; the hash is a pure-TypeScript SHA-256 in
+`src/data/sha256.ts`, checked against `node:crypto`). Any edit after approval
+changes the digest, and the build fails, naming the record, until it is
+approved again. A record that names another approver, or the editor without a
+digest, also fails. Records with `approved_by: null` are drafts.
+
+```sh
+npm run approve -- p-2025-01-self-01 p-2025-02-crypto-02   # validate, then write approved_by + approved_digest
+npm run approve -- --correction 0                          # approve corrections.json entry #0
+npm run approve -- --check                                 # list every approval that no longer matches (exit 1 if any)
+```
+
+Corrections are approved the same way: `approved_by` plus an
+`approved_digest` over `record_id`, `date`, `field`, `old_value`, `new_value`
+and `reason`. A correction's `field` must be a schema path (`summary`,
+`actors[0]`, `amounts[0].usd`, `sources[1].archive_url`,
+`actor_roles.<name>`); drafts (`approved_by: null`) are never published; and
+any correction, draft or not, whose text contains the id of a record that is
+not public fails the build. `dist/data/corrections.json` holds approved
+corrections only.
+
+The tool refuses to approve an invalid record. It uses the same dataset
+resolver as the build. The fixture's approved records were approved with it.
+
 The app loads `/data/entries.json`, a JSON array of records following dataset
 schema v2 (`docs/schema.md`, mirrored field for field in `src/types.ts`), and
 `/data/corrections.json`, the corrections log. The loader
@@ -148,7 +203,20 @@ a figure without `amount_type`, `actual_or_estimated` or `basis`, a source
 without `archive_url`, `approved_by: null` (not in the public dataset), a
 missing `first_published_at`, a record naming only private actors below grade
 3 or without a recorded response, or a child whose `root_id` does not name a
-root in the file. Schema v1 records (a single `status`, a `dollar_amount_usd`)
+root in the file. Validation also enforces the schema's admission controls: `actors` is a
+non-empty array of distinct, non-blank names with a role for each, and
+`entities` and `offices` are arrays of non-blank names (malformed values fail;
+nothing is coerced); every record has at least one source, and grade 1 needs a
+court filing or official report (or an admission), grade 2 a disclosure, court
+filing, official report or congressional record, grade 3 an investigation, and
+grade 4 two sources from distinct outlets; `date` is on or after 2025-01-20;
+and the summary passes the language lint (`src/data/lint.ts`): it opens with
+its grade's verb ("Documented:", "Alleged (corroborated):") or uses it within
+its first eight words, and below grade 1 it contains no guilt phrase
+("committed", "is guilty", "is a criminal", "bribed", "stole", "defrauded",
+"embezzled", "laundered") unless "reported", "alleged", "documented" or
+"according" appears within the six words before it. For an approved record,
+any of these failures stops the build. Schema v1 records (a single `status`, a `dollar_amount_usd`)
 are rejected with a message saying to migrate them; a file that is entirely
 v1 shows only that message.
 
@@ -181,8 +249,8 @@ record carries the placeholder flag.
 ## Using it
 
 - **Headline** (top of the page): "X qualifying records concerning Y distinct
-  events since 20 January 2025", the average interval beneath it, and a "How
-  we count" link to the methodology. Beside it, four counters: days since
+  events since 20 January 2025", beneath it "One new distinct qualifying event
+  every N hours on average.", and a "How we count" link to the methodology. Beside it, four counters: days since
   inauguration, records with a stated amount, records added in the last 30
   days, and records in investigation or litigation. Then the **cadence
   strip**: seven columns, one per calendar day in the viewer's time zone,
