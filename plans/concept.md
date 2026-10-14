@@ -29,11 +29,12 @@ The stream, filters, charts and detail drawer already built in app v1 remain as 
 
 ## Virality without gimmicks
 
-- **Receipts.** Every record has a permanent URL and an auto-generated share card: date, one-line headline, evidence grade, outlet or document, the figure and its type if any, the record's name. Plain, typeset, sourced.
+- **Receipts.** Every record has a permanent URL whose link preview is rendered on demand from current data: date, one-line headline, evidence grade, outlet or document, the figure and its type if any, current status, and a correction notice if one exists. A posted link therefore updates when the record does; no baked image outlives a retraction.
+- **Citation.** Every release publishes a recommended citation and a versioned, frozen dataset URL, so a journalist can footnote a fixed number rather than the live one.
 - **Subscriptions.** Email and RSS/Atom feeds, filterable by agency, actor and category, plus a weekly digest of status changes and corrections. This is what brings readers back; share cards and downloads alone are destinations.
 - **Daily review, not daily publication.** `/recent` lists what was added or changed in the last 24 hours, with timestamps. Quiet days stay quiet.
 - **Open data.** Full dataset as JSON and CSV, versioned at a stable URL, with the rubric, the evidence grades, the counting rules, the search universe, the candidate-and-exclusion log, and a changelog.
-- **Embeds.** The headline and any one instrument as an embeddable iframe.
+- **Embeds.** The headline and any one instrument as an embeddable iframe. Every embed carries the counting-rules link; the bare number is never embeddable on its own.
 - **Corrections page.** Public, dated, every post-publication change to a record.
 
 Explicitly out: games, leaderboards, countdowns, AI-generated imagery, comparison cards, a grand dollar total, any phrasing that asserts a person committed a crime.
@@ -44,8 +45,8 @@ Explicitly out: games, leaderboards, countdowns, AI-generated imagery, compariso
 - **Three status fields, not one.** Evidentiary status (what the evidence establishes), procedural status (investigation, litigation, resolved), subject response (denied, no comment, admitted, retracted by outlet).
 - **Every record states the rubric prong it satisfies and the evidence for it.**
 - **A named human editor approves every record before publication.** Machines find leads, draft entries, and verify sources; Sam approves. Nothing reaches the public dataset without that approval.
-- **Counsel reviews the methodology, the unusually risky entries, and a sample of the rest.** Not every release.
-- **Language.** "Reported," "alleged," "found," and "documented" are used according to the evidence grade and never interchangeably. Public-official status does not cover family members and private entities, so entries about them are held to grade 3 or better.
+- **Counsel reviews the methodology, every record that names a private person or states a crime, and a sample of the rest.** Not every release. The question "can a hostile reader find a false entry?" is an audit prompt, not a gate; at scale the honest answer is sometimes yes, and the corrections page is the answer to that.
+- **Language.** "Reported," "alleged," "found," and "documented" are used according to the evidence grade and never interchangeably. Public-official status does not cover family members and private entities, and California recognises no neutral-reportage privilege for private figures (Khawar v. Globe International), so entries about them are held to grade 3 or better and must record a subject response (sought and received, or sought and declined).
 
 ## The living part
 

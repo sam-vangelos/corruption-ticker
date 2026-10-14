@@ -53,7 +53,7 @@ Each entry in `data/entries.json` is one *record*: a discrete, dated, sourced cl
 | 1 | Adjudicated or official finding (court judgment, IG/GAO/OGE finding, admission) | yes |
 | 2 | Primary records establishing the material facts (filings, disclosures, contracts, FOIA documents) reported on by a journalistic outlet | yes |
 | 3 | Document-based journalistic investigation | yes |
-| 4 | Allegation independently corroborated by two or more unrelated outlets or witnesses | yes |
+| 4 | Allegation independently corroborated by two or more outlets with separate reporting (not the same wire copy republished) or by unrelated witnesses | yes |
 | 5 | Single-source allegation | no; retained as a lead |
 
 Outlet identity is recorded in `sources[].outlet` and `sources[].kind` and is never the inclusion gate. `docs/sources.md` lists outlets only to help researchers find reporting; it confers no grade.
@@ -62,7 +62,7 @@ Outlet identity is recorded in `sources[].outlet` and `sources[].kind` and is ne
 
 Include when BOTH hold:
 1. **Prong.** The record concerns use of public office, or proximity to it, for private gain (`private-gain`), OR abuse of office to punish oversight, reward allies, or evade accountability (`abuse-of-office`). `rubric_evidence` names the fact.
-2. **Evidence.** Grade 1 to 4 to count in metrics; grade 5 may be stored as a lead. Records whose actors are only `family`, `private-associate` or `private-entity` require grade 3 or better.
+2. **Evidence.** Grade 1 to 4 to count in metrics; grade 5 may be stored as a lead. Records whose actors are only `family`, `private-associate` or `private-entity` require grade 3 or better and a `subject_response` other than `not-sought` or `null`.
 
 Exclude: policy disagreements, pure opinion, unsourced social-media claims, first-term (2017-2021) conduct unless a 2025+ development exists (then the 2025+ development is the record).
 
