@@ -19,6 +19,23 @@ export const INTERVAL_START_MS = Date.parse(INTERVAL_START);
 /** How the start of the counting window is written in prose. */
 export const START_LABEL = '20 January 2025';
 
+/** "1,168" for long intervals; one decimal below 100 hours so short intervals keep their precision. */
+export function formatHours(h: number): string {
+  if (h >= 100) return Math.round(h).toLocaleString('en-US');
+  return (Math.round(h * 10) / 10).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+}
+
+/**
+ * The sentence beneath the headline: the average interval, stated over
+ * distinct events ("One new distinct qualifying event every N hours on
+ * average."), per the coordinator's fix round 3 (2026-10-14).
+ */
+export function intervalSentence(intervalHours: number | null): string {
+  return intervalHours === null
+    ? 'No qualifying events yet, so there is no average interval.'
+    : `One new distinct qualifying event every ${formatHours(intervalHours)} hours on average.`;
+}
+
 /** Roles that are not public officials (inclusion rubric, private-person rule). */
 export const PRIVATE_ROLES: readonly ActorRole[] = ['family', 'private-associate', 'private-entity'];
 /** A record naming only private actors needs this grade or better (a lower number)... */

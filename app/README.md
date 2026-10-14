@@ -18,34 +18,54 @@ npm run dev        # http://localhost:5173
 ## Build and check
 
 ```sh
-SITE_URL=https://example.org npm run build   # tsc --noEmit, vite build, scripts/prerender.mjs
+SITE_URL=https://example.org npm run build   # tsc --noEmit, vite build, prerender, then npm run verify
 ALLOW_PLACEHOLDER_SITE_URL=1 npm run build   # same, with the placeholder origin
-npm run smoke                                # builds, serves on a free port, checks (below)
+npm run verify                               # the adversarial suite on its own (needs a built dist/index.html)
+npm run smoke                                # checks the served output of the build in dist/
 ```
 
-`npm run smoke` reads the dataset through the same resolver as the build
-(`DATASET_DIR` and `ALLOW_DATASET_DIR` behave identically) and builds the site
-itself (with `ALLOW_PLACEHOLDER_SITE_URL=1` unless `SITE_URL` is set;
-`SMOKE_SKIP_BUILD=1` tests the `dist/` on disk). Before serving, it requires
-four variants of that dataset to fail the build: a draft followed by its
-approved twin with the same id, an approved record failing validation, an
-approved record whose root is not public, and an approved record failing the
-private-actor rubric. It builds once more with planted secrets (an unknown
-top-level key, an unknown nested key, and `related_ids` pointing at every
-draft and unpublished record) and searches every file in `dist/` for them.
-It then plants `dist/r/stale-zz/` and requires the final prerender to remove
-it. It serves the result with `vite preview` on a free port (it listens on
-port 0 and uses the port it gets) and requires every page to carry this build's id from
+**`npm run verify`** (`scripts/verify.mjs`) is the adversarial fixture suite,
+and `npm run build` runs it after the prerender, so a build in which any gate
+has slipped fails. Every case is a variant of the dataset in use (resolved by
+the shared resolver), prerendered into a throwaway copy of `dist/`, never the
+real one. It requires a failed build, with the right record and reason
+printed, for each admission gate:
+
+- a duplicate id (a draft followed by its approved twin);
+- an approval digest tampered by an edit after approval, an approver other
+  than the editor, and a draft given the editor's name without a digest;
+- an approved record with an invalid value, a root that is not public, or a
+  rubric failure;
+- each actor-coercion case (a number, a blank, a duplicate, a missing role,
+  an empty list) and a non-string entity;
+- no sources, each grade's missing source kind, a single-outlet grade 4, and
+  a non-http(s) URL;
+- a pre-2025 date, a wrong opening verb, and an unattributed guilt phrase;
+- an id of `..`;
+- a correction edited after approval, approved by someone else, with a field
+  that is not a schema path, naming a non-public record (approved or draft),
+  or naming no public record;
+- a loopback `SITE_URL`, and a `DATASET_DIR` without `ALLOW_DATASET_DIR`.
+
+Verify also requires two builds to succeed (an attributed guilt phrase; a
+grade-1 finding saying "committed"). It searches every file of a build with
+planted secrets for them, checks that the prerender removes a stale page and
+feed, and checks the pure-TypeScript SHA-256 against `node:crypto`.
+
+**`npm run smoke`** (`scripts/smoke.mjs`) checks the served output: it serves
+`dist/` with `vite preview` on a free port (it listens on port 0 and uses the
+port it gets) and requires every page to carry this build's id from
 `dist/build.json`, so a stale server can never answer for it. Against counts
 recomputed in the script, independently of the app's code, it checks:
 
 - no unapproved, unpublished or rubric-failing record from the dataset appears
   in `/data/entries.json`, in the front-page HTML, or as a page under
-  `dist/r/`, and every approved, rubric-passing record does;
+  `dist/r/`, and every approved, rubric-passing, published record does;
+- public records carry schema keys only, and their `related_ids` resolve;
 - every id is URL-safe;
-- the visible front-page headline (the SPA's own `Headline` component,
-  rendered into the HTML at build time) and the front page's
-  `og:description` equal the recount, and the fixture still contains a
+- the visible front-page headline and interval sentence (the SPA's own
+  `Headline` component, rendered into the HTML at build time) and the front
+  page's `og:description` equal the recount, and the fixture still contains a
   qualifying child under a non-qualifying root, so a roots-only event rule
   would fail;
 - every record page answers 200 with an `og:title` and `<h1>` that, entities
@@ -56,6 +76,11 @@ recomputed in the script, independently of the app's code, it checks:
 - `/feeds/index.json` lists exactly the feed files the build wrote, with the
   right counts;
 - corrections name only public records, and each route is its own page.
+
+**Continuous integration.** `ci/ci.yml` is a GitHub Actions workflow that runs
+`npm ci`, `npm run build` (with verify) and `npm run smoke` on every push and
+pull request. GitHub reads workflows only from `.github/workflows/` at the
+repository root, which is outside `app/`; move the file there.
 
 ### The prerender
 
@@ -224,8 +249,8 @@ record carries the placeholder flag.
 ## Using it
 
 - **Headline** (top of the page): "X qualifying records concerning Y distinct
-  events since 20 January 2025", the average interval beneath it, and a "How
-  we count" link to the methodology. Beside it, four counters: days since
+  events since 20 January 2025", beneath it "One new distinct qualifying event
+  every N hours on average.", and a "How we count" link to the methodology. Beside it, four counters: days since
   inauguration, records with a stated amount, records added in the last 30
   days, and records in investigation or litigation. Then the **cadence
   strip**: seven columns, one per calendar day in the viewer's time zone,

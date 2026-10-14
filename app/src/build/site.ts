@@ -14,7 +14,7 @@ import { CATEGORY_LABEL } from '../categories';
 import { EVIDENTIARY_LABEL, PROCEDURAL_LABEL, RESPONSE_LABEL } from '../status';
 import { SOURCE_KIND_LABEL, amountLong, amountShort } from '../amounts';
 import { correctionSentence, correctionsFor } from '../corrections';
-import { SITE_DECK, SITE_NAME, START_LABEL, gradeDef, gradeLabel } from '../method';
+import { SITE_DECK, SITE_NAME, START_LABEL, gradeDef, gradeLabel, intervalSentence } from '../method';
 import { recordPath } from '../router';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -290,7 +290,8 @@ export function buildSite(input: SiteInput): SiteOutput {
 
   // The front page: same shell, with a preview that states the headline and its rules link.
   const headline = headlineSentence(items, input.nowMs);
-  const frontDescription = `${placeholder ? 'Placeholder data. ' : ''}${headline} Counting rules: ${site}/method`;
+  const interval = intervalSentence(computeHeadline(items, input.nowMs).intervalHours);
+  const frontDescription = `${placeholder ? 'Placeholder data. ' : ''}${headline} ${interval} Counting rules: ${site}/method`;
   // The visible headline is the SPA's own component, rendered here so the
   // count is readable without JavaScript and testable in the built HTML.
   const headlineHtml = renderToStaticMarkup(createElement(Headline, {

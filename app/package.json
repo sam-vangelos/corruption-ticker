@@ -5,12 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit -p tsconfig.json && vite build && node scripts/prerender.mjs",
+    "build": "tsc --noEmit -p tsconfig.json && vite build && node scripts/prerender.mjs && node scripts/verify.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "preview": "vite preview",
     "smoke": "node scripts/smoke.mjs",
     "prerender": "node scripts/prerender.mjs",
-    "approve": "node scripts/approve.mjs"
+    "approve": "node scripts/approve.mjs",
+    "verify": "node scripts/verify.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",

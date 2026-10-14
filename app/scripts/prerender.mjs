@@ -22,7 +22,9 @@ import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 
 const appDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const dist = path.join(appDir, 'dist');
+// PRERENDER_DIST writes into another directory holding a built index.html
+// (the verify suite's throwaway copies); the real build uses app/dist.
+const dist = process.env.PRERENDER_DIST ? path.resolve(process.env.PRERENDER_DIST) : path.join(appDir, 'dist');
 const DEFAULT_SITE_URL = 'https://ethics-record.example';
 
 const fail = (msg) => {
