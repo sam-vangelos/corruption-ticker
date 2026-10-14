@@ -11,7 +11,8 @@
     "smoke": "node scripts/smoke.mjs",
     "prerender": "node scripts/prerender.mjs",
     "approve": "node scripts/approve.mjs",
-    "verify": "node scripts/verify.mjs"
+    "verify": "node scripts/verify.mjs",
+    "review-smoke": "node scripts/review-smoke.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",

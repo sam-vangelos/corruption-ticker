@@ -251,6 +251,25 @@ for (const [name, mutate, expect] of MUST_FAIL) {
   record('the prerender removes a stale record page and feed', r.status === 0 && gone, `exit ${r.status}; ${gone ? 'gone' : 'still present'}`);
 }
 
+// ---------- 5. the review queue never reaches dist ----------
+// The editor's queue is development only (scripts/review-middleware.mjs,
+// src/review/). Nothing of it may be in the real build: not its API path, its
+// page markers, its component or module names, in any file including
+// sourcemaps, nor any file named for it.
+{
+  const MARKERS = ['/__review', 'review-queue', 'ReviewApp', 'ReviewRecord', 'ReviewEdit', 'ReviewBatch', 'review-middleware', 'src/review/', 'rq-title', 'rq-edit'];
+  const walkAll = (d) => readdirSync(d, { withFileTypes: true }).flatMap((x) => (x.isDirectory() ? walkAll(path.join(d, x.name)) : [path.join(d, x.name)]));
+  const hits = [];
+  for (const f of walkAll(dist)) {
+    const rel = path.relative(dist, f);
+    if (/review/i.test(rel)) hits.push(`file ${rel}`);
+    const text = readFileSync(f, 'utf8');
+    for (const m of MARKERS) if (text.includes(m)) hits.push(`${rel}: "${m}"`);
+  }
+  record('dist contains no trace of the review queue (API path, markers, components)', hits.length === 0,
+    hits.length ? hits.slice(0, 6).join('; ') : `${MARKERS.length} markers, none in ${walkAll(dist).length} files`);
+}
+
 rmSync(scratch, { recursive: true, force: true });
 const failed = results.filter((x) => !x.ok).length;
 console.log(`verify: ${results.length - failed}/${results.length} passed`);
