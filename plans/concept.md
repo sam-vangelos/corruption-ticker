@@ -14,7 +14,7 @@ A ticker is a reader. A record is something people cite. The thing to build is a
 
 ## The headline
 
-"**X qualifying records concerning Y distinct events since 20 January 2025.**" Both counts come live from the dataset. Beneath it, the average cadence stated as what it is: "one new qualifying record every N hours on average," computed over root events only, with the counting rules one click away. No "acts of corruption," no "K a week" presented as current cadence, no "since you opened this page" counter.
+"**X qualifying records concerning Y distinct events since 20 January 2025.**" Both counts come live from the dataset. Beneath it, the average cadence stated as what it is: "one new distinct qualifying event every N hours on average," computed over event trees, with the counting rules one click away. No "acts of corruption," no "K a week" presented as current cadence, no "since you opened this page" counter.
 
 Counting rules, published beside the number: one root event per distinct underlying matter; developments in a matter are child records that do not increase the event count; retracted records are excluded from all metrics; records at evidence grade 5 (single-source allegation) are retained as leads and excluded from all metrics; the event count uses the date of the underlying conduct or first report, never the date the record was added.
 

@@ -1,7 +1,3 @@
-# Continuous integration for app/. MOVE THIS FILE to .github/workflows/ci.yml at
-# the repository root: GitHub reads workflows only from there, and the wave-2
-# implementer's allowlist stops at app/. Every path below already assumes the
-# repository root as the checkout and app/ as the working directory.
 #
 # `npm run build` runs the type check, the Vite build, the prerender and the
 # adversarial suite (npm run verify); `npm run smoke` then checks the served

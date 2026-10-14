@@ -84,7 +84,7 @@ Exclude: policy disagreements, pure opinion, unsourced social-media claims, firs
 - **Actors** is a non-empty array of distinct non-blank names; `actor_roles` covers every actor; malformed values fail, never coerce.
 - **Sources.** Every public record has at least one source with an `archive_url`. Grade 1 requires a source of kind `court-filing`, `official-report`, or an admission in `subject_response`. Grade 2 requires a source of kind `disclosure`, `court-filing`, `official-report`, or `congressional`. Grade 3 requires kind `investigation`. Grade 4 requires at least two sources from distinct outlets.
 - **Date floor.** `date` is on or after 2025-01-20. First-term conduct is represented only by its 2025+ development.
-- **Language lint.** The summary's first verb matches the grade (found / documented / reported / alleged (corroborated) / alleged). Below grade 1 the summary may not contain assertions of criminal guilt ("committed", "is guilty", "is a criminal", "bribed", "stole", "defrauded" as unattributed statements). The lint is deterministic and conservative; approval covers the rest.
+- **Language lint.** The summary's first verb matches the grade (found / documented / reported / alleged (corroborated) / alleged). Below grade 1 the summary may not contain assertions of criminal guilt ("committed", "is guilty", "is a criminal", "bribed", "stole", "defrauded", "embezzled", "laundered" as unattributed statements). The lint is deterministic and conservative; approval covers the rest.
 - **The build runs the adversarial fixture suite** (must-fail builds, planted secrets, stale pages) as part of `npm run build`, and continuous integration runs it on every push.
 
 ## Editorial rules
