@@ -172,6 +172,10 @@ export interface Correction {
   old_value: JsonValue;
   new_value: JsonValue;
   reason: string;
+  /** The editor who approved this correction; null means a draft, never published. */
+  approved_by: string | null;
+  /** SHA-256 of the canonical JSON of {record_id, date, field, old_value, new_value, reason}. */
+  approved_digest: string | null;
   /** Fixture-only flag, as on entries. */
   placeholder?: boolean;
 }

@@ -5,6 +5,7 @@
  */
 import type { Correction, Item } from '../types';
 import { checkCorrections, interpret } from '../data/load';
+import { canonicalJson } from '../data/sha256';
 import type { SkipCode } from '../types';
 import { computeHeadline, qualifyingOnly, type QualifyingItem } from '../data/metrics';
 import { formatDate, parseDay } from '../data/dates';
@@ -168,7 +169,7 @@ export const ROUTES: Array<{ path: string; title: string; description: string }>
 const QUIET: readonly SkipCode[] = ['unapproved'];
 
 // The approve tool and the verify suite use these through this module.
-export { validateForApproval } from '../data/load';
+export { validateForApproval, correctionProblem as checkCorrectionShape } from '../data/load';
 export { EDITOR_NAME, correctionDigest, recordDigest } from '../data/approval';
 export { sha256Hex, canonicalJson } from '../data/sha256';
 
@@ -184,6 +185,14 @@ export const GENERATED_PATHS: readonly string[] = [
   'r', 'feeds', 'data', 'build.json', '404.html', 'feed.xml',
   ...ROUTES.flatMap((r) => [`${r.path}.html`, r.path]),
 ];
+
+/** Every string id in the raw file, approved or not. */
+function rawIds(entries: unknown): string[] {
+  if (!Array.isArray(entries)) return [];
+  return entries
+    .map((r) => (r && typeof r === 'object' ? (r as Record<string, unknown>).id : null))
+    .filter((id): id is string => typeof id === 'string' && id !== '');
+}
 
 export function buildSite(input: SiteInput): SiteOutput {
   const notes: string[] = [];
@@ -216,11 +225,14 @@ export function buildSite(input: SiteInput): SiteOutput {
   }
   const byId = new Map(items.map((it) => [it.id, it]));
 
-  // Every correction must be well formed and name a record in the public
-  // dataset; anything else fails the build with the correction printed.
+  // Corrections (docs/schema.md § Admission controls): every entry well
+  // formed with a schema-path field; drafts (approved_by null) are dropped
+  // quietly; an approved one must carry the editor's name and matching digest
+  // and name a public record. No correction, draft or not, may contain the id
+  // of a record that is not public. Anything else fails the build, printed.
   let corrections: Correction[] = [];
   if (input.corrections !== null) {
-    const cs = checkCorrections(input.corrections);
+    const cs = checkCorrections(input.corrections, 'verify');
     if (!cs) {
       fatal.push('corrections log: the file is not a JSON array');
     } else {
@@ -228,6 +240,13 @@ export function buildSite(input: SiteInput): SiteOutput {
       for (const c of cs.corrections) {
         if (!byId.has(c.record_id)) fatal.push(`correction for "${c.record_id}" names no record in the public dataset: ${JSON.stringify(c)}`);
       }
+      for (const d of cs.drafts) notes.push(`not public: correction #${d.index} [unapproved] approved_by is null`);
+      const hidden = rawIds(input.entries).filter((id) => !publicIdSet.has(id));
+      (Array.isArray(input.corrections) ? input.corrections : []).forEach((raw, index) => {
+        const text = canonicalJson(raw);
+        const named = hidden.filter((id) => new RegExp(`(?<![a-z0-9-])${id.replace(/[-]/g, '\\-')}(?![a-z0-9-])`).test(text));
+        if (named.length) fatal.push(`correction #${index} names non-public record ${named.map((n) => `"${n}"`).join(', ')}: ${JSON.stringify(raw)}`);
+      });
       corrections = cs.corrections;
     }
   }
@@ -241,7 +260,12 @@ export function buildSite(input: SiteInput): SiteOutput {
   // retracted records stay, labelled by their own fields. Same order as the app.
   const publicEntries = items.map((it) => projectEntry(it, publicIdSet));
   files.push({ path: 'data/entries.json', content: `${JSON.stringify(publicEntries, null, 2)}\n` });
-  files.push({ path: 'data/corrections.json', content: `${JSON.stringify(corrections, null, 2)}\n` });
+  // Approved corrections only, projected to their fields (no unknown keys).
+  const publicCorrections = corrections.map((c) => ({
+    date: c.date, record_id: c.record_id, field: c.field, old_value: c.old_value, new_value: c.new_value, reason: c.reason,
+    approved_by: c.approved_by, approved_digest: c.approved_digest, ...(c.placeholder ? { placeholder: true } : {}),
+  }));
+  files.push({ path: 'data/corrections.json', content: `${JSON.stringify(publicCorrections, null, 2)}\n` });
   const placeholder = items.some((it) => it.placeholder);
   const noscriptRecord = 'The record above is complete without JavaScript; the interactive front page needs it.';
   const noscriptShell = 'This page needs JavaScript to load and display the dataset.';

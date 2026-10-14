@@ -6,7 +6,7 @@ import {
 } from '../types';
 import { monthKey, parseDay } from './dates';
 import { isQualifying } from './metrics';
-import { EDITOR_NAME, recordDigest } from './approval';
+import { EDITOR_NAME, correctionDigest, recordDigest } from './approval';
 import { PRIVATE_DISALLOWED_RESPONSES, PRIVATE_MAX_GRADE, PRIVATE_ROLES } from '../method';
 
 export const DATA_URL = `${import.meta.env.BASE_URL}data/entries.json`;
@@ -386,48 +386,96 @@ export interface CorrectionProblem {
   raw: unknown;
 }
 
+const TOP_FIELDS = [
+  'id', 'root_id', 'date', 'date_precision', 'title', 'summary', 'category', 'rubric_prong', 'rubric_evidence',
+  'actors', 'actor_roles', 'entities', 'offices', 'evidence_grade', 'evidence_note', 'evidentiary_status',
+  'procedural_status', 'subject_response', 'status_note', 'amounts', 'sources', 'first_published_at',
+  'last_modified_at', 'last_verified_at', 'related_ids', 'tags',
+];
+const AMOUNT_FIELDS = ['usd', 'amount_type', 'actual_or_estimated', 'basis', 'overlap_group'];
+const SOURCE_FIELDS = ['outlet', 'title', 'url', 'archive_url', 'date', 'author', 'kind'];
+
 /**
- * Validate the corrections log: an array of {date, record_id, field,
- * old_value, new_value, reason}. Returns the good entries (newest first) and
- * every malformed one with the reason. The build fails on any problem; the app
- * shows only the good entries.
+ * The paths a correction's `field` may name: a schema field ("summary"), an
+ * element of a list ("actors[0]", "amounts[1]"), a field of an amount or source
+ * ("amounts[0].usd", "sources[2].archive_url"), or one actor's role
+ * ("actor_roles.<name>"). Nothing else: no free text, no invented fields.
  */
-export function checkCorrections(body: unknown): { corrections: Correction[]; problems: CorrectionProblem[] } | null {
+export const CORRECTION_FIELD_RE = new RegExp(
+  `^(?:(?:${TOP_FIELDS.join('|')})`
+  + `|(?:actors|entities|offices|tags|related_ids|amounts|sources)\\[\\d+\\]`
+  + `|amounts\\[\\d+\\]\\.(?:${AMOUNT_FIELDS.join('|')})`
+  + `|sources\\[\\d+\\]\\.(?:${SOURCE_FIELDS.join('|')})`
+  + `|actor_roles\\.[^.\\[\\]]+)$`,
+);
+
+/** Why a raw correction is malformed, or null when its shape and field path are valid. Approval is separate. */
+export function correctionProblem(raw: unknown): string | null {
+  const o = raw && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, unknown>) : null;
+  if (!o) return 'not an object';
+  if (!isStr(o.date) || !DAY_RE.test(o.date) || parseDay(o.date) === null) return 'date is not YYYY-MM-DD';
+  if (!nonEmpty(o.record_id)) return 'missing record_id';
+  if (!nonEmpty(o.field)) return 'missing field';
+  if (!CORRECTION_FIELD_RE.test(o.field)) return `field "${o.field}" is not a schema path (e.g. "summary", "amounts[0].usd", "sources[1].title")`;
+  if (!nonEmpty(o.reason)) return 'missing reason';
+  if (!('old_value' in o) || !isJson(o.old_value)) return 'missing old_value';
+  if (!('new_value' in o) || !isJson(o.new_value)) return 'missing new_value';
+  return null;
+}
+
+export interface CheckedCorrections {
+  /** Approved corrections, newest first. */
+  corrections: Correction[];
+  /** Drafts (approved_by null): never published. */
+  drafts: Array<{ index: number; raw: unknown }>;
+  /** Malformed entries and failed approvals: the build fails on any. */
+  problems: CorrectionProblem[];
+}
+
+/**
+ * Validate the corrections log. Each entry needs a valid shape and field path;
+ * one with approved_by null is a draft; one that claims approval must name
+ * the configured editor and carry the matching digest (in `verify` mode).
+ */
+export function checkCorrections(body: unknown, mode: ApprovalMode = 'verify'): CheckedCorrections | null {
   if (!Array.isArray(body)) return null;
-  const corrections: Correction[] = [];
-  const problems: CorrectionProblem[] = [];
+  const out: CheckedCorrections = { corrections: [], drafts: [], problems: [] };
   body.forEach((raw, index) => {
-    const o = raw && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, unknown>) : null;
-    const reason = !o ? 'not an object'
-      : !isStr(o.date) || !DAY_RE.test(o.date) || parseDay(o.date) === null ? 'date is not YYYY-MM-DD'
-      : !nonEmpty(o.record_id) ? 'missing record_id'
-      : !nonEmpty(o.field) ? 'missing field'
-      : !nonEmpty(o.reason) ? 'missing reason'
-      : !('old_value' in o) || !isJson(o.old_value) ? 'missing old_value'
-      : !('new_value' in o) || !isJson(o.new_value) ? 'missing new_value'
-      : null;
-    if (reason || !o) {
-      problems.push({ index, reason: reason ?? 'not an object', raw });
-      return;
-    }
-    corrections.push({
+    const why = correctionProblem(raw);
+    if (why) { out.problems.push({ index, reason: why, raw }); return; }
+    const o = raw as Record<string, unknown>;
+    if (o.approved_by === null || o.approved_by === undefined) { out.drafts.push({ index, raw }); return; }
+    const c: Correction = {
       date: o.date as string,
       record_id: o.record_id as string,
       field: o.field as string,
       old_value: o.old_value as JsonValue,
       new_value: o.new_value as JsonValue,
       reason: o.reason as string,
+      approved_by: strOrNull(o.approved_by),
+      approved_digest: strOrNull(o.approved_digest),
       placeholder: o.placeholder === true ? true : undefined,
-    });
+    };
+    if (mode === 'verify') {
+      if (c.approved_by !== EDITOR_NAME) {
+        out.problems.push({ index, reason: `approved_by "${String(o.approved_by)}" is not the configured editor (app/editor.json)`, raw });
+        return;
+      }
+      if (c.approved_digest !== correctionDigest(c)) {
+        out.problems.push({ index, reason: `approved_digest does not match the correction's content; re-approve with npm run approve -- --correction ${index}`, raw });
+        return;
+      }
+    }
+    out.corrections.push(c);
   });
   // Newest first; stable by record id then field.
-  corrections.sort((a, b) => b.date.localeCompare(a.date) || a.record_id.localeCompare(b.record_id) || a.field.localeCompare(b.field));
-  return { corrections, problems };
+  out.corrections.sort((a, b) => b.date.localeCompare(a.date) || a.record_id.localeCompare(b.record_id) || a.field.localeCompare(b.field));
+  return out;
 }
 
 /** The app's view of the corrections log. */
-export function interpretCorrections(body: unknown): CorrectionsState {
-  const res = checkCorrections(body);
+export function interpretCorrections(body: unknown, mode: ApprovalMode = 'verify'): CorrectionsState {
+  const res = checkCorrections(body, mode);
   if (!res) return { kind: 'unavailable', detail: 'The corrections file is not an array.' };
   return { kind: 'ready', corrections: res.corrections, skipped: res.problems.length };
 }
@@ -436,7 +484,7 @@ export async function loadCorrections(url = CORRECTIONS_URL): Promise<Correction
   try {
     const res = await fetch(url, { cache: 'no-cache' });
     if (!res.ok) return { kind: 'unavailable', detail: `The server answered HTTP ${res.status}.` };
-    return interpretCorrections(JSON.parse(await res.text()));
+    return interpretCorrections(JSON.parse(await res.text()), import.meta.env.DEV ? 'verify' : 'trust');
   } catch (err) {
     return { kind: 'unavailable', detail: `The corrections log could not be read (${(err as Error).message}).` };
   }

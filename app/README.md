@@ -157,6 +157,15 @@ npm run approve -- --correction 0                          # approve corrections
 npm run approve -- --check                                 # list every approval that no longer matches (exit 1 if any)
 ```
 
+Corrections are approved the same way: `approved_by` plus an
+`approved_digest` over `record_id`, `date`, `field`, `old_value`, `new_value`
+and `reason`. A correction's `field` must be a schema path (`summary`,
+`actors[0]`, `amounts[0].usd`, `sources[1].archive_url`,
+`actor_roles.<name>`); drafts (`approved_by: null`) are never published; and
+any correction, draft or not, whose text contains the id of a record that is
+not public fails the build. `dist/data/corrections.json` holds approved
+corrections only.
+
 The tool refuses to approve an invalid record. It uses the same dataset
 resolver as the build. The fixture's approved records were approved with it.
 
